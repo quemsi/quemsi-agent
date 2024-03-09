@@ -1,0 +1,37 @@
+server:
+  port: 9082
+
+spring:
+  application:
+    name: biddflux-agent
+  security:
+    oauth2:
+      client:
+        registration:
+          api-client:
+            provider: keycloak
+            client-id: agent-2
+            client-name: agent-2
+            client-secret: DC2ZK9RJO2JoiEjfZgx33MLdvwYoGDO1
+            authorization-grant-type: client_credentials
+        provider:
+          keycloak:
+            token-uri: http://localhost:8080/realms/biddflux/protocol/openid-connect/token
+oauth2:
+  registration:
+    id: api-client              
+resource:
+  base: http://localhost:9081
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+mysqlbackup:
+  preserve-zip: true
+  preserve-sql: false
+  temp-dir: tmp
+logging:
+  level:
+    root: INFO
+    com.givlon.indexer.service: INFO

@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>3.2.2</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.biddflux</groupId>
 	<artifactId>biddflux-agent</artifactId>
@@ -19,6 +20,11 @@
 	</properties>
 	<dependencies>
 		<dependency>
+			<groupId>com.biddflux</groupId>
+			<artifactId>biddflux-model</artifactId>
+			<version>2.0.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-bootstrap</artifactId>
 		</dependency>
@@ -27,8 +33,25 @@
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-webflux</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-quartz</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-oauth2-client</artifactId>
+			<version>6.2.2</version>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
@@ -92,26 +115,26 @@
 				</configuration>
 			</plugin>
 			<plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
 					<layers>
 						<enabled>true</enabled>
-					  </layers>
-                    <image>
-                        <name>muratbarisik/indexer:${project.version}</name>
+					</layers>
+					<image>
+						<name>muratbarisik/indexer:${project.version}</name>
 						<verboseLogging>true</verboseLogging>
 						<builder>paketobuildpacks/builder-jammy-base:latest</builder>
-                    </image>
-                </configuration>
+					</image>
+				</configuration>
 				<executions>
 					<execution>
-					  <goals>
-						<goal>repackage</goal>
-					  </goals>
+						<goals>
+							<goal>repackage</goal>
+						</goals>
 					</execution>
-				  </executions>
-            </plugin>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
 </project>
