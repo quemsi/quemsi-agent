@@ -14,5 +14,9 @@ public interface ApiClient {
     AgentCommand nextCommand();
     @PostMapping("/api/agent/next-command")
     FlowHistory saveFlowHistory(FlowHistory history);
+    @GetMapping("/api/agent/gdrive-credentials")
+    String googleCredential();
+    @PostMapping("/api/agent/agent-command")
+    void send(AgentCommand command);
 }
 

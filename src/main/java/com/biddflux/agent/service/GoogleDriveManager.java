@@ -6,31 +6,34 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.stereotype.Service;
 
+import com.biddflux.agent.api.ApiClient;
+import com.biddflux.commons.util.Exceptions;
+import com.biddflux.model.dto.agent.onapi.NotifyError;
+import com.biddflux.model.dto.agent.onapi.UpdateGoogleDrive;
 import com.biddflux.model.flow.out.GoogleDrive;
 
 @Service
 
 public class GoogleDriveManager {
-	//TODO: how this should work in agent
-	// @Autowired
-	// private GoogleDriveServiceImpl googleDriveServiceImpl;
 	@Autowired
 	private DefaultListableBeanFactory beanFactory;
-	// @Autowired
-	// private ExecutorService vExecutorService;
+	@Autowired
+	private ApiClient apiClient;
+	@Autowired
+	private SpringBeanManager springBeanManager;
 
 	public void connectToDrives() {
-		// googleDriveServiceImpl.findAll().forEach(gde -> {
-		// 	googleDriveExecutor.execute(()->{
-		// 		GoogleDrive gd = beanFactory.getBean(gde.getName(), GoogleDrive.class);
-		// 		try {
-		// 			gd.connectToDrive();
-		// 		} catch (Exception e) {
-		// 			log.error("error connection to drive ", e);
-		// 			gd.setError(StringUtils.stackTraceOf(e));
-		// 		}
-		// 	});
-		// });
+		springBeanManager.findGoogleDrives().forEach(Exceptions.<GoogleDrive, Exception>wrapEx(gd -> {
+			try{
+				gd.setBrowserConsumer((driveName, authUrl) -> apiClient.send(UpdateGoogleDrive.builder().driveName(driveName).authUrl(authUrl).connected(false).build()));
+				gd.connectToDrive();
+				if(gd.isConnected()){
+					apiClient.send(UpdateGoogleDrive.builder().driveName(gd.getName()).connected(true).build());
+				}
+			}catch(Exception e){
+				apiClient.send(NotifyError.builder().entityType("google-drive").entityName(gd.getName()).exception(Exceptions.server("agent").withCause(e).get()).build());
+			}
+		}));
 	}
 	
 	public List<GoogleDrive> googleDriveBeans() {

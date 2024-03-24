@@ -57,6 +57,14 @@ public class SpringBeanManager {
 		registerer.register();
 	}
 	
+	public GoogleDrive findGoogleDrive(String name){
+		return beanFactory.getBean(name, GoogleDrive.class);
+	}
+
+	public List<GoogleDrive> findGoogleDrives(){
+		return List.copyOf(beanFactory.getBeansOfType(GoogleDrive.class).values());
+	}
+
 	public void registerGoogleDrive(String name, String callbackBaseUrl, Integer callbackPort) {
 		BeanReqisterer<GoogleDrive> registerer = new BeanReqisterer<>(name, GoogleDrive.class, () -> new GoogleDrive());
 		GoogleDrive googleDrive = registerer.getBean();

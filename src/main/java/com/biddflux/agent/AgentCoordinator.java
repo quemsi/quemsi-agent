@@ -1,5 +1,10 @@
 package com.biddflux.agent;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.util.concurrent.ExecutorService;
 
 import org.springframework.beans.factory.ObjectProvider;
@@ -8,6 +13,7 @@ import org.springframework.web.reactive.function.client.WebClientRequestExceptio
 
 import com.biddflux.agent.api.ApiClient;
 import com.biddflux.agent.service.FlowManager;
+import com.biddflux.agent.service.GoogleDriveManager;
 import com.biddflux.agent.service.SpringBeanManager;
 import com.biddflux.commons.util.Exceptions;
 import com.biddflux.model.dto.AgentModel;
@@ -15,8 +21,13 @@ import com.biddflux.model.dto.FlowHistory;
 import com.biddflux.model.dto.agent.AgentCommand;
 import com.biddflux.model.dto.agent.DelayAgentCommand;
 import com.biddflux.model.dto.agent.ExecuteFlow;
+import com.biddflux.model.dto.agent.GoogleDriveConnect;
+import com.biddflux.model.dto.agent.onapi.NotifyError;
+import com.biddflux.model.dto.agent.onapi.UpdateGoogleDrive;
 import com.biddflux.model.flow.Flow;
+import com.biddflux.model.flow.out.GoogleDrive;
 import com.biddflux.model.flow.retention.RetentionPolicy;
+import com.google.common.io.Files;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -34,6 +45,8 @@ public class AgentCoordinator {
 	private FlowManager flowManager;
     @Autowired
     private ExecutorService vThreadExecutor;
+    @Autowired
+    private GoogleDriveManager manager;
     private ApiCommandListener apiCommandListener;
 
 	private boolean initialized;
@@ -53,12 +66,16 @@ public class AgentCoordinator {
                 AgentModel model = apiClient.allModel();
                 log.info("model : {}", model);
 				initialize(model);
+                String googleCredentialJson = apiClient.googleCredential();
+                BufferedWriter writer = new BufferedWriter(Files.newWriter(new File("credentials.json"), StandardCharsets.UTF_8));
+                writer.write(googleCredentialJson);
+                writer.close();
+                vThreadExecutor.execute(new InitGoogleDrives());
                 initialized = true;
                 apiCommandListener = new ApiCommandListener();
                 vThreadExecutor.submit(apiCommandListener);
-            }catch(WebClientRequestException ex){
-                log.error("apiClientError", ex);
-                // SpringApplication.exit(context, () -> -1);
+            }catch(WebClientRequestException | IOException ex){
+                throw Exceptions.server("init-error").withCause(ex).get();
             }
         }
     }
@@ -76,6 +93,20 @@ public class AgentCoordinator {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
+        } else if(command instanceof GoogleDriveConnect gDriveConnect) {
+            GoogleDrive drive = beanManager.findGoogleDrive(gDriveConnect.getDriveName());
+            if(gDriveConnect.isConnect() != drive.isConnected()){
+                if(drive.isConnected()){
+                    drive.clearConnection();
+                } else {
+                    try {
+                        drive.connectToDrive();
+                    } catch (GeneralSecurityException | IOException e) {
+                        throw Exceptions.server("google-drive-error").withCause(e).get();
+                    }
+                }
+            }
+            apiClient.send(UpdateGoogleDrive.builder().driveName(drive.getName()).connected(drive.isConnected()).build());
         } else{
             throw Exceptions.server("not-implemented").withExtra("commandName", command.getName()).get();
         }
@@ -91,6 +122,26 @@ public class AgentCoordinator {
                 log.error("command-execution-error", e);
             }finally{
                 vThreadExecutor.submit(this);
+            }
+        }
+    }
+
+    public class InitGoogleDrives implements Runnable{
+        @Override
+        public void run() {
+            manager.connectToDrives();
+        }
+    }
+
+    public class ConnectToGoogleDrive implements Runnable{
+        private GoogleDrive googleDrive;
+
+        @Override
+        public void run() {
+            try{
+                googleDrive.connectToDrive();
+            } catch (Exception ex){
+                apiClient.send(NotifyError.builder().entityName(googleDrive.getName()).entityType(GoogleDrive.class.getSimpleName()).exception(Exceptions.server("unable-to-connect-drive").withCause(ex).get()).build());
             }
         }
     }

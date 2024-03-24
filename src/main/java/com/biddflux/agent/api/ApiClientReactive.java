@@ -32,4 +32,14 @@ public class ApiClientReactive implements ApiClient{
     public FlowHistory saveFlowHistory(FlowHistory flowHistory) {
         return webClient.post().uri("/api/agent/flow-history").body(BodyInserters.fromValue(flowHistory)).retrieve().bodyToMono(FlowHistory.class).block();
     }
+
+    @Override
+    public String googleCredential(){
+        return webClient.get().uri("/api/agent/gdrive-credentials").retrieve().bodyToMono(String.class).block();
+    }
+
+    @Override
+    public void send(AgentCommand command) {
+        webClient.post().uri("/api/agent/agent-command").body(BodyInserters.fromValue(command)).retrieve().toBodilessEntity().block();
+    }
 }
