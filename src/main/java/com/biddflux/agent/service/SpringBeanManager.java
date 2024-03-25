@@ -43,6 +43,9 @@ public class SpringBeanManager {
 		t.setName(name);  
 		t.setSchedule(schedule);
 		registerer.register();
+		if(!registerer.isNew()){
+			t.reset();
+		}
 		return t;
 	}
 	
@@ -142,6 +145,9 @@ public class SpringBeanManager {
 				beanFactory.autowireBean(bean);
 				beanFactory.registerSingleton(name, bean);
 			}
+		}
+		public boolean isNew(){
+			return newBean;
 		}
 	}
 }

@@ -22,6 +22,7 @@ import com.biddflux.model.dto.agent.AgentCommand;
 import com.biddflux.model.dto.agent.DelayAgentCommand;
 import com.biddflux.model.dto.agent.ExecuteFlow;
 import com.biddflux.model.dto.agent.GoogleDriveConnect;
+import com.biddflux.model.dto.agent.UpdateAgentModel;
 import com.biddflux.model.dto.agent.onapi.NotifyError;
 import com.biddflux.model.dto.agent.onapi.UpdateGoogleDrive;
 import com.biddflux.model.flow.Flow;
@@ -52,12 +53,24 @@ public class AgentCoordinator {
 	private boolean initialized;
 	
     public void initialize(AgentModel model){
-        model.getTimers().forEach(t -> beanManager.registerTimer(t.getName(), t.getSchedule()));
-        model.getDatasources().forEach(ds -> beanManager.registerDatasource(ds.getName(), ds.getDbName(), ds.getUrl(), ds.getUsername(), ds.getPassword()));
-		model.getGoogleDrives().forEach(t -> beanManager.registerGoogleDrive(t.getName(), t.getCallbackBaseUrl(), t.getCallbackPort()));
-		model.getLocalDrives().forEach(t -> beanManager.registerLocalDrive(t.getName(), t.getStorageRoot(), t.getCapacity()));
-		model.getStorages().forEach(s -> beanManager.registerStroge(s.getName(), s.getType(), s.getLoc(), s.getRootPath(), retentionPolicyProvider.getObject(s.getRetentionPolicy(), s.getCountLimit(), s.getSizeLimit())));
-		model.getFlows().forEach(f -> flowManager.createNewFlow(f));
+        if(model.getTimers() != null){
+            model.getTimers().forEach(t -> beanManager.registerTimer(t.getName(), t.getSchedule()));
+        }
+        if(model.getDatasources() != null){
+            model.getDatasources().forEach(ds -> beanManager.registerDatasource(ds.getName(), ds.getDbName(), ds.getUrl(), ds.getUsername(), ds.getPassword()));
+        }
+        if(model.getGoogleDrives() != null){
+            model.getGoogleDrives().forEach(t -> beanManager.registerGoogleDrive(t.getName(), t.getCallbackBaseUrl(), t.getCallbackPort()));
+        }
+        if(model.getLocalDrives() != null){
+            model.getLocalDrives().forEach(t -> beanManager.registerLocalDrive(t.getName(), t.getStorageRoot(), t.getCapacity()));
+        }
+        if(model.getStorages() != null){
+            model.getStorages().forEach(s -> beanManager.registerStroge(s.getName(), s.getType(), s.getLoc(), s.getRootPath(), retentionPolicyProvider.getObject(s.getRetentionPolicy(), s.getCountLimit(), s.getSizeLimit())));
+        }
+        if(model.getFlows() != null){
+            model.getFlows().forEach(f -> flowManager.createNewFlow(f));
+        }
     }
 
     public void start() {
@@ -107,6 +120,8 @@ public class AgentCoordinator {
                 }
             }
             apiClient.send(UpdateGoogleDrive.builder().driveName(drive.getName()).connected(drive.isConnected()).build());
+        } else if(command instanceof UpdateAgentModel updatedModel){
+            initialize(updatedModel.getUpdatedModel());
         } else{
             throw Exceptions.server("not-implemented").withExtra("commandName", command.getName()).get();
         }

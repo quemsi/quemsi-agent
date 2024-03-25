@@ -23,7 +23,7 @@ public class GoogleDriveManager {
 	private SpringBeanManager springBeanManager;
 
 	public void connectToDrives() {
-		springBeanManager.findGoogleDrives().forEach(Exceptions.<GoogleDrive, Exception>wrapEx(gd -> {
+		springBeanManager.findGoogleDrives().forEach(Exceptions.<GoogleDrive, Exception>wrapConsumer(gd -> {
 			try{
 				gd.setBrowserConsumer((driveName, authUrl) -> apiClient.send(UpdateGoogleDrive.builder().driveName(driveName).authUrl(authUrl).connected(false).build()));
 				gd.connectToDrive();
