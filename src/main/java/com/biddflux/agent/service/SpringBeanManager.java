@@ -79,12 +79,13 @@ public class SpringBeanManager {
 		registerer.register();
 	}
 
-	public void registerLocalDrive(String name, String storageRoot, long capacity) {
+	public void registerLocalDrive(String name, String storageRoot, long capacity, long usedSize) {
 		BeanReqisterer<LocalDrive> registerer = new BeanReqisterer<>(name, LocalDrive.class, () -> new LocalDrive());
 		LocalDrive localDrive = registerer.getBean();
 		localDrive.setName(name);
 		localDrive.setStorageRoot(storageRoot);
 		localDrive.setCapacity(capacity);
+		localDrive.setUsedSize(usedSize);
 		registerer.register();
 	}
 
@@ -96,7 +97,7 @@ public class SpringBeanManager {
 		return beanFactory.getBean(name, Storage.class);
 	}
 
-	public void registerStroge(String name, StorageType type, String loc, String rootPath, RetentionPolicy retentionPolicy) {
+	public void registerStroge(String name, StorageType type, String loc, String rootPath, RetentionPolicy retentionPolicy, long capacity, long usedSize) {
 		if(StorageType.GDRIVE.equals(type)){
 			BeanReqisterer<Gstorage> registerer = new BeanReqisterer<>(name, Gstorage.class, () -> new Gstorage());
 			Gstorage gstorage = registerer.getBean();
@@ -113,6 +114,8 @@ public class SpringBeanManager {
 			of.setLocalDrive(beanFactory.getBean(loc, LocalDrive.class));
 			of.setRootPath(rootPath);
 			of.setRetentionPolicy(retentionPolicy);
+			of.setUsedSize(usedSize);
+			of.setCapacity(capacity);
 			retentionPolicy.setStorage(of);
 			registerer.register();
 		} else {

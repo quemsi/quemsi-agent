@@ -73,6 +73,9 @@ public class FlowManager {
 			}
 			f.initialize();
 			return f;
+		} catch(BaseRuntimeException bre){
+			log.error("error-in-initializing-flow", bre);
+			apiClient.send(NotifyError.builder().exception(bre).build());
 		} catch (Exception ex){
 			log.error("error-in-creating-flow", ex);
 			BaseRuntimeException e = Exceptions.server("error-creating-flow").withCause(ex)

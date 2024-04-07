@@ -63,10 +63,10 @@ public class AgentCoordinator {
             model.getGoogleDrives().forEach(t -> beanManager.registerGoogleDrive(t.getName(), t.getCallbackBaseUrl(), t.getCallbackPort()));
         }
         if(model.getLocalDrives() != null){
-            model.getLocalDrives().forEach(t -> beanManager.registerLocalDrive(t.getName(), t.getStorageRoot(), t.getCapacity()));
+            model.getLocalDrives().forEach(t -> beanManager.registerLocalDrive(t.getName(), t.getStorageRoot(), t.getCapacity(), t.getUsedSize()));
         }
         if(model.getStorages() != null){
-            model.getStorages().forEach(s -> beanManager.registerStroge(s.getName(), s.getType(), s.getLoc(), s.getRootPath(), retentionPolicyProvider.getObject(s.getRetentionPolicy(), s.getCountLimit(), s.getSizeLimit())));
+            model.getStorages().forEach(s -> beanManager.registerStroge(s.getName(), s.getType(), s.getLoc(), s.getRootPath(), retentionPolicyProvider.getObject(s.getRetentionPolicy(), s.getCountLimit(), s.getSizeLimit()), s.getCapacity(), s.getUsedSize()));
         }
         if(model.getFlows() != null){
             model.getFlows().forEach(f -> flowManager.createNewFlow(f));
