@@ -34,8 +34,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class AgentCoordinator {
-    // @Autowired
-    // private ConfigurableApplicationContext context;
 	@Autowired
 	private ApiClient apiClient;
     @Autowired

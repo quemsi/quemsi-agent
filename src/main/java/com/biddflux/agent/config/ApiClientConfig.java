@@ -56,7 +56,6 @@ public class ApiClientConfig {
         oauth.setDefaultClientRegistrationId(oauth2RegistrationId);
 
         return WebClient.builder()
-                // base path of the client, just path while calling is required
                 .baseUrl(resourceBase)
                 .filter(oauth)
                 .filter(logResourceRequest(log, oauth2RegistrationId))
