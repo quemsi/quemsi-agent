@@ -12,22 +12,26 @@ import com.biddflux.commons.util.Exceptions;
 import com.biddflux.model.dto.agent.onapi.NotifyError;
 
 @Aspect
-// @Component
+@Component
 public class GlobalErrorHandling {
     @Autowired
 	private ApiClient apiClient;
     
-    @AfterThrowing(pointcut="execution(* com.biddflux.agent..*.*(..))", throwing="ex")
+    @AfterThrowing(pointcut="execution(* com.biddflux.agent.service..*.*(..))", throwing="ex")
+    public void onService(Exception ex) {
+        handleError(ex);
+    }
     public void handleError(Exception ex) {
         if(ex instanceof ClientAuthorizationException){
             return;
         }
-        NotifyError.NotifyErrorBuilder builder = NotifyError.builder().entityName("agent").entityType("agent");
+        NotifyError.NotifyErrorBuilder notifyError = NotifyError.builder();
         if(ex instanceof BaseRuntimeException bre){
-            builder.exception(bre);
+            notifyError.exception(bre);
         }else{
-            builder.exception(Exceptions.server("unexpected-agent-error").withCause(ex).get());
+            notifyError.exception(Exceptions.server("unexpected-agent-error").onEntity("global", "agent").withCause(ex).get());
         }
-        apiClient.send(builder.build());
+        apiClient.send(notifyError.build());
      }
+     
 }

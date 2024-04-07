@@ -1,6 +1,5 @@
 package com.biddflux.agent.service;
 
-import java.io.IOException;
 import java.nio.charset.Charset;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -12,10 +11,12 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.biddflux.agent.api.ApiClient;
+import com.biddflux.commons.util.BaseRuntimeException;
 import com.biddflux.commons.util.DateUtils;
 import com.biddflux.commons.util.Exceptions;
 import com.biddflux.model.dto.DataVersion;
 import com.biddflux.model.dto.FlowDetail;
+import com.biddflux.model.dto.agent.onapi.NotifyError;
 import com.biddflux.model.flow.Flow;
 import com.biddflux.model.flow.Step;
 import com.biddflux.model.flow.Timer;
@@ -72,10 +73,12 @@ public class FlowManager {
 			}
 			f.initialize();
 			return f;
-		} catch (IOException e) {
-			log.error("unable-to-create-flow", Exceptions.server("invalid-flow-model").withExtra("model", model).withCause(e).get());
 		} catch (Exception ex){
 			log.error("error-in-creating-flow", ex);
+			BaseRuntimeException e = Exceptions.server("error-creating-flow").withCause(ex)
+				.onEntity("flow", flow.getName())
+				.withExtra("detailMessage", ex.getMessage()).get();
+			apiClient.send(NotifyError.builder().exception(e).build());
 		}
 		return null;
 	}
