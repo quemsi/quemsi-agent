@@ -18,7 +18,6 @@ import com.biddflux.model.flow.out.Gstorage;
 import com.biddflux.model.flow.out.LStorage;
 import com.biddflux.model.flow.out.LocalDrive;
 import com.biddflux.model.flow.out.Storage;
-import com.biddflux.model.flow.retention.RetentionPolicy;
 
 @Service
 public class SpringBeanManager {
@@ -97,7 +96,7 @@ public class SpringBeanManager {
 		return beanFactory.getBean(name, Storage.class);
 	}
 
-	public void registerStroge(String name, StorageType type, String loc, String rootPath, RetentionPolicy retentionPolicy, long capacity, long usedSize) {
+	public void registerStroge(String name, StorageType type, String loc, String rootPath, String retentionPolicy, long capacity, long usedSize) {
 		if(StorageType.GDRIVE.equals(type)){
 			BeanReqisterer<Gstorage> registerer = new BeanReqisterer<>(name, Gstorage.class, () -> new Gstorage());
 			Gstorage gstorage = registerer.getBean();
@@ -105,7 +104,6 @@ public class SpringBeanManager {
 			gstorage.setRootPath(rootPath);
 			gstorage.setGoogleDrive(beanFactory.getBean(loc, GoogleDrive.class));
 			gstorage.setRetentionPolicy(retentionPolicy);
-			retentionPolicy.setStorage(gstorage);
 			registerer.register();
 		} else if (StorageType.LOCAL.equals(type)){
 			BeanReqisterer<LStorage> registerer = new BeanReqisterer<>(name, LStorage.class, () -> new LStorage());
@@ -116,7 +114,6 @@ public class SpringBeanManager {
 			of.setRetentionPolicy(retentionPolicy);
 			of.setUsedSize(usedSize);
 			of.setCapacity(capacity);
-			retentionPolicy.setStorage(of);
 			registerer.register();
 		} else {
 			throw Exceptions.server("not-implemented-yet").withExtra("type", type).get();

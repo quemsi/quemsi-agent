@@ -79,7 +79,7 @@ public class ApiClientConfig {
 
     private static ExchangeFilterFunction logResourceRequest(final Logger logger, final String clientName) {
         return ExchangeFilterFunction.ofRequestProcessor(c -> {
-            logger.info(
+            logger.trace(
                 "For Client {}, Sending OAUTH2 protected Resource Request to {}: {}",
                 clientName, c.method(), c.url()
             );
@@ -89,7 +89,7 @@ public class ApiClientConfig {
 
     private static ExchangeFilterFunction logResourceResponse(final Logger logger, final String clientName) {
         return ExchangeFilterFunction.ofResponseProcessor(c -> {
-            log.info("For Client {}, OAUTH2 protected Resource Response status: {}", clientName, c.statusCode());
+            log.trace("For Client {}, OAUTH2 protected Resource Response status: {}", clientName, c.statusCode());
             return Mono.just(c);
         });
     }
