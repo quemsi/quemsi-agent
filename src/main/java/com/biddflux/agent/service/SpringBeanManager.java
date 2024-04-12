@@ -48,14 +48,19 @@ public class SpringBeanManager {
 		return t;
 	}
 	
-	public void registerDatasource(String name, String dbName, String url, String username, String password) {
+	public void registerDatasource(String name, String dbName, String url, String username, String password, boolean useEnvVar) {
 		BeanReqisterer<DataSourceFactoryMySql> registerer = new BeanReqisterer<>(name, DataSourceFactoryMySql.class, () -> new DataSourceFactoryMySql());
 		DataSourceFactoryMySql mysql = registerer.getBean();
 		mysql.setName(name);
 		mysql.setDbName(dbName);
 		mysql.setUrl(url);
-		mysql.setUsername(username);
-		mysql.setPassword(password);
+		if(useEnvVar){
+			mysql.setUsername(System.getProperty(username));
+			mysql.setPassword(System.getProperty(password));
+		}else{
+			mysql.setUsername(username);
+			mysql.setPassword(password);
+		}
 		registerer.register();
 	}
 	

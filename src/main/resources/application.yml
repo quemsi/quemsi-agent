@@ -10,9 +10,9 @@ spring:
         registration:
           api-client:
             provider: keycloak
-            client-id: agent-2
-            client-name: agent-2
-            client-secret: DC2ZK9RJO2JoiEjfZgx33MLdvwYoGDO1
+            client-id: ${CLIENT-ID}
+            client-name: ${CLIENT-ID}
+            client-secret: ${CLIENT-SECRET}
             authorization-grant-type: client_credentials
         provider:
           keycloak:

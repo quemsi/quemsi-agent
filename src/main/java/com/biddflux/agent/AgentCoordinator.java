@@ -56,7 +56,7 @@ public class AgentCoordinator {
             model.getTimers().forEach(t -> beanManager.registerTimer(t.getName(), t.getSchedule()));
         }
         if(model.getDatasources() != null){
-            model.getDatasources().forEach(ds -> beanManager.registerDatasource(ds.getName(), ds.getDbName(), ds.getUrl(), ds.getUsername(), ds.getPassword()));
+            model.getDatasources().forEach(ds -> beanManager.registerDatasource(ds.getName(), ds.getDbName(), ds.getUrl(), ds.getUsername(), ds.getPassword(), ds.isUseEnvVar()));
         }
         if(model.getGoogleDrives() != null){
             model.getGoogleDrives().forEach(t -> beanManager.registerGoogleDrive(t.getName(), t.getCallbackBaseUrl(), t.getCallbackPort()));
