@@ -12,7 +12,7 @@ import com.biddflux.model.dto.agent.AgentCommand;
 
 public interface ApiClient {
     @GetMapping("/api/agent/all-model")
-    AgentModel allModel();
+    AgentModel allModel(String agentVersion);
     @GetMapping("/api/agent/next-command")
     AgentCommand nextCommand();
     @PostMapping("/api/agent/next-command")

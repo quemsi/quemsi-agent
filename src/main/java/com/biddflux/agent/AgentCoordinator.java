@@ -48,6 +48,7 @@ public class AgentCoordinator {
     @Autowired
     private GoogleDriveManager manager;
     private ApiCommandListener apiCommandListener;
+    private String agentVersion;
 
 	private boolean initialized;
 	
@@ -75,7 +76,8 @@ public class AgentCoordinator {
     public void start() {
         while(!this.initialized){
             try{
-                AgentModel model = apiClient.allModel();
+                this.agentVersion = getClass().getPackage().getImplementationVersion();
+                AgentModel model = apiClient.allModel(agentVersion);
                 log.info("model : {}", model);
 				initialize(model);
                 String googleCredentialJson = apiClient.googleCredential();

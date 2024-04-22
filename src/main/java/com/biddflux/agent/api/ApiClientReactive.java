@@ -16,13 +16,13 @@ public class ApiClientReactive implements ApiClient{
     private WebClient webClient;
     
     @Override
-    public AgentModel allModel() {
-        return webClient.get().uri("/api/agent/all-model") .retrieve().bodyToMono(AgentModel.class).block();
+    public AgentModel allModel(String agentVersion) {
+        return webClient.get().uri(uriBuilder -> uriBuilder.path("/api/agent/all-model").queryParam("agentVersion", agentVersion).build()).retrieve().bodyToMono(AgentModel.class).block();
     }
 
     @Override
     public AgentCommand nextCommand() {
-        return webClient.get().uri("/api/agent/next-command") .retrieve().bodyToMono(AgentCommand.class).block();
+        return webClient.get().uri("/api/agent/next-command").retrieve().bodyToMono(AgentCommand.class).block();
     }
 
     @Override
