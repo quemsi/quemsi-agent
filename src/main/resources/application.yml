@@ -28,8 +28,6 @@ management:
       exposure:
         include: "*"
 mysqlbackup:
-  preserve-zip: true
-  preserve-sql: false
   temp-dir: tmp
 logging:
   level:
