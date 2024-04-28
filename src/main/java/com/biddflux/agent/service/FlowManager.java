@@ -66,12 +66,17 @@ public class FlowManager {
 				}
 			}
 			f.setSteps(stepList);
-			flows.put(name, f);
+			Flow old = flows.containsKey(name)?flows.get(name):null;
+			if(old != null && old.getTimerName() != null){
+				Timer oldTimer = beanManager.findTimer(old.getTimerName());
+				oldTimer.remove(old.getName());
+			}
 			if(flow.getTimer() != null){
 				Timer timer = beanManager.findTimer(flow.getTimer());
 				timer.add(new FlowRunnable(f, flow.getTimer()));
 			}
 			f.initialize();
+			flows.put(name, f);
 			return f;
 		} catch(BaseRuntimeException bre){
 			log.error("error-in-initializing-flow", bre);

@@ -44,6 +44,8 @@ public class SpringBeanManager {
 		registerer.register();
 		if(!registerer.isNew()){
 			t.reset();
+		}else{
+			t.init();
 		}
 		return t;
 	}

@@ -18,6 +18,7 @@ import com.biddflux.agent.api.ApiClient;
 import com.biddflux.agent.service.FlowManager;
 import com.biddflux.agent.service.GoogleDriveManager;
 import com.biddflux.agent.service.SpringBeanManager;
+import com.biddflux.commons.util.DelayedFormatter;
 import com.biddflux.commons.util.Exceptions;
 import com.biddflux.model.dto.AgentModel;
 import com.biddflux.model.dto.FlowHistory;
@@ -33,6 +34,7 @@ import com.biddflux.model.dto.agent.onapi.UpdateGoogleDrive;
 import com.biddflux.model.flow.Flow;
 import com.biddflux.model.flow.out.GoogleDrive;
 import com.biddflux.model.flow.out.Storage;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Files;
 
 import lombok.extern.slf4j.Slf4j;
@@ -51,6 +53,9 @@ public class AgentCoordinator {
     private ExecutorService vThreadExecutor;
     @Autowired
     private GoogleDriveManager manager;
+    @Autowired
+    private ObjectMapper objectMapper;
+
     private ApiCommandListener apiCommandListener;
     private String agentVersion;
 
@@ -82,7 +87,7 @@ public class AgentCoordinator {
             try{
                 this.agentVersion = getClass().getPackage().getImplementationVersion();
                 AgentModel model = apiClient.allModel(agentVersion);
-                log.debug("model : {}", model);
+                log.debug("model : {}", DelayedFormatter.toDelayedString(Exceptions.wrapSupplier(() -> objectMapper.writeValueAsString(model))));
 				initialize(model);
                 String googleCredentialJson = apiClient.googleCredential();
                 BufferedWriter writer = new BufferedWriter(Files.newWriter(new File("credentials.json"), StandardCharsets.UTF_8));
