@@ -5,11 +5,13 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
+import java.time.Duration;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 
 import com.biddflux.agent.api.ApiClient;
@@ -37,6 +39,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class AgentCoordinator {
+    @Value("${api.retry:5}")
+    private long apiRetry;
 	@Autowired
 	private ApiClient apiClient;
     @Autowired
@@ -78,7 +82,7 @@ public class AgentCoordinator {
             try{
                 this.agentVersion = getClass().getPackage().getImplementationVersion();
                 AgentModel model = apiClient.allModel(agentVersion);
-                log.info("model : {}", model);
+                log.debug("model : {}", model);
 				initialize(model);
                 String googleCredentialJson = apiClient.googleCredential();
                 BufferedWriter writer = new BufferedWriter(Files.newWriter(new File("credentials.json"), StandardCharsets.UTF_8));
@@ -91,7 +95,7 @@ public class AgentCoordinator {
                 apiCommandListener = new ApiCommandListener();
                 vThreadExecutor.submit(apiCommandListener);
             }catch(WebClientRequestException | IOException ex){
-                throw Exceptions.server("init-error").withCause(ex).get();
+                throw Exceptions.server("initialization-error").withCause(ex).get();
             }
         }
     }
@@ -155,7 +159,12 @@ public class AgentCoordinator {
             try{
                 AgentCommand command = apiClient.nextCommand();
                 execute(command);
-            }catch(Exception e){
+            } catch (WebClientRequestException ignore){
+                log.debug("Unable to reach api, will try again in {} seconds", apiRetry);
+                log.trace("api error", ignore);
+                Exceptions.wrapRunnable(() -> Thread.sleep(Duration.ofSeconds(apiRetry))).run();;
+            }
+            catch(Exception e){
                 log.error("command-execution-error", e);
             }finally{
                 vThreadExecutor.submit(this);

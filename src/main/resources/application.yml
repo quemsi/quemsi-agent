@@ -29,6 +29,8 @@ management:
         include: "*"
 mysqlbackup:
   temp-dir: tmp
+api:
+  retry: 5 
 logging:
   level:
     root: INFO
