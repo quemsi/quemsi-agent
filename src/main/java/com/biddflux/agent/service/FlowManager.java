@@ -110,7 +110,7 @@ public class FlowManager {
 				, "time", dateUtils.getTimeString(LocalDateTime.now()),
 				"timer", this.timerName);
 			DataVersion version = apiClient.findVersion(flow.getName(), tags);
-			flow.execute(Optional.ofNullable(version).map(v -> v.getId()).orElse(null), tags);
+			flow.execute(Optional.ofNullable(version).map(v -> v.getId()).orElse(null), tags, version.getFiles());
 		}
 	}
 }

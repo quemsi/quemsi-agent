@@ -106,7 +106,7 @@ public class AgentCoordinator {
         } else if(command instanceof ExecuteFlow executeFlow){
             log.info("executing flow {}", executeFlow);
             Flow flow = flowManager.findByName(executeFlow.getFlowName()).orElseThrow(Exceptions.notFound("invalid-flow-name").withExtra("flowName", executeFlow.getFlowName()).supplier());
-            FlowHistory history = flow.execute(executeFlow.getVersionId(), executeFlow.getTags());
+            FlowHistory history = flow.execute(executeFlow.getVersionId(), executeFlow.getTags(), executeFlow.getFiles());
             if(history != null){
                 log.info("saving history {}", history);
                 history = apiClient.saveFlowHistory(history);
