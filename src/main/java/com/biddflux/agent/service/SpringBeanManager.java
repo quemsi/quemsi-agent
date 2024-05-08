@@ -8,9 +8,13 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 
+import com.biddflux.agent.api.ApiClient;
 import com.biddflux.agent.config.EnvironmentVars;
+import com.biddflux.commons.util.BaseRuntimeException;
 import com.biddflux.commons.util.Exceptions;
+import com.biddflux.commons.util.StringUtils;
 import com.biddflux.model.dto.StorageType;
+import com.biddflux.model.dto.agent.onapi.NotifyError;
 import com.biddflux.model.flow.Timer;
 import com.biddflux.model.flow.db.mysql.DataSourceFactoryMySql;
 import com.biddflux.model.flow.out.GoogleDrive;
@@ -27,6 +31,8 @@ public class SpringBeanManager {
 	private DefaultListableBeanFactory beanFactory;
 	@Autowired
 	protected ApplicationContext context;
+	@Autowired
+	protected ApiClient apiClient;
 
 	public Timer findTimer(String name){
 		return beanFactory.getBean(name, Timer.class);
@@ -57,8 +63,13 @@ public class SpringBeanManager {
 		mysql.setDbName(dbName);
 		mysql.setUrl(url);
 		if(useEnvVar){
-			mysql.setUsername(System.getProperty(username));
-			mysql.setPassword(System.getProperty(password));
+			mysql.setUsername(System.getenv(username));
+			mysql.setPassword(System.getenv(password));
+			if(StringUtils.isEmptyOrNull(mysql.getUsername()) || StringUtils.isEmptyOrNull(mysql.getPassword())){
+				BaseRuntimeException ex = Exceptions.badRequest("environment-vars-not-set").withExtra("vars", username + "," + password).get();
+				apiClient.send(NotifyError.builder().entityType("datasource").entityName(name).exception(ex).build());
+				ex.printStackTrace();
+			}
 		}else{
 			mysql.setUsername(username);
 			mysql.setPassword(password);

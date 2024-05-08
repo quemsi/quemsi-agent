@@ -11,11 +11,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AgentApplicationStartup implements ApplicationListener<ApplicationReadyEvent> {
     @Autowired
-    private AgentCoordinator agentController;
+    private AgentCoordinator agentCoordinator;
     
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
-        log.info("version : {}", getClass().getPackage().getImplementationVersion());
-        agentController.start();
+        log.info("agent started : {}", "2.0.0-SNAPSHOT");
+        log.info("agent coordinator : {}", agentCoordinator);
+        agentCoordinator.start();
     }
 }
