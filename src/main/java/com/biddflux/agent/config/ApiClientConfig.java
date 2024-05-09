@@ -36,7 +36,7 @@ public class ApiClientConfig {
     
     
     @Bean
-    public WebClient webClientTest(final @Value("${oauth2.registration.id}") String oauth2RegistrationId,
+    public WebClient webClient(final @Value("${oauth2.registration.id}") String oauth2RegistrationId,
                                    final @Value("${resource.base}") String resourceBase,
                                    final ClientRegistrationRepository clientRegistrationRepository) {
         var defaultClientCredentialsTokenResponseClient = new DefaultClientCredentialsTokenResponseClient();
