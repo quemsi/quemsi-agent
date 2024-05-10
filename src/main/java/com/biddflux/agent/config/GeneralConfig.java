@@ -19,7 +19,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 public class GeneralConfig {
 	@Bean
     public Jackson2ObjectMapperBuilderCustomizer jsonCustomizer() {
@@ -46,7 +46,7 @@ public class GeneralConfig {
 		return new MySqlBackupProperties();
 	}
 
-    @Bean
+    @Bean(destroyMethod = "shutdown")
 	public ExecutorService vThreadExecutor(){
 		return Executors.newVirtualThreadPerTaskExecutor();
 	}

@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 
 import com.biddflux.agent.api.ApiClient;
+import com.biddflux.agent.flow.gdrive.GoogleDrive;
 import com.biddflux.agent.service.FlowManager;
 import com.biddflux.agent.service.GoogleDriveManager;
 import com.biddflux.agent.service.SpringBeanManager;
@@ -32,7 +33,6 @@ import com.biddflux.model.dto.agent.onapi.NotifyError;
 import com.biddflux.model.dto.agent.onapi.RetentionCompleted;
 import com.biddflux.model.dto.agent.onapi.UpdateGoogleDrive;
 import com.biddflux.model.flow.Flow;
-import com.biddflux.model.flow.out.GoogleDrive;
 import com.biddflux.model.flow.out.Storage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Files;

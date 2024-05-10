@@ -10,7 +10,7 @@ import com.biddflux.model.flow.factories.SourceFactory;
 import com.biddflux.model.flow.factories.StepFactory;
 import com.biddflux.model.flow.factories.StorageFactory;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 public class FlowConfig {
     @Bean
     public FlowManager flowManager(){

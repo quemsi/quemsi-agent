@@ -20,17 +20,16 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import com.biddflux.agent.api.ApiClient;
 import com.biddflux.agent.api.ApiClientReactive;
 
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
 @Slf4j
-@Configuration
+@Configuration(proxyBeanMethods = false)
 public class ApiClientConfig {
     @Bean
-    public ApiClient apiClient(){
+    public ApiClientReactive apiClient(){
         return new ApiClientReactive();
     }
     

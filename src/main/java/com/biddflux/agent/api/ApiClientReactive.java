@@ -11,6 +11,9 @@ import com.biddflux.model.dto.DataVersion;
 import com.biddflux.model.dto.FlowHistory;
 import com.biddflux.model.dto.agent.AgentCommand;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class ApiClientReactive implements ApiClient{
     @Autowired
     private WebClient webClient;
@@ -37,6 +40,7 @@ public class ApiClientReactive implements ApiClient{
 
     @Override
     public void send(AgentCommand command) {
+        log.info("sending {} command to api {}", command.getName(), command);
         webClient.post().uri("/api/agent/agent-command").body(BodyInserters.fromValue(command)).retrieve().toBodilessEntity().block();
     }
 
