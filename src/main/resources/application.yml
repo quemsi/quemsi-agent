@@ -1,6 +1,9 @@
 server:
   port: 9082
-
+  tomcat:
+    threads:
+      max: 2
+      min-spare: 1
 spring:
   application:
     name: biddflux-agent

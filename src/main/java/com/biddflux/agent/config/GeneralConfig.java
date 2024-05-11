@@ -48,7 +48,7 @@ public class GeneralConfig {
 
     @Bean(destroyMethod = "shutdown")
 	public ExecutorService vThreadExecutor(){
-		return Executors.newVirtualThreadPerTaskExecutor();
+		return Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("command-executor-service").factory());
 	}
 	
 	@Bean
