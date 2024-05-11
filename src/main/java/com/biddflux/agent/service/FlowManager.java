@@ -16,6 +16,7 @@ import com.biddflux.commons.util.DateUtils;
 import com.biddflux.commons.util.Exceptions;
 import com.biddflux.model.dto.DataVersion;
 import com.biddflux.model.dto.FlowDetail;
+import com.biddflux.model.dto.FlowHistory;
 import com.biddflux.model.dto.agent.onapi.NotifyError;
 import com.biddflux.model.flow.Flow;
 import com.biddflux.model.flow.Step;
@@ -115,7 +116,11 @@ public class FlowManager {
 				, "time", dateUtils.getTimeString(LocalDateTime.now()),
 				"timer", this.timerName);
 			DataVersion version = apiClient.findVersion(flow.getName(), tags);
-			flow.execute(Optional.ofNullable(version).map(v -> v.getId()).orElse(null), tags, version.getFiles());
+			FlowHistory history = flow.execute(Optional.ofNullable(version).map(v -> v.getId()).orElse(null), tags, version.getFiles());
+			if(history != null){
+                log.info("saving history {}", history);
+                history = apiClient.saveFlowHistory(history);
+            }
 		}
 	}
 }

@@ -3,6 +3,7 @@ package com.biddflux.agent.service;
 import java.util.List;
 import java.util.function.Supplier;
 
+import org.quartz.Scheduler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -56,6 +57,7 @@ public class SpringBeanManager {
 		if(!registerer.isNew()){
 			t.reset();
 		}else{
+			t.setScheduler(context.getBean(Scheduler.class));
 			t.init();
 		}
 		return t;
