@@ -29,9 +29,11 @@ import com.biddflux.model.dto.agent.ExecuteFlow;
 import com.biddflux.model.dto.agent.GoogleDriveConnect;
 import com.biddflux.model.dto.agent.RetentionExecute;
 import com.biddflux.model.dto.agent.UpdateAgentModel;
+import com.biddflux.model.dto.agent.VersionDeleteRequest;
 import com.biddflux.model.dto.agent.onapi.NotifyError;
 import com.biddflux.model.dto.agent.onapi.RetentionCompleted;
 import com.biddflux.model.dto.agent.onapi.UpdateGoogleDrive;
+import com.biddflux.model.dto.agent.onapi.VersionDeleted;
 import com.biddflux.model.flow.Flow;
 import com.biddflux.model.flow.out.Storage;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -153,7 +155,20 @@ public class AgentCoordinator {
             RetentionCompleted retentionCompleted = RetentionCompleted.builder().storageId(retentionExecute.getStorageId()).storageName(retentionExecute.getStorageName()).files(fileIds).build();
             log.info("sending retention complete {}", retentionCompleted);
             apiClient.send(retentionCompleted);
-        } else{
+        } else if(command instanceof VersionDeleteRequest versionDeleteRequest){
+            Storage storage = beanManager.findStorage(versionDeleteRequest.getVersion().getStorage().getName());
+            versionDeleteRequest.getVersion().getFiles().forEach(f -> {
+                try{
+                    storage.deleteFile(f.getDir(), f.getName());
+                }catch(IOException ex){
+                    log.debug("ignored", ex);
+                }
+            });
+            VersionDeleted versionDeleted = VersionDeleted.builder().versionId(versionDeleteRequest.getVersion().getId()).build();
+            log.info("sending version deleted {}", versionDeleted);
+            apiClient.send(versionDeleted);
+        }
+        else{
             throw Exceptions.server("not-implemented").withExtra("commandName", command.getName()).get();
         }
     }
