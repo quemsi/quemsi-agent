@@ -20,7 +20,7 @@ import com.biddflux.model.dto.DataVersionSummary;
 import com.biddflux.model.dto.DatasourceType;
 import com.biddflux.model.dto.FlowDetail;
 import com.biddflux.model.dto.FlowHistory;
-import com.biddflux.model.dto.FlowHistoryStatus;
+import com.biddflux.model.dto.FlowExecutionStatus;
 import com.biddflux.model.dto.NamedEntityReference;
 import com.biddflux.model.dto.ObjectReference;
 import com.biddflux.model.dto.StorageType;
@@ -61,7 +61,7 @@ public class AotHints implements RuntimeHintsRegistrar{
             .registerType(DatasourceType.class)
             .registerType(FlowDetail.class)
             .registerType(FlowHistory.class)
-            .registerType(FlowHistoryStatus.class)
+            .registerType(FlowExecutionStatus.class)
             .registerType(NamedEntityReference.class)
             .registerType(ObjectReference.class)
             .registerType(StorageType.class)
