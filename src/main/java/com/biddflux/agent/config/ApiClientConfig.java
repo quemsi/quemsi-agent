@@ -3,10 +3,13 @@ package com.biddflux.agent.config;
 import java.util.List;
 
 import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
+import org.springframework.http.codec.json.Jackson2JsonDecoder;
+import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.http.converter.FormHttpMessageConverter;
 import org.springframework.security.oauth2.client.AuthorizedClientServiceOAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.client.InMemoryOAuth2AuthorizedClientService;
@@ -16,11 +19,13 @@ import org.springframework.security.oauth2.client.http.OAuth2ErrorResponseErrorH
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.reactive.function.client.ServletOAuth2AuthorizedClientExchangeFilterFunction;
 import org.springframework.security.oauth2.core.http.converter.OAuth2AccessTokenResponseHttpMessageConverter;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.biddflux.agent.api.ApiClientReactive;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
@@ -28,11 +33,13 @@ import reactor.core.publisher.Mono;
 @Slf4j
 @Configuration(proxyBeanMethods = false)
 public class ApiClientConfig {
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @Bean
     public ApiClientReactive apiClient(){
         return new ApiClientReactive();
     }
-    
     
     @Bean
     public WebClient webClient(final @Value("${oauth2.registration.id}") String oauth2RegistrationId,
@@ -59,6 +66,10 @@ public class ApiClientConfig {
                 .filter(oauth)
                 .filter(logResourceRequest(log, oauth2RegistrationId))
                 .filter(logResourceResponse(log, oauth2RegistrationId))
+                .codecs(configurer -> {
+                    configurer.defaultCodecs().jackson2JsonEncoder(new Jackson2JsonEncoder(objectMapper, MimeTypeUtils.APPLICATION_JSON));
+                    configurer.defaultCodecs().jackson2JsonDecoder(new Jackson2JsonDecoder(objectMapper, MimeTypeUtils.APPLICATION_JSON));
+                })
                 .build();
     }
 

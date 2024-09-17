@@ -6,9 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.client.ClientAuthorizationException;
 import org.springframework.stereotype.Component;
 
-import com.biddflux.agent.api.ApiClient;
 import com.biddflux.commons.util.BaseRuntimeException;
 import com.biddflux.commons.util.Exceptions;
+import com.biddflux.model.api.ApiClient;
 import com.biddflux.model.dto.agent.onapi.NotifyError;
 
 @Aspect

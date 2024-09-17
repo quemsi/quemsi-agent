@@ -6,9 +6,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import com.biddflux.model.api.ApiClient;
 import com.biddflux.model.dto.AgentModel;
 import com.biddflux.model.dto.DataVersion;
-import com.biddflux.model.dto.FlowHistory;
+import com.biddflux.model.dto.FlowExecution;
+import com.biddflux.model.dto.FlowExecution.FlowExecutionStep;
 import com.biddflux.model.dto.agent.AgentCommand;
 
 import lombok.extern.slf4j.Slf4j;
@@ -29,8 +31,14 @@ public class ApiClientReactive implements ApiClient{
     }
 
     @Override
-    public FlowHistory saveFlowHistory(FlowHistory flowHistory) {
-        return webClient.post().uri("/api/agent/flow-history").body(BodyInserters.fromValue(flowHistory)).retrieve().bodyToMono(FlowHistory.class).block();
+    public FlowExecution saveFlowExecution(FlowExecution flowExecution) {
+        return webClient.post().uri("/api/agent/flow-execution").body(BodyInserters.fromValue(flowExecution)).retrieve().bodyToMono(FlowExecution.class).block();
+    }
+
+    @Override
+    public FlowExecutionStep saveFlowExecutionStep(FlowExecutionStep flowExecutionStep) {
+        log.info("sending {} command to api {}", "saveFlowExecutionStep", flowExecutionStep);
+        return webClient.post().uri("/api/agent/flow-execution-step").body(BodyInserters.fromValue(flowExecutionStep)).retrieve().bodyToMono(FlowExecutionStep.class).block();
     }
 
     @Override

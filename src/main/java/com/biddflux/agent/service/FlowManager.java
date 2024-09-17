@@ -6,17 +6,18 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.biddflux.agent.api.ApiClient;
 import com.biddflux.commons.util.BaseRuntimeException;
 import com.biddflux.commons.util.DateUtils;
 import com.biddflux.commons.util.Exceptions;
+import com.biddflux.model.api.ApiClient;
 import com.biddflux.model.dto.DataVersion;
 import com.biddflux.model.dto.FlowDetail;
-import com.biddflux.model.dto.FlowHistory;
+import com.biddflux.model.dto.FlowExecution;
 import com.biddflux.model.dto.agent.onapi.NotifyError;
 import com.biddflux.model.flow.Flow;
 import com.biddflux.model.flow.Step;
@@ -59,10 +60,12 @@ public class FlowManager {
 			f.setData(flow.getData());
 			f.setBack(flow.isBack());
 			JsonNode steps = node.get("steps");
+			AtomicInteger ordinal = new AtomicInteger(1);
 			LinkedList<Step> stepList = new LinkedList<>();
 			if(steps != null && steps.isArray()) {
 				for(JsonNode step : steps){
 					Step s = stepFactory.from(step);
+					s.setOrd(ordinal.getAndIncrement());
 					stepList.add(s);
 				}
 			}
@@ -116,10 +119,11 @@ public class FlowManager {
 				, "time", dateUtils.getTimeString(LocalDateTime.now()),
 				"timer", this.timerName);
 			DataVersion version = apiClient.findVersion(flow.getName(), tags);
-			FlowHistory history = flow.execute(Optional.ofNullable(version).map(v -> v.getId()).orElse(null), tags, version.getFiles());
+			//TODO: how will flow execution be persisted when trigger from timer
+			FlowExecution history = flow.execute(Optional.ofNullable(version).map(v -> v.getId()).orElse(null), tags, version.getFiles(), null);
 			if(history != null){
                 log.info("saving history {}", history);
-                history = apiClient.saveFlowHistory(history);
+                history = apiClient.saveFlowExecution(history);
             }
 		}
 	}

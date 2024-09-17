@@ -1,5 +1,6 @@
 package com.biddflux.agent.config;
 
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -9,6 +10,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.biddflux.agent.AgentCoordinator;
+import com.biddflux.commons.util.ApacheDurationDeserializer;
+import com.biddflux.commons.util.ApacheDurationSerializer;
 import com.biddflux.commons.util.DateUtils;
 import com.biddflux.commons.util.FileNameUtil;
 import com.biddflux.commons.util.JsonUtils;
@@ -18,16 +21,31 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 
 @Configuration(proxyBeanMethods = false)
 public class GeneralConfig {
+	private static final String dateFormat = "yyyy-MM-dd";
+    private static final String dateTimeFormat = "yyyy-MM-dd HH:mm:ss";
+
 	@Bean
     public Jackson2ObjectMapperBuilderCustomizer jsonCustomizer() {
-        return builder -> builder.serializationInclusion(JsonInclude.Include.NON_NULL)
+        return builder -> {
+            builder.simpleDateFormat(dateTimeFormat);
+            builder.serializers(new LocalDateSerializer(DateTimeFormatter.ofPattern(dateFormat)));
+            builder.deserializers(new LocalDateDeserializer(DateTimeFormatter.ofPattern(dateFormat)));
+            builder.serializers(new LocalDateTimeSerializer(DateTimeFormatter.ofPattern(dateTimeFormat)));
+            builder.deserializers(new LocalDateTimeDeserializer(DateTimeFormatter.ofPattern(dateTimeFormat)));
+			builder.serializers(new ApacheDurationSerializer());
+            builder.deserializers(new ApacheDurationDeserializer());
+            builder.serializationInclusion(JsonInclude.Include.NON_NULL)
             .featuresToEnable(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT)
-			.featuresToEnable(SerializationFeature.FLUSH_AFTER_WRITE_VALUE)
-            .featuresToEnable(MapperFeature.DEFAULT_VIEW_INCLUSION)
-            ;
+            .featuresToDisable(SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS)
+            .featuresToDisable(MapperFeature.DEFAULT_VIEW_INCLUSION);       
+        };
     }
 
 	@Bean

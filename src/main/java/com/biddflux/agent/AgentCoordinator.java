@@ -14,15 +14,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 
-import com.biddflux.agent.api.ApiClient;
 import com.biddflux.agent.flow.gdrive.GoogleDrive;
 import com.biddflux.agent.service.FlowManager;
 import com.biddflux.agent.service.GoogleDriveManager;
 import com.biddflux.agent.service.SpringBeanManager;
 import com.biddflux.commons.util.DelayedFormatter;
 import com.biddflux.commons.util.Exceptions;
+import com.biddflux.model.api.ApiClient;
 import com.biddflux.model.dto.AgentModel;
-import com.biddflux.model.dto.FlowHistory;
+import com.biddflux.model.dto.FlowExecution;
 import com.biddflux.model.dto.agent.AgentCommand;
 import com.biddflux.model.dto.agent.DelayAgentCommand;
 import com.biddflux.model.dto.agent.ExecuteFlow;
@@ -117,10 +117,10 @@ public class AgentCoordinator {
         } else if(command instanceof ExecuteFlow executeFlow){
             log.info("executing flow {}", executeFlow);
             Flow flow = flowManager.findByName(executeFlow.getFlowName()).orElseThrow(Exceptions.notFound("invalid-flow-name").withExtra("flowName", executeFlow.getFlowName()).supplier());
-            FlowHistory history = flow.execute(executeFlow.getVersionId(), executeFlow.getTags(), executeFlow.getFiles());
-            if(history != null){
-                log.info("saving history {}", history);
-                history = apiClient.saveFlowHistory(history);
+            FlowExecution execution = flow.execute(executeFlow.getVersionId(), executeFlow.getTags(), executeFlow.getFiles(), executeFlow.getFlowExecutionId());
+            if(execution != null){
+                log.info("saving history {}", execution);
+                execution = apiClient.saveFlowExecution(execution);
             }
         } else if(command instanceof GoogleDriveConnect gDriveConnect) {
             log.info("connecting google drive {}", gDriveConnect);
@@ -183,10 +183,9 @@ public class AgentCoordinator {
                 log.debug("Unable to reach api, will try again in {} seconds", apiRetry);
                 log.trace("api error", ignore);
                 Exceptions.wrapRunnable(() -> Thread.sleep(Duration.ofSeconds(apiRetry))).run();;
-            }
-            catch(Exception e){
+            } catch(Exception e) {
                 log.error("command-execution-error", e);
-            }finally{
+            } finally {
                 vThreadExecutor.submit(this);
             }
         }

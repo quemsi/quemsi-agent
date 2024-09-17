@@ -6,9 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.stereotype.Service;
 
-import com.biddflux.agent.api.ApiClient;
 import com.biddflux.agent.flow.gdrive.GoogleDrive;
 import com.biddflux.commons.util.Exceptions;
+import com.biddflux.model.api.ApiClient;
 import com.biddflux.model.dto.agent.onapi.NotifyError;
 import com.biddflux.model.dto.agent.onapi.UpdateGoogleDrive;
 
