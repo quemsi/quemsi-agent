@@ -1,4 +1,4 @@
-package com.biddflux.agent.config;
+package com.quemsi.agent.config;
 
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ExecutorService;
@@ -9,14 +9,14 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.biddflux.agent.AgentCoordinator;
-import com.biddflux.commons.util.ApacheDurationDeserializer;
-import com.biddflux.commons.util.ApacheDurationSerializer;
-import com.biddflux.commons.util.DateUtils;
-import com.biddflux.commons.util.FileNameUtil;
-import com.biddflux.commons.util.JsonUtils;
-import com.biddflux.model.flow.db.sql.SqlParser;
-import com.biddflux.model.flow.in.MySqlBackupProperties;
+import com.quemsi.agent.AgentCoordinator;
+import com.quemsi.commons.util.ApacheDurationDeserializer;
+import com.quemsi.commons.util.ApacheDurationSerializer;
+import com.quemsi.commons.util.DateUtils;
+import com.quemsi.commons.util.FileNameUtil;
+import com.quemsi.commons.util.JsonUtils;
+import com.quemsi.model.flow.db.sql.SqlParser;
+import com.quemsi.model.flow.in.MySqlBackupProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;

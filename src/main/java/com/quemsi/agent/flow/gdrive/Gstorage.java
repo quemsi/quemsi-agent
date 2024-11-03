@@ -1,4 +1,4 @@
-package com.biddflux.agent.flow.gdrive;
+package com.quemsi.agent.flow.gdrive;
 
 import java.io.IOException;
 import java.util.List;
@@ -6,17 +6,17 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.biddflux.commons.util.Exceptions;
-import com.biddflux.commons.util.FileNameUtil;
-import com.biddflux.commons.util.FileResource;
-import com.biddflux.commons.util.StringUtils;
-import com.biddflux.model.dto.DataFile;
-import com.biddflux.model.dto.DataType;
-import com.biddflux.model.flow.DataPackage;
-import com.biddflux.model.flow.DataPackageFileResource;
-import com.biddflux.model.flow.Flow;
-import com.biddflux.model.flow.out.AbstractStorage;
-import com.biddflux.model.flow.out.Storage;
+import com.quemsi.commons.util.Exceptions;
+import com.quemsi.commons.util.FileNameUtil;
+import com.quemsi.commons.util.FileResource;
+import com.quemsi.commons.util.StringUtils;
+import com.quemsi.model.dto.DataFile;
+import com.quemsi.model.dto.DataType;
+import com.quemsi.model.flow.DataPackage;
+import com.quemsi.model.flow.DataPackageFileResource;
+import com.quemsi.model.flow.Flow;
+import com.quemsi.model.flow.out.AbstractStorage;
+import com.quemsi.model.flow.out.Storage;
 import com.google.api.client.auth.oauth2.TokenResponseException;
 import com.google.api.services.drive.model.File;
 

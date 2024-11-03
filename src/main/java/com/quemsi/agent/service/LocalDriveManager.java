@@ -1,4 +1,4 @@
-package com.biddflux.agent.service;
+package com.quemsi.agent.service;
 
 import java.util.List;
 
@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.stereotype.Component;
 
-import com.biddflux.model.flow.out.LocalDrive;
+import com.quemsi.model.flow.out.LocalDrive;
 
 @Component
 public class LocalDriveManager {

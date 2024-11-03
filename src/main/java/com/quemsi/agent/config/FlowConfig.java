@@ -1,4 +1,4 @@
-package com.biddflux.agent.config;
+package com.quemsi.agent.config;
 
 import java.util.Properties;
 
@@ -7,11 +7,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 
-import com.biddflux.agent.service.FlowManager;
-import com.biddflux.model.flow.Flow;
-import com.biddflux.model.flow.factories.SourceFactory;
-import com.biddflux.model.flow.factories.StepFactory;
-import com.biddflux.model.flow.factories.StorageFactory;
+import com.quemsi.agent.service.FlowManager;
+import com.quemsi.model.flow.Flow;
+import com.quemsi.model.flow.factories.SourceFactory;
+import com.quemsi.model.flow.factories.StepFactory;
+import com.quemsi.model.flow.factories.StorageFactory;
 
 @Configuration(proxyBeanMethods = false)
 public class FlowConfig {

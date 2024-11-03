@@ -1,4 +1,4 @@
-package com.biddflux.agent.api;
+package com.quemsi.agent.api;
 
 import java.util.Map;
 
@@ -6,12 +6,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import com.biddflux.model.api.ApiClient;
-import com.biddflux.model.dto.AgentModel;
-import com.biddflux.model.dto.DataVersion;
-import com.biddflux.model.dto.FlowExecution;
-import com.biddflux.model.dto.FlowExecution.FlowExecutionStep;
-import com.biddflux.model.dto.agent.AgentCommand;
+import com.quemsi.model.api.ApiClient;
+import com.quemsi.model.dto.AgentModel;
+import com.quemsi.model.dto.DataVersion;
+import com.quemsi.model.dto.FlowExecution;
+import com.quemsi.model.dto.FlowExecution.FlowExecutionStep;
+import com.quemsi.model.dto.agent.AgentCommand;
 
 import lombok.extern.slf4j.Slf4j;
 

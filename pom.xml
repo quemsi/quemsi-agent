@@ -7,18 +7,18 @@
 		<version>3.2.5</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.biddflux</groupId>
-	<artifactId>biddflux-agent</artifactId>
+	<groupId>com.quemsi</groupId>
+	<artifactId>quemsi-agent</artifactId>
 	<version>2.1.0-SNAPSHOT</version>
-	<name>biddflux-agent</name>
-	<description>biddflux agent</description>
+	<name>quemsi-agent</name>
+	<description>quemsi agent</description>
 	<properties>
 		<java.version>21</java.version>
 		<spring-cloud.version>2023.0.0</spring-cloud.version>
 		<local.dist.repository>file:///workspace/local-dist-repository/</local.dist.repository>
 	</properties>
 	<scm>
-		<developerConnection>scm:git:https://github.com/biddflux/biddflux-agent.git</developerConnection>
+		<developerConnection>scm:git:https://github.com/quemsi/quemsi-agent.git</developerConnection>
 		<tag>HEAD</tag>
 	</scm>
 	<distributionManagement>
@@ -40,8 +40,8 @@
 	</dependencyManagement>
 	<dependencies>
 		<dependency>
-			<groupId>com.biddflux</groupId>
-			<artifactId>biddflux-model</artifactId>
+			<groupId>com.quemsi</groupId>
+			<artifactId>quemsi-model</artifactId>
 			<version>${project.version}</version>
 			<exclusions>
 				<exclusion>
@@ -161,7 +161,7 @@
 						<enabled>true</enabled>
 					</layers>
 					<image>
-						<name>biddflux/biddflux-agent:${project.version}</name>
+						<name>quemsi/quemsi-agent:${project.version}</name>
 						<verboseLogging>true</verboseLogging>
 						<builder>paketobuildpacks/builder-jammy-base:latest</builder>
 					</image>

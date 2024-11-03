@@ -1,4 +1,4 @@
-package com.biddflux.agent.config;
+package com.quemsi.agent.config;
 
 import java.io.File;
 
@@ -8,7 +8,7 @@ import lombok.Data;
 
 @Data
 public class EnvironmentVars {
-	@Value("${BAKERUP_HOME:~/biddflux-agent}")
+	@Value("${BAKERUP_HOME:~/quemsi-agent}")
     private String homeDir;
 	@Value("${google-drives-files:googleDrives}")
 	private String googleDriveFilesRoot;

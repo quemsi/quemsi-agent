@@ -1,10 +1,10 @@
-package com.biddflux.agent;
+package com.quemsi.agent;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ImportRuntimeHints;
 
-import com.biddflux.agent.config.AotHints;
+import com.quemsi.agent.config.AotHints;
 
 @SpringBootApplication
 @ImportRuntimeHints(AotHints.class)

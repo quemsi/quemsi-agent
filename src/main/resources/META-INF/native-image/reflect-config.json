@@ -122,7 +122,7 @@
   "name":"co.elastic.clients.transport.ElasticsearchTransport"
 },
 {
-  "name":"com.biddflux.agent.AgentApplication",
+  "name":"com.quemsi.agent.AgentApplication",
   "allDeclaredFields":true,
   "allDeclaredClasses":true,
   "queryAllDeclaredMethods":true,
@@ -130,7 +130,7 @@
   "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"main","parameterTypes":["java.lang.String[]"] }, {"name":"setBeanFactory","parameterTypes":["org.springframework.beans.factory.BeanFactory"] }]
 },
 {
-  "name":"com.biddflux.agent.AgentApplication$$SpringCGLIB$$0",
+  "name":"com.quemsi.agent.AgentApplication$$SpringCGLIB$$0",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
@@ -138,48 +138,48 @@
   "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"CGLIB$SET_STATIC_CALLBACKS","parameterTypes":["org.springframework.cglib.proxy.Callback[]"] }, {"name":"CGLIB$SET_THREAD_CALLBACKS","parameterTypes":["org.springframework.cglib.proxy.Callback[]"] }]
 },
 {
-  "name":"com.biddflux.agent.AgentApplicationStartup",
+  "name":"com.quemsi.agent.AgentApplicationStartup",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"onApplicationEvent","parameterTypes":["org.springframework.context.ApplicationEvent"] }]
 },
 {
-  "name":"com.biddflux.agent.AgentCoordinator",
+  "name":"com.quemsi.agent.AgentCoordinator",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "methods":[{"name":"close","parameterTypes":[] }, {"name":"shutdown","parameterTypes":[] }]
 },
 {
-  "name":"com.biddflux.agent.AgentCoordinator$ApiCommandListener"
+  "name":"com.quemsi.agent.AgentCoordinator$ApiCommandListener"
 },
 {
-  "name":"com.biddflux.agent.api.ApiClient",
+  "name":"com.quemsi.agent.api.ApiClient",
   "queryAllDeclaredMethods":true,
   "queryAllPublicMethods":true,
   "queryAllDeclaredConstructors":true
 },
 {
-  "name":"com.biddflux.agent.api.ApiClientReactive",
+  "name":"com.quemsi.agent.api.ApiClientReactive",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
-  "methods":[{"name":"allModel","parameterTypes":["java.lang.String"] }, {"name":"close","parameterTypes":[] }, {"name":"findVersion","parameterTypes":["java.lang.String","java.util.Map"] }, {"name":"googleCredential","parameterTypes":[] }, {"name":"nextCommand","parameterTypes":[] }, {"name":"saveFlowHistory","parameterTypes":["com.biddflux.model.dto.FlowHistory"] }, {"name":"send","parameterTypes":["com.biddflux.model.dto.agent.AgentCommand"] }, {"name":"shutdown","parameterTypes":[] }]
+  "methods":[{"name":"allModel","parameterTypes":["java.lang.String"] }, {"name":"close","parameterTypes":[] }, {"name":"findVersion","parameterTypes":["java.lang.String","java.util.Map"] }, {"name":"googleCredential","parameterTypes":[] }, {"name":"nextCommand","parameterTypes":[] }, {"name":"saveFlowHistory","parameterTypes":["com.quemsi.model.dto.FlowHistory"] }, {"name":"send","parameterTypes":["com.quemsi.model.dto.agent.AgentCommand"] }, {"name":"shutdown","parameterTypes":[] }]
 },
 {
-  "name":"com.biddflux.agent.aspect.GlobalErrorHandling",
+  "name":"com.quemsi.agent.aspect.GlobalErrorHandling",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
-  "name":"com.biddflux.agent.config.AotHints",
+  "name":"com.quemsi.agent.config.AotHints",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"registerHints","parameterTypes":["org.springframework.aot.hint.RuntimeHints","java.lang.ClassLoader"] }, {"name":"setBeanFactory","parameterTypes":["org.springframework.beans.factory.BeanFactory"] }]
 },
 {
-  "name":"com.biddflux.agent.config.AotHints$$SpringCGLIB$$0",
+  "name":"com.quemsi.agent.config.AotHints$$SpringCGLIB$$0",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
@@ -187,413 +187,413 @@
   "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"CGLIB$SET_STATIC_CALLBACKS","parameterTypes":["org.springframework.cglib.proxy.Callback[]"] }, {"name":"CGLIB$SET_THREAD_CALLBACKS","parameterTypes":["org.springframework.cglib.proxy.Callback[]"] }]
 },
 {
-  "name":"com.biddflux.agent.config.ApiClientConfig",
+  "name":"com.quemsi.agent.config.ApiClientConfig",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"apiClient","parameterTypes":[] }, {"name":"webClient","parameterTypes":["java.lang.String","java.lang.String","org.springframework.security.oauth2.client.registration.ClientRegistrationRepository"] }]
 },
 {
-  "name":"com.biddflux.agent.config.EnvironmentVars",
+  "name":"com.quemsi.agent.config.EnvironmentVars",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "methods":[{"name":"close","parameterTypes":[] }, {"name":"equals","parameterTypes":["java.lang.Object"] }, {"name":"hashCode","parameterTypes":[] }, {"name":"shutdown","parameterTypes":[] }, {"name":"toString","parameterTypes":[] }]
 },
 {
-  "name":"com.biddflux.agent.config.FlowConfig",
+  "name":"com.quemsi.agent.config.FlowConfig",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"flow","parameterTypes":[] }, {"name":"flowManager","parameterTypes":[] }, {"name":"schedulerFactoryBean","parameterTypes":[] }, {"name":"sourceFactory","parameterTypes":[] }, {"name":"stepFactory","parameterTypes":[] }, {"name":"storageFactory","parameterTypes":[] }]
 },
 {
-  "name":"com.biddflux.agent.config.GeneralConfig",
+  "name":"com.quemsi.agent.config.GeneralConfig",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"agentController","parameterTypes":[] }, {"name":"dateUtils","parameterTypes":[] }, {"name":"environmentVars","parameterTypes":[] }, {"name":"fileNameUtil","parameterTypes":[] }, {"name":"jsonCustomizer","parameterTypes":[] }, {"name":"jsonUtils","parameterTypes":[] }, {"name":"mySqlBackupProperties","parameterTypes":[] }, {"name":"sqlParser","parameterTypes":[] }, {"name":"vThreadExecutor","parameterTypes":[] }]
 },
 {
-  "name":"com.biddflux.agent.flow.gdrive.GoogleDrive"
+  "name":"com.quemsi.agent.flow.gdrive.GoogleDrive"
 },
 {
-  "name":"com.biddflux.agent.flow.gdrive.Gstorage"
+  "name":"com.quemsi.agent.flow.gdrive.Gstorage"
 },
 {
-  "name":"com.biddflux.agent.service.FlowManager",
+  "name":"com.quemsi.agent.service.FlowManager",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
-  "methods":[{"name":"close","parameterTypes":[] }, {"name":"createNewFlow","parameterTypes":["com.biddflux.model.dto.FlowDetail"] }, {"name":"findByName","parameterTypes":["java.lang.String"] }, {"name":"shutdown","parameterTypes":[] }]
+  "methods":[{"name":"close","parameterTypes":[] }, {"name":"createNewFlow","parameterTypes":["com.quemsi.model.dto.FlowDetail"] }, {"name":"findByName","parameterTypes":["java.lang.String"] }, {"name":"shutdown","parameterTypes":[] }]
 },
 {
-  "name":"com.biddflux.agent.service.FlowManager$$SpringCGLIB$$0",
+  "name":"com.quemsi.agent.service.FlowManager$$SpringCGLIB$$0",
   "fields":[{"name":"CGLIB$CALLBACK_FILTER"}, {"name":"CGLIB$FACTORY_DATA"}],
   "methods":[{"name":"CGLIB$SET_THREAD_CALLBACKS","parameterTypes":["org.springframework.cglib.proxy.Callback[]"] }]
 },
 {
-  "name":"com.biddflux.agent.service.GoogleDriveManager",
+  "name":"com.quemsi.agent.service.GoogleDriveManager",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"connectToDrives","parameterTypes":[] }]
 },
 {
-  "name":"com.biddflux.agent.service.GoogleDriveManager$$SpringCGLIB$$0",
+  "name":"com.quemsi.agent.service.GoogleDriveManager$$SpringCGLIB$$0",
   "fields":[{"name":"CGLIB$CALLBACK_FILTER"}, {"name":"CGLIB$FACTORY_DATA"}],
   "methods":[{"name":"CGLIB$SET_THREAD_CALLBACKS","parameterTypes":["org.springframework.cglib.proxy.Callback[]"] }]
 },
 {
-  "name":"com.biddflux.agent.service.LocalDriveManager",
+  "name":"com.quemsi.agent.service.LocalDriveManager",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
-  "name":"com.biddflux.agent.service.LocalDriveManager$$SpringCGLIB$$0",
+  "name":"com.quemsi.agent.service.LocalDriveManager$$SpringCGLIB$$0",
   "fields":[{"name":"CGLIB$CALLBACK_FILTER"}, {"name":"CGLIB$FACTORY_DATA"}],
   "methods":[{"name":"CGLIB$SET_THREAD_CALLBACKS","parameterTypes":["org.springframework.cglib.proxy.Callback[]"] }]
 },
 {
-  "name":"com.biddflux.agent.service.SpringBeanManager",
+  "name":"com.quemsi.agent.service.SpringBeanManager",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"findGoogleDrive","parameterTypes":["java.lang.String"] }, {"name":"findGoogleDrives","parameterTypes":[] }, {"name":"findTimer","parameterTypes":["java.lang.String"] }, {"name":"registerDatasource","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","boolean"] }, {"name":"registerGoogleDrive","parameterTypes":["java.lang.String","java.lang.String","java.lang.Integer"] }, {"name":"registerLocalDrive","parameterTypes":["java.lang.String","java.lang.String","long","long"] }, {"name":"registerStroge","parameterTypes":["java.lang.String","com.biddflux.model.dto.StorageType","java.lang.String","java.lang.String","java.lang.String","long","long"] }, {"name":"registerTimer","parameterTypes":["java.lang.String","java.lang.String"] }]
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"findGoogleDrive","parameterTypes":["java.lang.String"] }, {"name":"findGoogleDrives","parameterTypes":[] }, {"name":"findTimer","parameterTypes":["java.lang.String"] }, {"name":"registerDatasource","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","boolean"] }, {"name":"registerGoogleDrive","parameterTypes":["java.lang.String","java.lang.String","java.lang.Integer"] }, {"name":"registerLocalDrive","parameterTypes":["java.lang.String","java.lang.String","long","long"] }, {"name":"registerStroge","parameterTypes":["java.lang.String","com.quemsi.model.dto.StorageType","java.lang.String","java.lang.String","java.lang.String","long","long"] }, {"name":"registerTimer","parameterTypes":["java.lang.String","java.lang.String"] }]
 },
 {
-  "name":"com.biddflux.agent.service.SpringBeanManager$$SpringCGLIB$$0",
+  "name":"com.quemsi.agent.service.SpringBeanManager$$SpringCGLIB$$0",
   "fields":[{"name":"CGLIB$CALLBACK_FILTER"}, {"name":"CGLIB$FACTORY_DATA"}],
   "methods":[{"name":"CGLIB$SET_THREAD_CALLBACKS","parameterTypes":["org.springframework.cglib.proxy.Callback[]"] }]
 },
 {
-  "name":"com.biddflux.commons.persistence.BaseDto",
+  "name":"com.quemsi.commons.persistence.BaseDto",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "methods":[{"name":"getId","parameterTypes":[] }, {"name":"isActive","parameterTypes":[] }, {"name":"setActive","parameterTypes":["boolean"] }, {"name":"setId","parameterTypes":["java.io.Serializable"] }]
 },
 {
-  "name":"com.biddflux.commons.util.DateUtils",
+  "name":"com.quemsi.commons.util.DateUtils",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "methods":[{"name":"close","parameterTypes":[] }, {"name":"shutdown","parameterTypes":[] }]
 },
 {
-  "name":"com.biddflux.commons.util.Exceptions"
+  "name":"com.quemsi.commons.util.Exceptions"
 },
 {
-  "name":"com.biddflux.commons.util.FileNameUtil",
+  "name":"com.quemsi.commons.util.FileNameUtil",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "methods":[{"name":"close","parameterTypes":[] }, {"name":"shutdown","parameterTypes":[] }]
 },
 {
-  "name":"com.biddflux.commons.util.JsonUtils",
+  "name":"com.quemsi.commons.util.JsonUtils",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "methods":[{"name":"close","parameterTypes":[] }, {"name":"shutdown","parameterTypes":[] }]
 },
 {
-  "name":"com.biddflux.model.dto.AgentModel",
+  "name":"com.quemsi.model.dto.AgentModel",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"setAgentId","parameterTypes":["java.lang.Long"] }, {"name":"setDatasources","parameterTypes":["java.util.List"] }, {"name":"setFlows","parameterTypes":["java.util.List"] }, {"name":"setGoogleDrives","parameterTypes":["java.util.List"] }, {"name":"setLocalDrives","parameterTypes":["java.util.List"] }, {"name":"setStorages","parameterTypes":["java.util.List"] }, {"name":"setTimers","parameterTypes":["java.util.List"] }]
 },
 {
-  "name":"com.biddflux.model.dto.AgentModel$Datasource",
+  "name":"com.quemsi.model.dto.AgentModel$Datasource",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"setDbName","parameterTypes":["java.lang.String"] }, {"name":"setId","parameterTypes":["java.lang.Long"] }, {"name":"setName","parameterTypes":["java.lang.String"] }, {"name":"setPassword","parameterTypes":["java.lang.String"] }, {"name":"setType","parameterTypes":["com.biddflux.model.dto.DatasourceType"] }, {"name":"setUrl","parameterTypes":["java.lang.String"] }, {"name":"setUseEnvVar","parameterTypes":["boolean"] }, {"name":"setUsername","parameterTypes":["java.lang.String"] }]
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"setDbName","parameterTypes":["java.lang.String"] }, {"name":"setId","parameterTypes":["java.lang.Long"] }, {"name":"setName","parameterTypes":["java.lang.String"] }, {"name":"setPassword","parameterTypes":["java.lang.String"] }, {"name":"setType","parameterTypes":["com.quemsi.model.dto.DatasourceType"] }, {"name":"setUrl","parameterTypes":["java.lang.String"] }, {"name":"setUseEnvVar","parameterTypes":["boolean"] }, {"name":"setUsername","parameterTypes":["java.lang.String"] }]
 },
 {
-  "name":"com.biddflux.model.dto.AgentModel$GoogleDrive",
+  "name":"com.quemsi.model.dto.AgentModel$GoogleDrive",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"setCallbackBaseUrl","parameterTypes":["java.lang.String"] }, {"name":"setCallbackPort","parameterTypes":["java.lang.Integer"] }, {"name":"setId","parameterTypes":["java.lang.Long"] }, {"name":"setName","parameterTypes":["java.lang.String"] }, {"name":"setTitle","parameterTypes":["java.lang.String"] }, {"name":"setUsedSize","parameterTypes":["long"] }]
 },
 {
-  "name":"com.biddflux.model.dto.AgentModel$LocalDrive",
+  "name":"com.quemsi.model.dto.AgentModel$LocalDrive",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"setCapacity","parameterTypes":["long"] }, {"name":"setId","parameterTypes":["java.lang.Long"] }, {"name":"setName","parameterTypes":["java.lang.String"] }, {"name":"setStorageRoot","parameterTypes":["java.lang.String"] }, {"name":"setTitle","parameterTypes":["java.lang.String"] }, {"name":"setUsedSize","parameterTypes":["long"] }]
 },
 {
-  "name":"com.biddflux.model.dto.AgentModel$Storage",
+  "name":"com.quemsi.model.dto.AgentModel$Storage",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"setCapacity","parameterTypes":["long"] }, {"name":"setCountLimit","parameterTypes":["long"] }, {"name":"setDisplayOrder","parameterTypes":["int"] }, {"name":"setId","parameterTypes":["java.lang.Long"] }, {"name":"setLoc","parameterTypes":["java.lang.String"] }, {"name":"setName","parameterTypes":["java.lang.String"] }, {"name":"setRetentionPolicy","parameterTypes":["java.lang.String"] }, {"name":"setRootPath","parameterTypes":["java.lang.String"] }, {"name":"setSizeLimit","parameterTypes":["long"] }, {"name":"setTitle","parameterTypes":["java.lang.String"] }, {"name":"setType","parameterTypes":["com.biddflux.model.dto.StorageType"] }, {"name":"setUsedSize","parameterTypes":["long"] }]
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"setCapacity","parameterTypes":["long"] }, {"name":"setCountLimit","parameterTypes":["long"] }, {"name":"setDisplayOrder","parameterTypes":["int"] }, {"name":"setId","parameterTypes":["java.lang.Long"] }, {"name":"setLoc","parameterTypes":["java.lang.String"] }, {"name":"setName","parameterTypes":["java.lang.String"] }, {"name":"setRetentionPolicy","parameterTypes":["java.lang.String"] }, {"name":"setRootPath","parameterTypes":["java.lang.String"] }, {"name":"setSizeLimit","parameterTypes":["long"] }, {"name":"setTitle","parameterTypes":["java.lang.String"] }, {"name":"setType","parameterTypes":["com.quemsi.model.dto.StorageType"] }, {"name":"setUsedSize","parameterTypes":["long"] }]
 },
 {
-  "name":"com.biddflux.model.dto.AgentModel$Timer",
+  "name":"com.quemsi.model.dto.AgentModel$Timer",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"setId","parameterTypes":["java.lang.Long"] }, {"name":"setName","parameterTypes":["java.lang.String"] }, {"name":"setSchedule","parameterTypes":["java.lang.String"] }, {"name":"setTitle","parameterTypes":["java.lang.String"] }]
 },
 {
-  "name":"com.biddflux.model.dto.DataFile",
+  "name":"com.quemsi.model.dto.DataFile",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getContentType","parameterTypes":[] }, {"name":"getDir","parameterTypes":[] }, {"name":"getName","parameterTypes":[] }, {"name":"getSize","parameterTypes":[] }, {"name":"getStorage","parameterTypes":[] }, {"name":"getVersion","parameterTypes":[] }, {"name":"setContentType","parameterTypes":["java.lang.String"] }, {"name":"setDir","parameterTypes":["java.lang.String"] }, {"name":"setName","parameterTypes":["java.lang.String"] }, {"name":"setSize","parameterTypes":["java.lang.Long"] }, {"name":"setStorage","parameterTypes":["java.lang.String"] }, {"name":"setVersion","parameterTypes":["java.lang.Long"] }]
 },
 {
-  "name":"com.biddflux.model.dto.DataGroup",
+  "name":"com.quemsi.model.dto.DataGroup",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"setName","parameterTypes":["java.lang.String"] }, {"name":"setRetentionPolicy","parameterTypes":["java.lang.String"] }, {"name":"setTitle","parameterTypes":["java.lang.String"] }, {"name":"setType","parameterTypes":["com.biddflux.model.dto.DataType"] }]
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"setName","parameterTypes":["java.lang.String"] }, {"name":"setRetentionPolicy","parameterTypes":["java.lang.String"] }, {"name":"setTitle","parameterTypes":["java.lang.String"] }, {"name":"setType","parameterTypes":["com.quemsi.model.dto.DataType"] }]
 },
 {
-  "name":"com.biddflux.model.dto.DataType",
+  "name":"com.quemsi.model.dto.DataType",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true
 },
 {
-  "name":"com.biddflux.model.dto.DataVersion",
+  "name":"com.quemsi.model.dto.DataVersion",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getData","parameterTypes":[] }, {"name":"getFiles","parameterTypes":[] }, {"name":"getTags","parameterTypes":[] }, {"name":"setData","parameterTypes":["com.biddflux.model.dto.NamedEntityReference"] }, {"name":"setFiles","parameterTypes":["java.util.List"] }, {"name":"setTags","parameterTypes":["java.util.List"] }]
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getData","parameterTypes":[] }, {"name":"getFiles","parameterTypes":[] }, {"name":"getTags","parameterTypes":[] }, {"name":"setData","parameterTypes":["com.quemsi.model.dto.NamedEntityReference"] }, {"name":"setFiles","parameterTypes":["java.util.List"] }, {"name":"setTags","parameterTypes":["java.util.List"] }]
 },
 {
-  "name":"com.biddflux.model.dto.DatasourceType",
+  "name":"com.quemsi.model.dto.DatasourceType",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true
 },
 {
-  "name":"com.biddflux.model.dto.FlowDetail",
+  "name":"com.quemsi.model.dto.FlowDetail",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"setActive","parameterTypes":["boolean"] }, {"name":"setAgent","parameterTypes":["com.biddflux.model.dto.ObjectReference"] }, {"name":"setBack","parameterTypes":["boolean"] }, {"name":"setData","parameterTypes":["com.biddflux.model.dto.DataGroup"] }, {"name":"setDisplayOrder","parameterTypes":["int"] }, {"name":"setModel","parameterTypes":["java.lang.String"] }, {"name":"setName","parameterTypes":["java.lang.String"] }, {"name":"setTimer","parameterTypes":["java.lang.String"] }, {"name":"setTitle","parameterTypes":["java.lang.String"] }]
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"setActive","parameterTypes":["boolean"] }, {"name":"setAgent","parameterTypes":["com.quemsi.model.dto.ObjectReference"] }, {"name":"setBack","parameterTypes":["boolean"] }, {"name":"setData","parameterTypes":["com.quemsi.model.dto.DataGroup"] }, {"name":"setDisplayOrder","parameterTypes":["int"] }, {"name":"setModel","parameterTypes":["java.lang.String"] }, {"name":"setName","parameterTypes":["java.lang.String"] }, {"name":"setTimer","parameterTypes":["java.lang.String"] }, {"name":"setTitle","parameterTypes":["java.lang.String"] }]
 },
 {
-  "name":"com.biddflux.model.dto.FlowHistory",
+  "name":"com.quemsi.model.dto.FlowHistory",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getFinishedAt","parameterTypes":[] }, {"name":"getFlowId","parameterTypes":[] }, {"name":"getFlowName","parameterTypes":[] }, {"name":"getLogs","parameterTypes":[] }, {"name":"getStartedAt","parameterTypes":[] }, {"name":"getStatus","parameterTypes":[] }, {"name":"getVersion","parameterTypes":[] }, {"name":"setFinishedAt","parameterTypes":["java.util.Date"] }, {"name":"setFlowId","parameterTypes":["java.lang.Long"] }, {"name":"setFlowName","parameterTypes":["java.lang.String"] }, {"name":"setLogs","parameterTypes":["java.lang.String"] }, {"name":"setStartedAt","parameterTypes":["java.util.Date"] }, {"name":"setStatus","parameterTypes":["com.biddflux.model.dto.FlowHistoryStatus"] }, {"name":"setVersion","parameterTypes":["com.biddflux.model.dto.DataVersion"] }]
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getFinishedAt","parameterTypes":[] }, {"name":"getFlowId","parameterTypes":[] }, {"name":"getFlowName","parameterTypes":[] }, {"name":"getLogs","parameterTypes":[] }, {"name":"getStartedAt","parameterTypes":[] }, {"name":"getStatus","parameterTypes":[] }, {"name":"getVersion","parameterTypes":[] }, {"name":"setFinishedAt","parameterTypes":["java.util.Date"] }, {"name":"setFlowId","parameterTypes":["java.lang.Long"] }, {"name":"setFlowName","parameterTypes":["java.lang.String"] }, {"name":"setLogs","parameterTypes":["java.lang.String"] }, {"name":"setStartedAt","parameterTypes":["java.util.Date"] }, {"name":"setStatus","parameterTypes":["com.quemsi.model.dto.FlowHistoryStatus"] }, {"name":"setVersion","parameterTypes":["com.quemsi.model.dto.DataVersion"] }]
 },
 {
-  "name":"com.biddflux.model.dto.FlowHistoryStatus",
+  "name":"com.quemsi.model.dto.FlowHistoryStatus",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true
 },
 {
-  "name":"com.biddflux.model.dto.KeyValuePair",
+  "name":"com.quemsi.model.dto.KeyValuePair",
   "queryAllDeclaredMethods":true
 },
 {
-  "name":"com.biddflux.model.dto.NamedEntityReference",
+  "name":"com.quemsi.model.dto.NamedEntityReference",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getId","parameterTypes":[] }, {"name":"getName","parameterTypes":[] }, {"name":"setId","parameterTypes":["java.lang.Long"] }, {"name":"setName","parameterTypes":["java.lang.String"] }]
 },
 {
-  "name":"com.biddflux.model.dto.ObjectReference",
+  "name":"com.quemsi.model.dto.ObjectReference",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"setId","parameterTypes":["java.lang.Long"] }]
 },
 {
-  "name":"com.biddflux.model.dto.StorageType",
+  "name":"com.quemsi.model.dto.StorageType",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true
 },
 {
-  "name":"com.biddflux.model.dto.Tag",
+  "name":"com.quemsi.model.dto.Tag",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getName","parameterTypes":[] }, {"name":"getVal","parameterTypes":[] }, {"name":"setName","parameterTypes":["java.lang.String"] }, {"name":"setVal","parameterTypes":["java.lang.String"] }]
 },
 {
-  "name":"com.biddflux.model.dto.agent.AgentCommand",
+  "name":"com.quemsi.model.dto.agent.AgentCommand",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"getAgentId","parameterTypes":[] }, {"name":"getName","parameterTypes":[] }, {"name":"setAgentId","parameterTypes":["java.lang.Long"] }, {"name":"setName","parameterTypes":["java.lang.String"] }]
 },
 {
-  "name":"com.biddflux.model.dto.agent.DelayAgentCommand",
+  "name":"com.quemsi.model.dto.agent.DelayAgentCommand",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"setDelay","parameterTypes":["long"] }]
 },
 {
-  "name":"com.biddflux.model.dto.agent.ExecuteFlow",
+  "name":"com.quemsi.model.dto.agent.ExecuteFlow",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"setFiles","parameterTypes":["java.util.List"] }, {"name":"setFlowName","parameterTypes":["java.lang.String"] }, {"name":"setTags","parameterTypes":["java.util.Map"] }, {"name":"setVersionId","parameterTypes":["java.lang.Long"] }]
 },
 {
-  "name":"com.biddflux.model.dto.agent.GoogleDriveConnect",
+  "name":"com.quemsi.model.dto.agent.GoogleDriveConnect",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"setConnect","parameterTypes":["boolean"] }, {"name":"setDriveName","parameterTypes":["java.lang.String"] }]
 },
 {
-  "name":"com.biddflux.model.dto.agent.RetentionExecute$FileInfo"
+  "name":"com.quemsi.model.dto.agent.RetentionExecute$FileInfo"
 },
 {
-  "name":"com.biddflux.model.dto.agent.UpdateAgentModel",
+  "name":"com.quemsi.model.dto.agent.UpdateAgentModel",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"setUpdatedModel","parameterTypes":["com.biddflux.model.dto.AgentModel"] }]
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"setUpdatedModel","parameterTypes":["com.quemsi.model.dto.AgentModel"] }]
 },
 {
-  "name":"com.biddflux.model.dto.agent.onapi.UpdateGoogleDrive",
+  "name":"com.quemsi.model.dto.agent.onapi.UpdateGoogleDrive",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"getAuthUrl","parameterTypes":[] }, {"name":"getDriveName","parameterTypes":[] }, {"name":"isConnected","parameterTypes":[] }]
 },
 {
-  "name":"com.biddflux.model.flow.AbstractStep",
+  "name":"com.quemsi.model.flow.AbstractStep",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true
 },
 {
-  "name":"com.biddflux.model.flow.Flow",
+  "name":"com.quemsi.model.flow.Flow",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "methods":[{"name":"equals","parameterTypes":["java.lang.Object"] }, {"name":"hashCode","parameterTypes":[] }, {"name":"toString","parameterTypes":[] }]
 },
 {
-  "name":"com.biddflux.model.flow.FlowContext"
+  "name":"com.quemsi.model.flow.FlowContext"
 },
 {
-  "name":"com.biddflux.model.flow.From",
+  "name":"com.quemsi.model.flow.From",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true
 },
 {
-  "name":"com.biddflux.model.flow.Step",
+  "name":"com.quemsi.model.flow.Step",
   "queryAllPublicMethods":true
 },
 {
-  "name":"com.biddflux.model.flow.Timer",
+  "name":"com.quemsi.model.flow.Timer",
   "methods":[{"name":"tick","parameterTypes":[] }]
 },
 {
-  "name":"com.biddflux.model.flow.To",
+  "name":"com.quemsi.model.flow.To",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true
 },
 {
-  "name":"com.biddflux.model.flow.db.DataSourceFactory",
+  "name":"com.quemsi.model.flow.db.DataSourceFactory",
   "queryAllPublicMethods":true
 },
 {
-  "name":"com.biddflux.model.flow.db.mysql.DataSourceFactoryMySql",
+  "name":"com.quemsi.model.flow.db.mysql.DataSourceFactoryMySql",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true
 },
 {
-  "name":"com.biddflux.model.flow.db.sql.SqlParser",
+  "name":"com.quemsi.model.flow.db.sql.SqlParser",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "methods":[{"name":"close","parameterTypes":[] }, {"name":"shutdown","parameterTypes":[] }]
 },
 {
-  "name":"com.biddflux.model.flow.factories.AbstractFactory",
+  "name":"com.quemsi.model.flow.factories.AbstractFactory",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"from","parameterTypes":["com.fasterxml.jackson.databind.JsonNode"] }, {"name":"setCommonBeans","parameterTypes":["java.lang.Object"] }, {"name":"type","parameterTypes":["com.fasterxml.jackson.databind.JsonNode"] }]
 },
 {
-  "name":"com.biddflux.model.flow.factories.SourceFactory",
+  "name":"com.quemsi.model.flow.factories.SourceFactory",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "methods":[{"name":"close","parameterTypes":[] }, {"name":"getBuilders","parameterTypes":[] }, {"name":"shutdown","parameterTypes":[] }]
 },
 {
-  "name":"com.biddflux.model.flow.factories.StepFactory",
+  "name":"com.quemsi.model.flow.factories.StepFactory",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "methods":[{"name":"close","parameterTypes":[] }, {"name":"getBuilders","parameterTypes":[] }, {"name":"shutdown","parameterTypes":[] }]
 },
 {
-  "name":"com.biddflux.model.flow.factories.StorageFactory",
+  "name":"com.quemsi.model.flow.factories.StorageFactory",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "methods":[{"name":"close","parameterTypes":[] }, {"name":"getBuilders","parameterTypes":[] }, {"name":"shutdown","parameterTypes":[] }]
 },
 {
-  "name":"com.biddflux.model.flow.file.Unzip",
+  "name":"com.quemsi.model.flow.file.Unzip",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true
 },
 {
-  "name":"com.biddflux.model.flow.file.Zip",
+  "name":"com.quemsi.model.flow.file.Zip",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true
 },
 {
-  "name":"com.biddflux.model.flow.in.MySqlBackup",
+  "name":"com.quemsi.model.flow.in.MySqlBackup",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true
 },
 {
-  "name":"com.biddflux.model.flow.in.MySqlBackupProperties",
+  "name":"com.quemsi.model.flow.in.MySqlBackupProperties",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "methods":[{"name":"close","parameterTypes":[] }, {"name":"equals","parameterTypes":["java.lang.Object"] }, {"name":"hashCode","parameterTypes":[] }, {"name":"setTempDir","parameterTypes":["java.lang.String"] }, {"name":"shutdown","parameterTypes":[] }, {"name":"toString","parameterTypes":[] }]
 },
 {
-  "name":"com.biddflux.model.flow.in.Source",
+  "name":"com.quemsi.model.flow.in.Source",
   "queryAllPublicMethods":true
 },
 {
-  "name":"com.biddflux.model.flow.in.StoredData",
+  "name":"com.quemsi.model.flow.in.StoredData",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true
 },
 {
-  "name":"com.biddflux.model.flow.out.AbstractStorage",
+  "name":"com.quemsi.model.flow.out.AbstractStorage",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true
 },
 {
-  "name":"com.biddflux.model.flow.out.GoogleDrive",
+  "name":"com.quemsi.model.flow.out.GoogleDrive",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true
 },
 {
-  "name":"com.biddflux.model.flow.out.Gstorage",
+  "name":"com.quemsi.model.flow.out.Gstorage",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true
 },
 {
-  "name":"com.biddflux.model.flow.out.LStorage",
+  "name":"com.quemsi.model.flow.out.LStorage",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true
 },
 {
-  "name":"com.biddflux.model.flow.out.LocalDrive",
+  "name":"com.quemsi.model.flow.out.LocalDrive",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true
 },
 {
-  "name":"com.biddflux.model.flow.out.MySqlDb",
+  "name":"com.quemsi.model.flow.out.MySqlDb",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true
 },
 {
-  "name":"com.biddflux.model.flow.out.Storage",
+  "name":"com.quemsi.model.flow.out.Storage",
   "queryAllPublicMethods":true
 },
 {

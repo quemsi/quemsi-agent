@@ -1,4 +1,4 @@
-package com.biddflux.agent.config;
+package com.quemsi.agent.config;
 
 import java.util.List;
 
@@ -24,7 +24,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import com.biddflux.agent.api.ApiClientReactive;
+import com.quemsi.agent.api.ApiClientReactive;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.extern.slf4j.Slf4j;

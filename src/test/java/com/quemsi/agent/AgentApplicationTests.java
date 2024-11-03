@@ -1,4 +1,4 @@
-package com.biddflux.agent;
+package com.quemsi.agent;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;

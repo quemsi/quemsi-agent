@@ -1,4 +1,4 @@
-package com.biddflux.agent.flow.gdrive;
+package com.quemsi.agent.flow.gdrive;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -16,8 +16,8 @@ import java.util.stream.Collectors;
 
 import org.springframework.scheduling.annotation.Async;
 
-import com.biddflux.commons.util.Exceptions;
-import com.biddflux.commons.util.FileResource;
+import com.quemsi.commons.util.Exceptions;
+import com.quemsi.commons.util.FileResource;
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.auth.oauth2.StoredCredential;
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
@@ -112,7 +112,7 @@ public class GoogleDrive {
 			redirectUrl = redirectUrl.replace("http://localhost:" + callbackPort, callbackBaseUrl);
 			receiver.setRedirectUri(redirectUrl);
 		}
-		return new AuthorizationCodeInstalledApp(flow, receiver, new BiddfluxBrowser()).authorize("user");
+		return new AuthorizationCodeInstalledApp(flow, receiver, new quemsiBrowser()).authorize("user");
 	}
 
 	@Async
@@ -234,7 +234,7 @@ public class GoogleDrive {
 		return file;
 	}
 
-	private class BiddfluxBrowser implements Browser {
+	private class quemsiBrowser implements Browser {
 		@Override
 		public void browse(String url) throws IOException {
 			log.debug("open url :{}", url);
