@@ -3,7 +3,6 @@ package com.quemsi.agent.aspect;
 import org.aspectj.lang.annotation.AfterThrowing;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.oauth2.client.ClientAuthorizationException;
 import org.springframework.stereotype.Component;
 
 import com.quemsi.commons.util.BaseRuntimeException;
@@ -22,9 +21,6 @@ public class GlobalErrorHandling {
         handleError(ex);
     }
     public void handleError(Exception ex) {
-        if(ex instanceof ClientAuthorizationException){
-            return;
-        }
         NotifyError.NotifyErrorBuilder notifyError = NotifyError.builder();
         if(ex instanceof BaseRuntimeException bre){
             notifyError.exception(bre);

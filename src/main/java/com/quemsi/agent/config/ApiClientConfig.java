@@ -1,115 +1,78 @@
 package com.quemsi.agent.config;
 
-import java.util.List;
+import java.time.Duration;
 
-import org.slf4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.client.ClientHttpRequestInterceptor;
-import org.springframework.http.codec.json.Jackson2JsonDecoder;
-import org.springframework.http.codec.json.Jackson2JsonEncoder;
-import org.springframework.http.converter.FormHttpMessageConverter;
-import org.springframework.security.oauth2.client.AuthorizedClientServiceOAuth2AuthorizedClientManager;
-import org.springframework.security.oauth2.client.InMemoryOAuth2AuthorizedClientService;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProviderBuilder;
-import org.springframework.security.oauth2.client.endpoint.DefaultClientCredentialsTokenResponseClient;
-import org.springframework.security.oauth2.client.http.OAuth2ErrorResponseErrorHandler;
-import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
-import org.springframework.security.oauth2.client.web.reactive.function.client.ServletOAuth2AuthorizedClientExchangeFilterFunction;
-import org.springframework.security.oauth2.core.http.converter.OAuth2AccessTokenResponseHttpMessageConverter;
-import org.springframework.util.MimeTypeUtils;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.support.WebClientAdapter;
+import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 
-import com.quemsi.agent.api.ApiClientReactive;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.quemsi.agent.api.ApiManager;
+import com.quemsi.agent.api.QuemsiApi;
+import com.quemsi.agent.api.TokenApi;
 
 import lombok.extern.slf4j.Slf4j;
-import reactor.core.publisher.Mono;
+import reactor.netty.http.client.HttpClient;
 
 @Slf4j
 @Configuration(proxyBeanMethods = false)
 public class ApiClientConfig {
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @Bean
-    public ApiClientReactive apiClient(){
-        return new ApiClientReactive();
-    }
+    @Value("${quemsi-api.server-url}")
+    private String serverUrl;
+    @Value("${quemsi-api.log-request-detail:false}")
+    private boolean logRequestDetails;
     
     @Bean
-    public WebClient webClient(final @Value("${oauth2.registration.id}") String oauth2RegistrationId,
-                                   final @Value("${resource.base}") String resourceBase,
-                                   final ClientRegistrationRepository clientRegistrationRepository) {
-        var defaultClientCredentialsTokenResponseClient = new DefaultClientCredentialsTokenResponseClient();
-        defaultClientCredentialsTokenResponseClient
-                .setRestOperations(getRestTemplateForTokenEndPoint(oauth2RegistrationId));
+    public ApiManager apiManager(TokenApi tokenApi, QuemsiApi quemsiApi){
+        return new ApiManager(tokenApi, quemsiApi);
+    }
 
-        var provider = OAuth2AuthorizedClientProviderBuilder.builder()
-                .clientCredentials(c -> c.accessTokenResponseClient(defaultClientCredentialsTokenResponseClient))
+    @Bean
+    public TokenApi keycloakTokenApi(HttpServiceProxyFactory apiServiceProxyFactory){
+        return apiServiceProxyFactory.createClient(TokenApi.class);
+    }
+    @Bean
+    public QuemsiApi quemsiApi(HttpServiceProxyFactory apiServiceProxyFactory){
+        return apiServiceProxyFactory.createClient(QuemsiApi.class);
+    }
+
+    @Bean
+    public HttpServiceProxyFactory apiServiceProxyFactory(WebClientAdapter apiExchangeAdapter) {
+        log.info("HttpServiceProxyFactory is being initialized");
+        HttpServiceProxyFactory factory = HttpServiceProxyFactory.builderFor(apiExchangeAdapter).build();
+        log.info("apiServiceProxyFactory is initialized: {}", factory);
+        return factory;
+    }
+
+    @Bean
+    public WebClientAdapter apiExchangeAdapter(WebClient apiWebClient) {
+        WebClientAdapter webClientAdapter = WebClientAdapter.create(apiWebClient);
+        webClientAdapter.setBlockTimeout(Duration.ofSeconds(30));
+        return webClientAdapter;
+    }
+
+    @Bean
+    public WebClient apiWebClient(ReactorClientHttpConnector clientConnector) {
+        log.info("Api webClient is being initialized");
+        WebClient webClient = WebClient
+                .builder()
+                .clientConnector(clientConnector)
+                .codecs(configurer -> configurer.defaultCodecs().enableLoggingRequestDetails(logRequestDetails))
+                .baseUrl(serverUrl)
                 .build();
-
-        var oauth2AuthorizedClientService = new InMemoryOAuth2AuthorizedClientService(clientRegistrationRepository);
-
-        var authorizedClientServiceOAuth2AuthorizedClientManager = new AuthorizedClientServiceOAuth2AuthorizedClientManager(clientRegistrationRepository, oauth2AuthorizedClientService);
-        authorizedClientServiceOAuth2AuthorizedClientManager.setAuthorizedClientProvider(provider);
         
-        var oauth = new ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientServiceOAuth2AuthorizedClientManager);
-        oauth.setDefaultClientRegistrationId(oauth2RegistrationId);
-
-        return WebClient.builder()
-                .baseUrl(resourceBase)
-                .filter(oauth)
-                .filter(logResourceRequest(log, oauth2RegistrationId))
-                .filter(logResourceResponse(log, oauth2RegistrationId))
-                .codecs(configurer -> {
-                    configurer.defaultCodecs().jackson2JsonEncoder(new Jackson2JsonEncoder(objectMapper, MimeTypeUtils.APPLICATION_JSON));
-                    configurer.defaultCodecs().jackson2JsonDecoder(new Jackson2JsonDecoder(objectMapper, MimeTypeUtils.APPLICATION_JSON));
-                })
-                .build();
+        log.info("apiWebClient is initialized: {}", webClient);
+        return webClient;
     }
 
-    private RestTemplate getRestTemplateForTokenEndPoint(String oauth2RegistrationId) {
-        var restTemplateForTokenEndPoint = new RestTemplate();
-        restTemplateForTokenEndPoint
-                .setMessageConverters(
-                        List.of(new FormHttpMessageConverter(),
-                                new OAuth2AccessTokenResponseHttpMessageConverter()
-                        ));
-        restTemplateForTokenEndPoint
-                .setErrorHandler(new OAuth2ErrorResponseErrorHandler());
-        restTemplateForTokenEndPoint
-                .setInterceptors(List.of(restTemplateRequestInterceptor(oauth2RegistrationId)));
-        return restTemplateForTokenEndPoint;
-    }
-
-    private static ExchangeFilterFunction logResourceRequest(final Logger logger, final String clientName) {
-        return ExchangeFilterFunction.ofRequestProcessor(c -> {
-            logger.trace(
-                "For Client {}, Sending OAUTH2 protected Resource Request to {}: {}",
-                clientName, c.method(), c.url()
-            );
-            return Mono.just(c);
-        });
-    }
-
-    private static ExchangeFilterFunction logResourceResponse(final Logger logger, final String clientName) {
-        return ExchangeFilterFunction.ofResponseProcessor(c -> {
-            log.trace("For Client {}, OAUTH2 protected Resource Response status: {}", clientName, c.statusCode());
-            return Mono.just(c);
-        });
-    }
-
-    private static ClientHttpRequestInterceptor restTemplateRequestInterceptor(final String clientName) {
-        return (request, body, execution) -> {
-            log.info("For Client {}, Sending OAUTH2 Token Request to {}", clientName, request.getURI());
-            var clientResponse = execution.execute(request, body);
-            log.info("For Client {}, OAUTH2 Token Response: {}", clientName, clientResponse.getStatusCode());
-            return clientResponse;
-        };
+    @Bean
+    public ReactorClientHttpConnector clientConnector(){
+        HttpClient httpClient = HttpClient.create()
+            .responseTimeout(Duration.ofSeconds(30)); 
+        ReactorClientHttpConnector connector = new ReactorClientHttpConnector(httpClient);
+        return connector;
     }
 }

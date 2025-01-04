@@ -14,13 +14,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.io.Files;
+import com.quemsi.agent.api.ApiManager;
 import com.quemsi.agent.flow.gdrive.GoogleDrive;
 import com.quemsi.agent.service.FlowManager;
 import com.quemsi.agent.service.GoogleDriveManager;
 import com.quemsi.agent.service.SpringBeanManager;
 import com.quemsi.commons.util.DelayedFormatter;
 import com.quemsi.commons.util.Exceptions;
-import com.quemsi.model.api.ApiClient;
 import com.quemsi.model.dto.AgentModel;
 import com.quemsi.model.dto.FlowExecution;
 import com.quemsi.model.dto.agent.AgentCommand;
@@ -36,8 +38,6 @@ import com.quemsi.model.dto.agent.onapi.UpdateGoogleDrive;
 import com.quemsi.model.dto.agent.onapi.VersionDeleted;
 import com.quemsi.model.flow.Flow;
 import com.quemsi.model.flow.out.Storage;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.io.Files;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,7 +46,7 @@ public class AgentCoordinator {
     @Value("${api.retry:5}")
     private long apiRetry;
 	@Autowired
-	private ApiClient apiClient;
+	private ApiManager apiManager;
     @Autowired
 	private SpringBeanManager beanManager;
 	@Autowired
@@ -88,10 +88,10 @@ public class AgentCoordinator {
         while(!this.initialized){
             try{
                 this.agentVersion = getClass().getPackage().getImplementationVersion();
-                AgentModel model = apiClient.allModel(agentVersion);
+                AgentModel model = apiManager.allModel(agentVersion);
                 log.debug("model : {}", DelayedFormatter.toDelayedString(Exceptions.wrapSupplier(() -> objectMapper.writeValueAsString(model))));
 				initialize(model);
-                String googleCredentialJson = apiClient.googleCredential();
+                String googleCredentialJson = apiManager.googleCredential();
                 BufferedWriter writer = new BufferedWriter(Files.newWriter(new File("credentials.json"), StandardCharsets.UTF_8));
                 writer.write(googleCredentialJson);
                 writer.close();
@@ -120,7 +120,7 @@ public class AgentCoordinator {
             FlowExecution execution = flow.execute(executeFlow.getVersionId(), executeFlow.getTags(), executeFlow.getFiles(), executeFlow.getFlowExecutionId());
             if(execution != null){
                 log.info("saving history {}", execution);
-                execution = apiClient.saveFlowExecution(execution);
+                execution = apiManager.saveFlowExecution(execution);
             }
         } else if(command instanceof GoogleDriveConnect gDriveConnect) {
             log.info("connecting google drive {}", gDriveConnect);
@@ -136,7 +136,7 @@ public class AgentCoordinator {
                     }
                 }
             }
-            apiClient.send(UpdateGoogleDrive.builder().driveName(drive.getName()).connected(drive.isConnected()).build());
+            apiManager.send(UpdateGoogleDrive.builder().driveName(drive.getName()).connected(drive.isConnected()).build());
         } else if(command instanceof UpdateAgentModel updatedModel){
             log.info("uupdating model {}", updatedModel);
             initialize(updatedModel.getUpdatedModel());
@@ -154,7 +154,7 @@ public class AgentCoordinator {
             });
             RetentionCompleted retentionCompleted = RetentionCompleted.builder().storageId(retentionExecute.getStorageId()).storageName(retentionExecute.getStorageName()).files(fileIds).build();
             log.info("sending retention complete {}", retentionCompleted);
-            apiClient.send(retentionCompleted);
+            apiManager.send(retentionCompleted);
         } else if(command instanceof VersionDeleteRequest versionDeleteRequest){
             Storage storage = beanManager.findStorage(versionDeleteRequest.getVersion().getStorage().getName());
             versionDeleteRequest.getVersion().getFiles().forEach(f -> {
@@ -166,7 +166,7 @@ public class AgentCoordinator {
             });
             VersionDeleted versionDeleted = VersionDeleted.builder().versionId(versionDeleteRequest.getVersion().getId()).build();
             log.info("sending version deleted {}", versionDeleted);
-            apiClient.send(versionDeleted);
+            apiManager.send(versionDeleted);
         }
         else{
             throw Exceptions.server("not-implemented").withExtra("commandName", command.getName()).get();
@@ -177,7 +177,7 @@ public class AgentCoordinator {
         @Override
         public void run() {
             try{
-                AgentCommand command = apiClient.nextCommand();
+                AgentCommand command = apiManager.nextCommand();
                 execute(command);
             } catch (WebClientRequestException ignore){
                 log.debug("Unable to reach api, will try again in {} seconds", apiRetry);
@@ -206,7 +206,7 @@ public class AgentCoordinator {
             try{
                 googleDrive.connectToDrive();
             } catch (Exception ex){
-                apiClient.send(NotifyError.builder().entityName(googleDrive.getName()).entityType(GoogleDrive.class.getSimpleName()).exception(Exceptions.server("unable-to-connect-drive").withCause(ex).get()).build());
+                apiManager.send(NotifyError.builder().entityName(googleDrive.getName()).entityType(GoogleDrive.class.getSimpleName()).exception(Exceptions.server("unable-to-connect-drive").withCause(ex).get()).build());
             }
         }
     }

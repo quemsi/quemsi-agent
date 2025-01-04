@@ -7,19 +7,7 @@ server:
 spring:
   application:
     name: quemsi-agent
-  security:
-    oauth2:
-      client:
-        registration:
-          api-client:
-            provider: keycloak
-            client-id: ${CLIENT-ID}
-            client-name: ${CLIENT-ID}
-            client-secret: ${CLIENT-SECRET}
-            authorization-grant-type: client_credentials
-        provider:
-          keycloak:
-            token-uri: http://127.0.0.1/idm/realms/quemsi/protocol/openid-connect/token
+      
 oauth2:
   registration:
     id: api-client              
@@ -32,8 +20,14 @@ management:
         include: "*"
 mysqlbackup:
   temp-dir: tmp
-api:
-  retry: 5 
+quemsi-api:
+  server-url: http://127.0.0.1
+  token-uri: http://127.0.0.1/idm/realms/quemsi/protocol/openid-connect/token
+  realm: quemsi
+  client-id: ${CLIENT-ID}
+  client-secret: ${CLIENT-SECRET}
+  log-request-detail: true
+  retry: 5
 logging:
   level:
     root: INFO

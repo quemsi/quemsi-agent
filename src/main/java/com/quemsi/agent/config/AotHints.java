@@ -6,7 +6,6 @@ import org.springframework.aot.hint.RuntimeHintsRegistrar;
 import org.springframework.aot.hint.TypeReference;
 import org.springframework.context.annotation.Configuration;
 
-import com.quemsi.agent.api.ApiClientReactive;
 import com.quemsi.agent.flow.gdrive.Gstorage;
 import com.quemsi.commons.util.FileNameUtil;
 import com.quemsi.model.dto.AgentError;
@@ -43,7 +42,7 @@ public class AotHints implements RuntimeHintsRegistrar{
     @Override
     public void registerHints(RuntimeHints hints, ClassLoader classLoader) {
         hints.reflection()
-            .registerType(ApiClientReactive.class, t -> t.withField("webClient"))
+            // .registerType(ApiClientReactive.class, t -> t.withField("webClient"))
             .registerType(GoogleClientSecrets.class, MemberCategory.values()).registerType(GoogleClientSecrets.Details.class, MemberCategory.values())
             .registerType(Gstorage.class, MemberCategory.values())
             .registerType(FileNameUtil.class, MemberCategory.values())
