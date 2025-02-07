@@ -14,7 +14,7 @@
 	<description>quemsi agent</description>
 	<properties>
 		<java.version>21</java.version>
-		<spring-cloud.version>2023.0.0</spring-cloud.version>
+		<spring-cloud.version>2024.0.0</spring-cloud.version>
 		<local.dist.repository>file:///workspace/local-dist-repository/</local.dist.repository>
 	</properties>
 	<scm>
@@ -70,15 +70,6 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
-		<!-- <dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-security</artifactId>
-		</dependency> -->
-		<!-- <dependency>
-			<groupId>org.springframework.security</groupId>
-			<artifactId>spring-security-oauth2-client</artifactId>
-			<version>6.2.2</version>
-		</dependency> -->
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-core</artifactId>
@@ -139,6 +130,14 @@
 			<plugin>
 				<groupId>org.graalvm.buildtools</groupId>
 				<artifactId>native-maven-plugin</artifactId>
+				<configuration>
+					<metadataRepository>
+						<version>0.3.14</version>
+					</metadataRepository>
+					<buildArgs>
+						--verbose -g
+					</buildArgs>
+				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -157,22 +156,21 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
-					<layers>
-						<enabled>true</enabled>
-					</layers>
-					<image>
-						<name>quemsi/quemsi-agent:${project.version}</name>
-						<verboseLogging>true</verboseLogging>
-						<builder>paketobuildpacks/builder-jammy-base:latest</builder>
-					</image>
-				</configuration>
-				<executions>
-					<execution>
-						<goals>
-							<goal>repackage</goal>
-						</goals>
-					</execution>
-				</executions>
+					<buildArgs>
+						--verbose -g
+					</buildArgs>
+          <image>
+              <!--<builder>paketobuildpacks/builder-jammy-buildpackless-tiny</builder> required for AArch64/M1 support -->
+              <buildpacks>
+                  <buildpack>paketobuildpacks/oracle</buildpack>
+                  <buildpack>paketobuildpacks/java-native-image</buildpack>
+              </buildpacks>
+							<env>
+								<JAVA_TOOL_OPTIONS>--gc=G1</JAVA_TOOL_OPTIONS>
+								<BP_JVM_VERSION>${java.version}</BP_JVM_VERSION>
+							</env>
+          </image>
+	      </configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>

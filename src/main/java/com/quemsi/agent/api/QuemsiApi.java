@@ -30,7 +30,7 @@ public interface QuemsiApi {
     @PostExchange("/api/agent/flow-execution-step")
     FlowExecutionStep saveFlowExecutionStep(@RequestHeader(HttpHeaders.AUTHORIZATION) String token, @RequestBody FlowExecutionStep executionStep);
     
-    @PostExchange("/api/agent/gdrive-credentials")
+    @GetExchange("/api/agent/gdrive-credentials")
     String googleCredential(@RequestHeader(HttpHeaders.AUTHORIZATION) String token);
     
     @PostExchange("/api/agent/agent-command")

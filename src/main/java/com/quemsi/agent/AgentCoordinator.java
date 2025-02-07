@@ -1,9 +1,6 @@
 package com.quemsi.agent;
 
-import java.io.BufferedWriter;
-import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.time.Duration;
 import java.util.LinkedList;
@@ -15,7 +12,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.io.Files;
 import com.quemsi.agent.api.ApiManager;
 import com.quemsi.agent.flow.gdrive.GoogleDrive;
 import com.quemsi.agent.service.FlowManager;
@@ -91,23 +87,27 @@ public class AgentCoordinator {
                 AgentModel model = apiManager.allModel(agentVersion);
                 log.debug("model : {}", DelayedFormatter.toDelayedString(Exceptions.wrapSupplier(() -> objectMapper.writeValueAsString(model))));
 				initialize(model);
+                //TODO: to be fixed
+                /*
                 String googleCredentialJson = apiManager.googleCredential();
                 BufferedWriter writer = new BufferedWriter(Files.newWriter(new File("credentials.json"), StandardCharsets.UTF_8));
                 writer.write(googleCredentialJson);
                 writer.close();
                 log.info("will initialize googledrives");
                 vThreadExecutor.execute(new InitGoogleDrives());
+                 */
                 initialized = true;
                 log.info("initialization completed");
                 apiCommandListener = new ApiCommandListener();
                 vThreadExecutor.submit(apiCommandListener);
-            }catch(WebClientRequestException | IOException ex){
+            }catch(WebClientRequestException ex){
                 throw Exceptions.server("initialization-error").withCause(ex).get();
             }
         }
     }
 
     public void execute(AgentCommand command){
+        log.info("recived command  : {}", command);
         if(command instanceof DelayAgentCommand delayAgent){
             try {
                 Thread.sleep(delayAgent.getDelay());
