@@ -1,12 +1,10 @@
-package com.quemsi.agent.config;
+package com.quemsi.agent;
 
 import org.springframework.aot.hint.MemberCategory;
 import org.springframework.aot.hint.RuntimeHints;
 import org.springframework.aot.hint.RuntimeHintsRegistrar;
-import org.springframework.aot.hint.TypeReference;
 import org.springframework.context.annotation.Configuration;
 
-import com.quemsi.agent.flow.gdrive.Gstorage;
 import com.quemsi.commons.util.FileNameUtil;
 import com.quemsi.model.dto.AgentError;
 import com.quemsi.model.dto.AgentModel;
@@ -18,8 +16,8 @@ import com.quemsi.model.dto.DataVersion;
 import com.quemsi.model.dto.DataVersionSummary;
 import com.quemsi.model.dto.DatasourceType;
 import com.quemsi.model.dto.FlowDetail;
-import com.quemsi.model.dto.FlowHistory;
 import com.quemsi.model.dto.FlowExecutionStatus;
+import com.quemsi.model.dto.FlowHistory;
 import com.quemsi.model.dto.NamedEntityReference;
 import com.quemsi.model.dto.ObjectReference;
 import com.quemsi.model.dto.StorageType;
@@ -34,17 +32,16 @@ import com.quemsi.model.dto.agent.UpdateAgentModel;
 import com.quemsi.model.dto.agent.onapi.NotifyError;
 import com.quemsi.model.dto.agent.onapi.RetentionCompleted;
 import com.quemsi.model.dto.agent.onapi.UpdateGoogleDrive;
-import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
+// import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 
 @Configuration
-public class AotHints implements RuntimeHintsRegistrar{
+public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
 
     @Override
     public void registerHints(RuntimeHints hints, ClassLoader classLoader) {
         hints.reflection()
-            // .registerType(ApiClientReactive.class, t -> t.withField("webClient"))
-            .registerType(GoogleClientSecrets.class, MemberCategory.values()).registerType(GoogleClientSecrets.Details.class, MemberCategory.values())
-            .registerType(Gstorage.class, MemberCategory.values())
+            // .registerType(GoogleClientSecrets.class, MemberCategory.values()).registerType(GoogleClientSecrets.Details.class, MemberCategory.values())
+            // .registerType(Gstorage.class, MemberCategory.values())
             .registerType(FileNameUtil.class, MemberCategory.values())
             ;
         hints.serialization()
@@ -78,7 +75,7 @@ public class AotHints implements RuntimeHintsRegistrar{
             .registerType(RetentionCompleted.class)
             .registerType(UpdateGoogleDrive.class)
 
-            .registerType(TypeReference.of(GoogleClientSecrets.class)).registerType(TypeReference.of(GoogleClientSecrets.Details.class))
+            // .registerType(TypeReference.of(GoogleClientSecrets.class)).registerType(TypeReference.of(GoogleClientSecrets.Details.class))
             ;
     }
 

@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.stereotype.Service;
 
-import com.quemsi.agent.flow.gdrive.GoogleDrive;
+// import com.quemsi.agent.flow.gdrive.GoogleDrive;
 import com.quemsi.commons.util.Exceptions;
 import com.quemsi.model.api.ApiClient;
 import com.quemsi.model.dto.agent.onapi.NotifyError;
@@ -23,20 +23,20 @@ public class GoogleDriveManager {
 	private SpringBeanManager springBeanManager;
 
 	public void connectToDrives() {
-		springBeanManager.findGoogleDrives().forEach(Exceptions.<GoogleDrive, Exception>wrapConsumer(gd -> {
-			try{
-				gd.setBrowserConsumer((driveName, authUrl) -> apiClient.send(UpdateGoogleDrive.builder().driveName(driveName).authUrl(authUrl).connected(false).build()));
-				gd.connectToDrive();
-				if(gd.isConnected()){
-					apiClient.send(UpdateGoogleDrive.builder().driveName(gd.getName()).connected(true).build());
-				}
-			}catch(Exception e){
-				apiClient.send(NotifyError.builder().entityType("google-drive").entityName(gd.getName()).exception(Exceptions.server("agent").withCause(e).get()).build());
-			}
-		}));
+		// springBeanManager.findGoogleDrives().forEach(Exceptions.<GoogleDrive, Exception>wrapConsumer(gd -> {
+		// 	try{
+		// 		gd.setBrowserConsumer((driveName, authUrl) -> apiClient.send(UpdateGoogleDrive.builder().driveName(driveName).authUrl(authUrl).connected(false).build()));
+		// 		gd.connectToDrive();
+		// 		if(gd.isConnected()){
+		// 			apiClient.send(UpdateGoogleDrive.builder().driveName(gd.getName()).connected(true).build());
+		// 		}
+		// 	}catch(Exception e){
+		// 		apiClient.send(NotifyError.builder().entityType("google-drive").entityName(gd.getName()).exception(Exceptions.server("agent").withCause(e).get()).build());
+		// 	}
+		// }));
 	}
 	
-	public List<GoogleDrive> googleDriveBeans() {
-		return List.copyOf(beanFactory.getBeansOfType(GoogleDrive.class).values());
-	}
+	// public List<GoogleDrive> googleDriveBeans() {
+	// 	return List.copyOf(beanFactory.getBeansOfType(GoogleDrive.class).values());
+	// }
 }

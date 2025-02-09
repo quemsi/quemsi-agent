@@ -21,8 +21,8 @@ management:
 mysqlbackup:
   temp-dir: tmp
 quemsi-api:
-  server-url: http://127.0.0.1
-  token-uri: http://127.0.0.1/idm/realms/quemsi/protocol/openid-connect/token
+  server-url: http://127.0.0.1:9081
+  keycloak-url: http://127.0.0.1
   realm: quemsi
   client-id: ${CLIENT-ID}
   client-secret: ${CLIENT-SECRET}

@@ -21,8 +21,8 @@ import com.quemsi.model.dto.FlowExecution;
 import com.quemsi.model.dto.agent.onapi.NotifyError;
 import com.quemsi.model.flow.Flow;
 import com.quemsi.model.flow.Step;
-import com.quemsi.model.flow.Timer;
-import com.quemsi.model.flow.Timer.NamedRunnable;
+import com.quemsi.agent.flow.TimerImpl;
+import com.quemsi.agent.flow.TimerImpl.NamedRunnable;
 import com.quemsi.model.flow.factories.StepFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -72,11 +72,11 @@ public class FlowManager {
 			f.setSteps(stepList);
 			Flow old = flows.containsKey(name)?flows.get(name):null;
 			if(old != null && old.getTimerName() != null){
-				Timer oldTimer = beanManager.findTimer(old.getTimerName());
+				TimerImpl oldTimer = beanManager.findTimer(old.getTimerName());
 				oldTimer.remove(old.getName());
 			}
 			if(flow.getTimer() != null){
-				Timer timer = beanManager.findTimer(flow.getTimer());
+				TimerImpl timer = beanManager.findTimer(flow.getTimer());
 				timer.add(new FlowRunnable(f, flow.getTimer()));
 			}
 			f.initialize();

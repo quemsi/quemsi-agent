@@ -1,7 +1,6 @@
 package com.quemsi.agent;
 
 import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.time.Duration;
 import java.util.LinkedList;
 import java.util.List;
@@ -13,7 +12,7 @@ import org.springframework.web.reactive.function.client.WebClientRequestExceptio
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.quemsi.agent.api.ApiManager;
-import com.quemsi.agent.flow.gdrive.GoogleDrive;
+// import com.quemsi.agent.flow.gdrive.GoogleDrive;
 import com.quemsi.agent.service.FlowManager;
 import com.quemsi.agent.service.GoogleDriveManager;
 import com.quemsi.agent.service.SpringBeanManager;
@@ -28,9 +27,7 @@ import com.quemsi.model.dto.agent.GoogleDriveConnect;
 import com.quemsi.model.dto.agent.RetentionExecute;
 import com.quemsi.model.dto.agent.UpdateAgentModel;
 import com.quemsi.model.dto.agent.VersionDeleteRequest;
-import com.quemsi.model.dto.agent.onapi.NotifyError;
 import com.quemsi.model.dto.agent.onapi.RetentionCompleted;
-import com.quemsi.model.dto.agent.onapi.UpdateGoogleDrive;
 import com.quemsi.model.dto.agent.onapi.VersionDeleted;
 import com.quemsi.model.flow.Flow;
 import com.quemsi.model.flow.out.Storage;
@@ -67,7 +64,7 @@ public class AgentCoordinator {
             model.getDatasources().forEach(ds -> beanManager.registerDatasource(ds.getName(), ds.getDbName(), ds.getUrl(), ds.getUsername(), ds.getPassword(), ds.isUseEnvVar()));
         }
         if(model.getGoogleDrives() != null){
-            model.getGoogleDrives().forEach(t -> beanManager.registerGoogleDrive(t.getName(), t.getCallbackBaseUrl(), t.getCallbackPort()));
+            // model.getGoogleDrives().forEach(t -> beanManager.registerGoogleDrive(t.getName(), t.getCallbackBaseUrl(), t.getCallbackPort()));
         }
         if(model.getLocalDrives() != null){
             model.getLocalDrives().forEach(t -> beanManager.registerLocalDrive(t.getName(), t.getStorageRoot(), t.getCapacity(), t.getUsedSize()));
@@ -124,19 +121,19 @@ public class AgentCoordinator {
             }
         } else if(command instanceof GoogleDriveConnect gDriveConnect) {
             log.info("connecting google drive {}", gDriveConnect);
-            GoogleDrive drive = beanManager.findGoogleDrive(gDriveConnect.getDriveName());
-            if(gDriveConnect.isConnect() != drive.isConnected()){
-                if(drive.isConnected()){
-                    drive.clearConnection();
-                } else {
-                    try {
-                        drive.connectToDrive();
-                    } catch (GeneralSecurityException | IOException e) {
-                        throw Exceptions.server("google-drive-error").withCause(e).get();
-                    }
-                }
-            }
-            apiManager.send(UpdateGoogleDrive.builder().driveName(drive.getName()).connected(drive.isConnected()).build());
+            // GoogleDrive drive = beanManager.findGoogleDrive(gDriveConnect.getDriveName());
+            // if(gDriveConnect.isConnect() != drive.isConnected()){
+            //     if(drive.isConnected()){
+            //         drive.clearConnection();
+            //     } else {
+            //         try {
+            //             drive.connectToDrive();
+            //         } catch (GeneralSecurityException | IOException e) {
+            //             throw Exceptions.server("google-drive-error").withCause(e).get();
+            //         }
+            //     }
+            // }
+            // apiManager.send(UpdateGoogleDrive.builder().driveName(drive.getName()).connected(drive.isConnected()).build());
         } else if(command instanceof UpdateAgentModel updatedModel){
             log.info("uupdating model {}", updatedModel);
             initialize(updatedModel.getUpdatedModel());
@@ -199,14 +196,14 @@ public class AgentCoordinator {
     }
 
     public class ConnectToGoogleDrive implements Runnable{
-        private GoogleDrive googleDrive;
+        // private GoogleDrive googleDrive;
 
         @Override
         public void run() {
             try{
-                googleDrive.connectToDrive();
+                // googleDrive.connectToDrive();
             } catch (Exception ex){
-                apiManager.send(NotifyError.builder().entityName(googleDrive.getName()).entityType(GoogleDrive.class.getSimpleName()).exception(Exceptions.server("unable-to-connect-drive").withCause(ex).get()).build());
+                // apiManager.send(NotifyError.builder().entityName(googleDrive.getName()).entityType(GoogleDrive.class.getSimpleName()).exception(Exceptions.server("unable-to-connect-drive").withCause(ex).get()).build());
             }
         }
     }

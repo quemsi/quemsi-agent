@@ -3,7 +3,7 @@ package com.quemsi.agent.service;
 import java.util.List;
 import java.util.function.Supplier;
 
-import org.quartz.Scheduler;
+// import org.quartz.Scheduler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -11,8 +11,9 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 import com.quemsi.agent.config.EnvironmentVars;
-import com.quemsi.agent.flow.gdrive.GoogleDrive;
-import com.quemsi.agent.flow.gdrive.Gstorage;
+import com.quemsi.agent.flow.TimerImpl;
+// import com.quemsi.agent.flow.gdrive.GoogleDrive;
+// import com.quemsi.agent.flow.gdrive.Gstorage;
 import com.quemsi.commons.util.BaseRuntimeException;
 import com.quemsi.commons.util.Exceptions;
 import com.quemsi.commons.util.FileNameUtil;
@@ -40,24 +41,24 @@ public class SpringBeanManager {
 	@Autowired
 	protected ApiClient apiClient;
 
-	public Timer findTimer(String name){
-		return beanFactory.getBean(name, Timer.class);
+	public TimerImpl findTimer(String name){
+		return beanFactory.getBean(name, TimerImpl.class);
 	}
 	
 	public List<Timer> findTimers(){
 		return List.copyOf(beanFactory.getBeansOfType(Timer.class).values());
 	}
 
-	public Timer registerTimer(String name, String schedule) {
-		BeanReqisterer<Timer> registerer = new BeanReqisterer<>(name, Timer.class, () -> new Timer());
-		Timer t = registerer.getBean();
+	public TimerImpl registerTimer(String name, String schedule) {
+		BeanReqisterer<TimerImpl> registerer = new BeanReqisterer<>(name, TimerImpl.class, () -> new TimerImpl());
+		TimerImpl t = registerer.getBean();
 		t.setName(name);  
 		t.setSchedule(schedule);
 		registerer.register();
 		if(!registerer.isNew()){
 			t.reset();
 		}else{
-			t.setScheduler(context.getBean(Scheduler.class));
+			// t.setScheduler(context.getBean(Scheduler.class));
 			t.init();
 		}
 		return t;
@@ -88,24 +89,24 @@ public class SpringBeanManager {
 		registerer.register();
 	}
 	
-	public GoogleDrive findGoogleDrive(String name){
-		return beanFactory.getBean(name, GoogleDrive.class);
-	}
+	// public GoogleDrive findGoogleDrive(String name){
+	// 	return beanFactory.getBean(name, GoogleDrive.class);
+	// }
 
-	public List<GoogleDrive> findGoogleDrives(){
-		return List.copyOf(beanFactory.getBeansOfType(GoogleDrive.class).values());
-	}
+	// public List<GoogleDrive> findGoogleDrives(){
+	// 	return List.copyOf(beanFactory.getBeansOfType(GoogleDrive.class).values());
+	// }
 
-	public void registerGoogleDrive(String name, String callbackBaseUrl, Integer callbackPort) {
-		BeanReqisterer<GoogleDrive> registerer = new BeanReqisterer<>(name, GoogleDrive.class, () -> new GoogleDrive());
-		GoogleDrive googleDrive = registerer.getBean();
-		googleDrive.setName(name);
-		googleDrive.setCredentialFilePath(envVars.getGoogleDriveFilesRoot() + "/" + name);
-		googleDrive.setTokensDirectoryPath(envVars.getGoogleDriveFilesRoot() + "/" + name);
-		googleDrive.setCallbackBaseUrl(callbackBaseUrl);
-		googleDrive.setCallbackPort(callbackPort);
-		registerer.register();
-	}
+	// public void registerGoogleDrive(String name, String callbackBaseUrl, Integer callbackPort) {
+	// 	BeanReqisterer<GoogleDrive> registerer = new BeanReqisterer<>(name, GoogleDrive.class, () -> new GoogleDrive());
+	// 	GoogleDrive googleDrive = registerer.getBean();
+	// 	googleDrive.setName(name);
+	// 	googleDrive.setCredentialFilePath(envVars.getGoogleDriveFilesRoot() + "/" + name);
+	// 	googleDrive.setTokensDirectoryPath(envVars.getGoogleDriveFilesRoot() + "/" + name);
+	// 	googleDrive.setCallbackBaseUrl(callbackBaseUrl);
+	// 	googleDrive.setCallbackPort(callbackPort);
+	// 	registerer.register();
+	// }
 
 	public void registerLocalDrive(String name, String storageRoot, long capacity, long usedSize) {
 		BeanReqisterer<LocalDrive> registerer = new BeanReqisterer<>(name, LocalDrive.class, () -> new LocalDrive());
@@ -127,14 +128,14 @@ public class SpringBeanManager {
 
 	public void registerStroge(String name, StorageType type, String loc, String rootPath, String retentionPolicy, long capacity, long usedSize) {
 		if(StorageType.GDRIVE.equals(type)){
-			BeanReqisterer<Gstorage> registerer = new BeanReqisterer<>(name, Gstorage.class, () -> new Gstorage());
-			Gstorage gs = registerer.getBean();
-			gs.setName(name);
-			gs.setRootPath(rootPath);
-			gs.setGoogleDrive(beanFactory.getBean(loc, GoogleDrive.class));
-			gs.setRetentionPolicy(retentionPolicy);
-			gs.setUtil(context.getBean(FileNameUtil.class));
-			registerer.register();
+			// BeanReqisterer<Gstorage> registerer = new BeanReqisterer<>(name, Gstorage.class, () -> new Gstorage());
+			// Gstorage gs = registerer.getBean();
+			// gs.setName(name);
+			// gs.setRootPath(rootPath);
+			// gs.setGoogleDrive(beanFactory.getBean(loc, GoogleDrive.class));
+			// gs.setRetentionPolicy(retentionPolicy);
+			// gs.setUtil(context.getBean(FileNameUtil.class));
+			// registerer.register();
 		} else if (StorageType.LOCAL.equals(type)){
 			BeanReqisterer<LStorage> registerer = new BeanReqisterer<>(name, LStorage.class, () -> new LStorage());
 			LStorage ls = registerer.getBean();

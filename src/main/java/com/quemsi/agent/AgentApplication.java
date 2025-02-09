@@ -4,10 +4,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ImportRuntimeHints;
 
-import com.quemsi.agent.config.AotHints;
-
 @SpringBootApplication
-@ImportRuntimeHints(AotHints.class)
+@ImportRuntimeHints(AgentRuntimeHintsRegistrar.class)
 public class AgentApplication {
 
 	public static void main(String[] args) {
