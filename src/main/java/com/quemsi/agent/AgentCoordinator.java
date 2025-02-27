@@ -16,6 +16,7 @@ import com.quemsi.agent.api.ApiManager;
 import com.quemsi.agent.service.FlowManager;
 import com.quemsi.agent.service.GoogleDriveManager;
 import com.quemsi.agent.service.SpringBeanManager;
+import com.quemsi.commons.util.BaseRuntimeException;
 import com.quemsi.commons.util.DelayedFormatter;
 import com.quemsi.commons.util.Exceptions;
 import com.quemsi.model.dto.AgentModel;
@@ -173,6 +174,7 @@ public class AgentCoordinator {
     public class ApiCommandListener implements Runnable{
         @Override
         public void run() {
+            boolean listenNext = true;
             try{
                 AgentCommand command = apiManager.nextCommand();
                 execute(command);
@@ -180,10 +182,14 @@ public class AgentCoordinator {
                 log.debug("Unable to reach api, will try again in {} seconds", apiRetry);
                 log.trace("api error", ignore);
                 Exceptions.wrapRunnable(() -> Thread.sleep(Duration.ofSeconds(apiRetry))).run();;
+            } catch(BaseRuntimeException bre){
+                listenNext = !bre.getExtra().containsKey("exit");
             } catch(Exception e) {
                 log.error("command-execution-error", e);
             } finally {
-                vThreadExecutor.submit(this);
+                if(listenNext){
+                    vThreadExecutor.submit(this);
+                }
             }
         }
     }
