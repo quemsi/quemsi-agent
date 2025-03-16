@@ -12,6 +12,8 @@ spring:
 oauth2:
   registration:
     id: api-client              
+resource:
+  base: http://127.0.0.1
 management:
   endpoints:
     web:
@@ -20,8 +22,8 @@ management:
 mysqlbackup:
   temp-dir: tmp
 quemsi-api:
-  server-url: http://quemsi.test
-  keycloak-url: http://quemsi.test
+  server-url: http://127.0.0.1:9081
+  keycloak-url: http://127.0.0.1
   realm: quemsi
   client-id: ${CLIENT-ID}
   client-secret: ${CLIENT-SECRET}

@@ -53,6 +53,7 @@ public class AgentCoordinator {
     private ObjectMapper objectMapper;
 
     private ApiCommandListener apiCommandListener;
+    @Value("${spring.application.version}")
     private String agentVersion;
 
 	private boolean initialized;
@@ -81,7 +82,7 @@ public class AgentCoordinator {
     public void start() {
         while(!this.initialized){
             try{
-                this.agentVersion = getClass().getPackage().getImplementationVersion();
+                log.info("quemsi-agent:{}", agentVersion);
                 AgentModel model = apiManager.allModel(agentVersion);
                 log.debug("model : {}", DelayedFormatter.toDelayedString(Exceptions.wrapSupplier(() -> objectMapper.writeValueAsString(model))));
 				initialize(model);

@@ -15,8 +15,6 @@ public class AgentApplicationStartup implements ApplicationListener<ApplicationR
     
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
-        log.info("agent started : {}", "2.0.0-SNAPSHOT");
-        log.info("agent coordinator : {}", agentCoordinator);
         agentCoordinator.start();
     }
 }
