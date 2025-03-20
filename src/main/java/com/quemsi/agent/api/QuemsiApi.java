@@ -24,6 +24,9 @@ public interface QuemsiApi {
     @GetExchange("/api/agent/next-command")
     AgentCommand nextCommand(@RequestHeader(HttpHeaders.AUTHORIZATION) String token);
     
+    @PostExchange("/api/agent/initate/{flowName}")
+    FlowExecution initiate(@RequestHeader(HttpHeaders.AUTHORIZATION) String token, @PathVariable String flowName, @RequestParam Map<String, String> tags);
+    
     @PostExchange("/api/agent/flow-execution")
     FlowExecution saveFlowExecution(@RequestHeader(HttpHeaders.AUTHORIZATION) String token, @RequestBody FlowExecution execution);
     

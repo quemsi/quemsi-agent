@@ -105,6 +105,11 @@ public class ApiManager implements ApiClient{
     }
 
     @Override
+    public FlowExecution initiate(String flowName, Map<String, String> tags) {
+        return quemsiApi.initiate(this.authHeader(), flowName, tags);
+    }
+
+    @Override
     public FlowExecution saveFlowExecution(FlowExecution execution) {
         return quemsiApi.saveFlowExecution(this.authHeader(), execution);
     }

@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 // import org.springframework.scheduling.quartz.SchedulerFactoryBean;
+import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 
 import com.quemsi.agent.service.FlowManager;
 import com.quemsi.model.flow.Flow;
@@ -41,12 +42,12 @@ public class FlowConfig {
 		return new Flow();
 	}
 
-	// @Bean
-	// public SchedulerFactoryBean schedulerFactoryBean() {        
-	// 	SchedulerFactoryBean scheduler = new SchedulerFactoryBean();
-	// 	Properties quartzProperties = new Properties();     
-	// 	quartzProperties.put("org.quartz.threadPool.threadCount", "1");
-	// 	scheduler.setQuartzProperties(quartzProperties);
-	// 	return scheduler;
-	// }
+	@Bean
+	public SchedulerFactoryBean schedulerFactoryBean() {        
+		SchedulerFactoryBean scheduler = new SchedulerFactoryBean();
+		Properties quartzProperties = new Properties();     
+		quartzProperties.put("org.quartz.threadPool.threadCount", "1");
+		scheduler.setQuartzProperties(quartzProperties);
+		return scheduler;
+	}
 }

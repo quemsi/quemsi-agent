@@ -9,6 +9,7 @@ import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
 import org.quartz.TriggerKey;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean;
 
 import com.quemsi.commons.util.Exceptions;
@@ -19,7 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class TimerImpl {
-    @Setter
+    @Autowired
+	@Setter
 	private Scheduler scheduler;
 	@Setter
 	@Getter

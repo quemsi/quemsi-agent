@@ -11,21 +11,20 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.quemsi.agent.flow.TimerImpl;
+import com.quemsi.agent.flow.TimerImpl.NamedRunnable;
 import com.quemsi.commons.util.BaseRuntimeException;
 import com.quemsi.commons.util.DateUtils;
 import com.quemsi.commons.util.Exceptions;
 import com.quemsi.model.api.ApiClient;
-import com.quemsi.model.dto.DataVersion;
 import com.quemsi.model.dto.FlowDetail;
 import com.quemsi.model.dto.FlowExecution;
 import com.quemsi.model.dto.agent.onapi.NotifyError;
 import com.quemsi.model.flow.Flow;
 import com.quemsi.model.flow.Step;
-import com.quemsi.agent.flow.TimerImpl;
-import com.quemsi.agent.flow.TimerImpl.NamedRunnable;
 import com.quemsi.model.flow.factories.StepFactory;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -118,12 +117,11 @@ public class FlowManager {
 			Map<String, String> tags = Map.of("date", dateUtils.getDateString(LocalDateTime.now())
 				, "time", dateUtils.getTimeString(LocalDateTime.now()),
 				"timer", this.timerName);
-			DataVersion version = apiClient.findVersion(flow.getName(), tags);
-			//TODO: how will flow execution be persisted when trigger from timer
-			FlowExecution history = flow.execute(Optional.ofNullable(version).map(v -> v.getId()).orElse(null), tags, version.getFiles(), null);
-			if(history != null){
-                log.info("saving history {}", history);
-                history = apiClient.saveFlowExecution(history);
+			FlowExecution execution = apiClient.initiate(flow.getName(), tags);
+			FlowExecution updatedExecution = flow.execute(execution.getVersion().getId(), tags, execution.getVersion().getFiles(), execution.getId());
+			if(updatedExecution != null){
+                log.info("saving execution {}", updatedExecution);
+                updatedExecution = apiClient.saveFlowExecution(updatedExecution);
             }
 		}
 	}

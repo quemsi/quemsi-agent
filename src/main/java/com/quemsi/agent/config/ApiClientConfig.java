@@ -72,14 +72,6 @@ public class ApiClientConfig {
         return webClient;
     }
 
-    // @Bean
-    // public ReactorClientHttpConnector clientConnector(){
-    //     HttpClient httpClient = HttpClient.create()
-    //         .responseTimeout(Duration.ofSeconds(30)); 
-    //     ReactorClientHttpConnector connector = new ReactorClientHttpConnector(httpClient);
-    //     return connector;
-    // }
-
     @Bean
     public TokenApi keycloakTokenApi(HttpServiceProxyFactory keycloakServiceProxyFactory){
         return keycloakServiceProxyFactory.createClient(TokenApi.class);

@@ -10,7 +10,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
-import com.quemsi.agent.config.EnvironmentVars;
 import com.quemsi.agent.flow.TimerImpl;
 // import com.quemsi.agent.flow.gdrive.GoogleDrive;
 // import com.quemsi.agent.flow.gdrive.Gstorage;
@@ -33,8 +32,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SpringBeanManager {
 	@Autowired
-	private EnvironmentVars envVars;
-	@Autowired
 	private DefaultListableBeanFactory beanFactory;
 	@Autowired
 	protected ApplicationContext context;
@@ -54,11 +51,10 @@ public class SpringBeanManager {
 		TimerImpl t = registerer.getBean();
 		t.setName(name);  
 		t.setSchedule(schedule);
-		registerer.register();
+		registerer.register(true);
 		if(!registerer.isNew()){
 			t.reset();
 		}else{
-			// t.setScheduler(context.getBean(Scheduler.class));
 			t.init();
 		}
 		return t;
@@ -172,11 +168,16 @@ public class SpringBeanManager {
 			}
 			return bean;
 		}
-		public void register(){
+		public void register(boolean autowire){
 			if(newBean){
-				// beanFactory.autowireBean(bean);
+				if(autowire){
+					beanFactory.autowireBean(bean);
+				}
 				beanFactory.registerSingleton(name, bean);
 			}
+		}
+		public void register(){
+			register(false);
 		}
 		public boolean isNew(){
 			return newBean;
