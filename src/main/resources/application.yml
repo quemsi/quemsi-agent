@@ -20,8 +20,8 @@ management:
 mysqlbackup:
   temp-dir: tmp
 quemsi-api:
-  server-url: http://quemsi.test
-  keycloak-url: http://quemsi.test
+  server-url: https://quemsi.com
+  keycloak-url: https://quemsi.com
   realm: quemsi
   client-id: ${CLIENT-ID}
   client-secret: ${CLIENT-SECRET}
