@@ -5,6 +5,7 @@ import org.springframework.aot.hint.RuntimeHints;
 import org.springframework.aot.hint.RuntimeHintsRegistrar;
 import org.springframework.context.annotation.Configuration;
 
+import com.quemsi.agent.flow.TimerImpl;
 import com.quemsi.commons.util.FileNameUtil;
 import com.quemsi.model.dto.AgentError;
 import com.quemsi.model.dto.AgentModel;
@@ -43,6 +44,7 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             // .registerType(GoogleClientSecrets.class, MemberCategory.values()).registerType(GoogleClientSecrets.Details.class, MemberCategory.values())
             // .registerType(Gstorage.class, MemberCategory.values())
             .registerType(FileNameUtil.class, MemberCategory.values())
+            .registerType(TimerImpl.class, MemberCategory.values())
             ;
         hints.serialization()
             .registerType(AgentError.class)
