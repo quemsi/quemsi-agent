@@ -160,6 +160,7 @@
 				<version>3.0.1</version>
 				<configuration>
 					<tagNameFormat>version-@{project.version}</tagNameFormat>
+					<releaseProfiles>native</releaseProfiles>
 				</configuration>
 			</plugin>
 		</plugins>
