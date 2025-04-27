@@ -9,7 +9,7 @@
 	</parent>
 	<groupId>com.quemsi</groupId>
 	<artifactId>quemsi-agent</artifactId>
-	<version>2.2.6-SNAPSHOT</version>
+	<version>2.2.7-SNAPSHOT</version>
 	<name>quemsi-agent</name>
 	<description>quemsi agent</description>
 	<properties>
@@ -21,7 +21,7 @@
 		<dependency>
 			<groupId>com.quemsi</groupId>
 			<artifactId>quemsi-model</artifactId>
-			<version>2.2.5</version>
+			<version>2.2.7-SNAPSHOT</version>
 			<exclusions>
 				<exclusion>
 					<groupId>mysql</groupId>
