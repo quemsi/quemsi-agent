@@ -1,20 +1,16 @@
 package com.quemsi.agent.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.stereotype.Service;
-
-import com.quemsi.model.api.ApiClient;
 
 @Service
 
 public class GoogleDriveManager {
-	@Autowired
-	private DefaultListableBeanFactory beanFactory;
-	@Autowired
-	private ApiClient apiClient;
-	@Autowired
-	private SpringBeanManager springBeanManager;
+	// @Autowired
+	// private DefaultListableBeanFactory beanFactory;
+	// @Autowired
+	// private ApiClient apiClient;
+	// @Autowired
+	// private SpringBeanManager springBeanManager;
 
 	public void connectToDrives() {
 		// springBeanManager.findGoogleDrives().forEach(Exceptions.<GoogleDrive, Exception>wrapConsumer(gd -> {
