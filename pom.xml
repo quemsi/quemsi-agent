@@ -112,6 +112,7 @@
 		</repository>
 	</distributionManagement>
 	<build>
+		<finalName>${project.artifactId}</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.graalvm.buildtools</groupId>
