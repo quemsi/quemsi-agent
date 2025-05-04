@@ -21,7 +21,7 @@
 		<dependency>
 			<groupId>com.quemsi</groupId>
 			<artifactId>quemsi-model</artifactId>
-			<version>2.2.7</version>
+			<version>2.2.8-SNAPSHOT</version>
 			<exclusions>
 				<exclusion>
 					<groupId>mysql</groupId>
@@ -122,7 +122,7 @@
 						<version>0.3.14</version>
 					</metadataRepository>
 					<buildArgs>
-						--verbose -g
+						--verbose --initialize-at-run-time=sun.net.dns.ResolverConfigurationImpl
 					</buildArgs>
 				</configuration>
 			</plugin>
