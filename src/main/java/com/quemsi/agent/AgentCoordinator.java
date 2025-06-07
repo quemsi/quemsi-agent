@@ -12,6 +12,7 @@ import org.springframework.web.reactive.function.client.WebClientRequestExceptio
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.quemsi.agent.api.ApiManager;
+import com.quemsi.agent.service.CommandExecutor;
 // import com.quemsi.agent.flow.gdrive.GoogleDrive;
 import com.quemsi.agent.service.FlowManager;
 import com.quemsi.agent.service.GoogleDriveManager;
@@ -26,6 +27,7 @@ import com.quemsi.model.dto.agent.DelayAgentCommand;
 import com.quemsi.model.dto.agent.ExecuteFlow;
 import com.quemsi.model.dto.agent.GoogleDriveConnect;
 import com.quemsi.model.dto.agent.RetentionExecute;
+import com.quemsi.model.dto.agent.TestDatasource;
 import com.quemsi.model.dto.agent.UpdateAgentModel;
 import com.quemsi.model.dto.agent.VersionDeleteRequest;
 import com.quemsi.model.dto.agent.onapi.RetentionCompleted;
@@ -51,6 +53,8 @@ public class AgentCoordinator {
     private GoogleDriveManager manager;
     @Autowired
     private ObjectMapper objectMapper;
+    @Autowired
+    private CommandExecutor commandExecutor;
 
     private ApiCommandListener apiCommandListener;
     @Value("${spring.application.version}")
@@ -113,62 +117,66 @@ public class AgentCoordinator {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
-        } else if(command instanceof ExecuteFlow executeFlow){
-            log.info("executing flow {}", executeFlow);
-            Flow flow = flowManager.findByName(executeFlow.getFlowName()).orElseThrow(Exceptions.notFound("invalid-flow-name").withExtra("flowName", executeFlow.getFlowName()).supplier());
-            FlowExecution execution = flow.execute(executeFlow.getVersionId(), executeFlow.getTags(), executeFlow.getFiles(), executeFlow.getFlowExecutionId());
-            if(execution != null){
-                log.info("saving history {}", execution);
-                execution = apiManager.saveFlowExecution(execution);
+        } else {
+            if(command instanceof ExecuteFlow executeFlow){
+                log.info("executing flow {}", executeFlow);
+                Flow flow = flowManager.findByName(executeFlow.getFlowName()).orElseThrow(Exceptions.notFound("invalid-flow-name").withExtra("flowName", executeFlow.getFlowName()).supplier());
+                FlowExecution execution = flow.execute(executeFlow.getVersionId(), executeFlow.getTags(), executeFlow.getFiles(), executeFlow.getFlowExecutionId());
+                if(execution != null){
+                    log.info("saving history {}", execution);
+                    execution = apiManager.saveFlowExecution(execution);
+                }
+            } else if(command instanceof GoogleDriveConnect gDriveConnect) {
+                log.info("connecting google drive {}", gDriveConnect);
+                // GoogleDrive drive = beanManager.findGoogleDrive(gDriveConnect.getDriveName());
+                // if(gDriveConnect.isConnect() != drive.isConnected()){
+                //     if(drive.isConnected()){
+                //         drive.clearConnection();
+                //     } else {
+                //         try {
+                //             drive.connectToDrive();
+                //         } catch (GeneralSecurityException | IOException e) {
+                //             throw Exceptions.server("google-drive-error").withCause(e).get();
+                //         }
+                //     }
+                // }
+                // apiManager.send(UpdateGoogleDrive.builder().driveName(drive.getName()).connected(drive.isConnected()).build());
+            } else if(command instanceof UpdateAgentModel updatedModel){
+                log.info("uupdating model {}", updatedModel);
+                initialize(updatedModel.getUpdatedModel());
+            } else if(command instanceof RetentionExecute retentionExecute){
+                log.info("executing retention {}", retentionExecute);
+                Storage storage = beanManager.findStorage(retentionExecute.getStorageName());
+                List<Long> fileIds = new LinkedList<>();
+                retentionExecute.getFiles().forEach(f -> {
+                    try{
+                        storage.deleteFile(f.getDir(), f.getName());
+                        fileIds.add(f.getId());
+                    }catch(IOException ex){
+                        log.debug("ignored", ex);
+                    }
+                });
+                RetentionCompleted retentionCompleted = RetentionCompleted.builder().storageId(retentionExecute.getStorageId()).storageName(retentionExecute.getStorageName()).files(fileIds).build();
+                log.info("sending retention complete {}", retentionCompleted);
+                apiManager.send(retentionCompleted);
+            } else if(command instanceof VersionDeleteRequest versionDeleteRequest){
+                Storage storage = beanManager.findStorage(versionDeleteRequest.getVersion().getStorage().getName());
+                versionDeleteRequest.getVersion().getFiles().forEach(f -> {
+                    try{
+                        storage.deleteFile(f.getDir(), f.getName());
+                    }catch(IOException ex){
+                        log.debug("ignored", ex);
+                    }
+                });
+                VersionDeleted versionDeleted = VersionDeleted.builder().versionId(versionDeleteRequest.getVersion().getId()).build();
+                log.info("sending version deleted {}", versionDeleted);
+                apiManager.send(versionDeleted);
+            } else if(command instanceof TestDatasource testDatasource){
+                commandExecutor.execute(testDatasource);
             }
-        } else if(command instanceof GoogleDriveConnect gDriveConnect) {
-            log.info("connecting google drive {}", gDriveConnect);
-            // GoogleDrive drive = beanManager.findGoogleDrive(gDriveConnect.getDriveName());
-            // if(gDriveConnect.isConnect() != drive.isConnected()){
-            //     if(drive.isConnected()){
-            //         drive.clearConnection();
-            //     } else {
-            //         try {
-            //             drive.connectToDrive();
-            //         } catch (GeneralSecurityException | IOException e) {
-            //             throw Exceptions.server("google-drive-error").withCause(e).get();
-            //         }
-            //     }
-            // }
-            // apiManager.send(UpdateGoogleDrive.builder().driveName(drive.getName()).connected(drive.isConnected()).build());
-        } else if(command instanceof UpdateAgentModel updatedModel){
-            log.info("uupdating model {}", updatedModel);
-            initialize(updatedModel.getUpdatedModel());
-        } else if(command instanceof RetentionExecute retentionExecute){
-            log.info("executing retention {}", retentionExecute);
-            Storage storage = beanManager.findStorage(retentionExecute.getStorageName());
-            List<Long> fileIds = new LinkedList<>();
-            retentionExecute.getFiles().forEach(f -> {
-                try{
-                    storage.deleteFile(f.getDir(), f.getName());
-                    fileIds.add(f.getId());
-                }catch(IOException ex){
-                    log.debug("ignored", ex);
-                }
-            });
-            RetentionCompleted retentionCompleted = RetentionCompleted.builder().storageId(retentionExecute.getStorageId()).storageName(retentionExecute.getStorageName()).files(fileIds).build();
-            log.info("sending retention complete {}", retentionCompleted);
-            apiManager.send(retentionCompleted);
-        } else if(command instanceof VersionDeleteRequest versionDeleteRequest){
-            Storage storage = beanManager.findStorage(versionDeleteRequest.getVersion().getStorage().getName());
-            versionDeleteRequest.getVersion().getFiles().forEach(f -> {
-                try{
-                    storage.deleteFile(f.getDir(), f.getName());
-                }catch(IOException ex){
-                    log.debug("ignored", ex);
-                }
-            });
-            VersionDeleted versionDeleted = VersionDeleted.builder().versionId(versionDeleteRequest.getVersion().getId()).build();
-            log.info("sending version deleted {}", versionDeleted);
-            apiManager.send(versionDeleted);
-        }
-        else{
-            throw Exceptions.server("not-implemented").withExtra("commandName", command.getName()).get();
+            else{
+                throw Exceptions.server("not-implemented").withExtra("commandName", command.getName()).get();
+            }
         }
     }
 				

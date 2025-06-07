@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.quemsi.agent.AgentCoordinator;
+import com.quemsi.agent.service.CommandExecutor;
 import com.quemsi.commons.util.ApacheDurationDeserializer;
 import com.quemsi.commons.util.ApacheDurationSerializer;
 import com.quemsi.commons.util.DateUtils;
@@ -53,6 +54,11 @@ public class GeneralConfig {
 		return new AgentCoordinator();
 	}
 	
+	@Bean
+	public CommandExecutor commandExecutor(){
+		return new CommandExecutor();
+	}
+
 	@Bean
 	public EnvironmentVars environmentVars() {
 		return new EnvironmentVars();
