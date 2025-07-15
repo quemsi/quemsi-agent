@@ -5,7 +5,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -17,7 +16,6 @@ import com.quemsi.commons.util.DateUtils;
 import com.quemsi.commons.util.FileNameUtil;
 import com.quemsi.commons.util.JsonUtils;
 import com.quemsi.model.flow.db.sql.SqlParser;
-import com.quemsi.model.flow.in.MySqlBackupProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
@@ -64,12 +62,6 @@ public class GeneralConfig {
 		return new EnvironmentVars();
 	}
     
-	@Bean
-	@ConfigurationProperties(prefix = "mysqlbackup")
-	public MySqlBackupProperties mySqlBackupProperties(){
-		return new MySqlBackupProperties();
-	}
-
     @Bean(destroyMethod = "shutdown")
 	public ExecutorService vThreadExecutor(){
 		return Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("command-executor-service").factory());
