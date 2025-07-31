@@ -53,6 +53,9 @@ public class CommandExecutor {
                 } else {
                     result.setMessage("connection-unreachable");
                 }
+                if(conn != null && !conn.isClosed()){
+                    conn.close();
+                }
             }
         } catch(SQLException sex){
             log.error("datasource-test-failed", sex);

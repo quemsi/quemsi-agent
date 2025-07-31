@@ -76,7 +76,7 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(NotifyError.class)
             .registerType(RetentionCompleted.class)
             .registerType(UpdateGoogleDrive.class)
-
+            
             // .registerType(TypeReference.of(GoogleClientSecrets.class)).registerType(TypeReference.of(GoogleClientSecrets.Details.class))
             ;
     }

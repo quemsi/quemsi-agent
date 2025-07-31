@@ -18,10 +18,13 @@ import com.quemsi.commons.util.Exceptions;
 import com.quemsi.commons.util.FileNameUtil;
 import com.quemsi.commons.util.StringUtils;
 import com.quemsi.model.api.ApiClient;
+import com.quemsi.model.dto.DatasourceType;
 import com.quemsi.model.dto.StorageType;
 import com.quemsi.model.dto.agent.onapi.NotifyError;
 import com.quemsi.model.flow.Timer;
+import com.quemsi.model.flow.db.DataSourceFactory;
 import com.quemsi.model.flow.db.mysql.DataSourceFactoryMySql;
+import com.quemsi.model.flow.db.postgres.DatasourceFactoryPostgres;
 import com.quemsi.model.flow.out.LStorage;
 import com.quemsi.model.flow.out.LocalDrive;
 import com.quemsi.model.flow.out.Storage;
@@ -60,27 +63,34 @@ public class SpringBeanManager {
 		return t;
 	}
 	
-	public void registerDatasource(String name, String dbName, String url, String username, String password, boolean useEnvVar) {
-		BeanReqisterer<DataSourceFactoryMySql> registerer = new BeanReqisterer<>(name, DataSourceFactoryMySql.class, () -> new DataSourceFactoryMySql());
-		DataSourceFactoryMySql mysql = registerer.getBean();
-		mysql.setName(name);
-		mysql.setDbName(dbName);
-		mysql.setUrl(url);
+	public void registerDatasource(DatasourceType type, String name, String dbName, String url, String username, String password, boolean useEnvVar) {
+		BeanReqisterer<? extends DataSourceFactory> registerer = null;
+		if(DatasourceType.MYSQL.equals(type)){
+			registerer = new BeanReqisterer<DataSourceFactoryMySql>(name, DataSourceFactoryMySql.class, () -> new DataSourceFactoryMySql());
+		} else if(DatasourceType.POSTGRES.equals(type)){
+			registerer = new BeanReqisterer<>(name, DatasourceFactoryPostgres.class, ()-> new DatasourceFactoryPostgres());
+		} else {
+			throw Exceptions.server("not-implemented-datasource-type").withExtra("type", type).withExtra("name", name).get();
+		}
+		DataSourceFactory dsFactory = registerer.getBean();
+		dsFactory.setName(name);
+		dsFactory.setDbName(dbName);
+		dsFactory.setUrl(url);
 		if(useEnvVar){
 			Environment environment = context.getEnvironment();
 			log.debug("{} var value : {}", "MYSQLUSER", environment.getProperty("MYSQLUSER"));
 			log.debug("{} var value : {}", "MYSQLPASS", environment.getProperty("MYSQLPASS"));
-			mysql.setUsername(environment.getProperty(username));
-			mysql.setPassword(environment.getProperty(password));
+			dsFactory.setUsername(environment.getProperty(username));
+			dsFactory.setPassword(environment.getProperty(password));
 			
-			if(StringUtils.isEmptyOrNull(mysql.getUsername()) || StringUtils.isEmptyOrNull(mysql.getPassword())){
+			if(StringUtils.isEmptyOrNull(dsFactory.getUsername()) || StringUtils.isEmptyOrNull(dsFactory.getPassword())){
 				BaseRuntimeException ex = Exceptions.badRequest("environment-vars-not-set").withExtra("vars", username + "," + password).get();
 				apiClient.send(NotifyError.builder().entityType("datasource").entityName(name).exception(ex).build());
 				ex.printStackTrace();
 			}
 		}else{
-			mysql.setUsername(username);
-			mysql.setPassword(password);
+			dsFactory.setUsername(username);
+			dsFactory.setPassword(password);
 		}
 		registerer.register();
 	}
