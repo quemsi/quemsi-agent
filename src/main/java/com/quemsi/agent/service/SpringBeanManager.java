@@ -25,6 +25,7 @@ import com.quemsi.model.flow.Timer;
 import com.quemsi.model.flow.db.DataSourceFactory;
 import com.quemsi.model.flow.db.mysql.DataSourceFactoryMySql;
 import com.quemsi.model.flow.db.postgres.DatasourceFactoryPostgres;
+import com.quemsi.model.flow.db.sqlserver.DatasourceFactorySqlserver;
 import com.quemsi.model.flow.out.LStorage;
 import com.quemsi.model.flow.out.LocalDrive;
 import com.quemsi.model.flow.out.Storage;
@@ -69,6 +70,8 @@ public class SpringBeanManager {
 			registerer = new BeanReqisterer<DataSourceFactoryMySql>(name, DataSourceFactoryMySql.class, () -> new DataSourceFactoryMySql());
 		} else if(DatasourceType.POSTGRES.equals(type)){
 			registerer = new BeanReqisterer<>(name, DatasourceFactoryPostgres.class, ()-> new DatasourceFactoryPostgres());
+		} else if(DatasourceType.SQLSERVER.equals(type)){
+			registerer = new BeanReqisterer<>(name, DatasourceFactorySqlserver.class, ()-> new DatasourceFactorySqlserver());
 		} else {
 			throw Exceptions.server("not-implemented-datasource-type").withExtra("type", type).withExtra("name", name).get();
 		}
