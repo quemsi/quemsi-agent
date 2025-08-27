@@ -13,9 +13,7 @@ import org.springframework.web.reactive.function.client.WebClientRequestExceptio
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.quemsi.agent.api.ApiManager;
 import com.quemsi.agent.service.CommandExecutor;
-// import com.quemsi.agent.flow.gdrive.GoogleDrive;
 import com.quemsi.agent.service.FlowManager;
-import com.quemsi.agent.service.GoogleDriveManager;
 import com.quemsi.agent.service.SpringBeanManager;
 import com.quemsi.commons.util.BaseRuntimeException;
 import com.quemsi.commons.util.DelayedFormatter;
@@ -25,7 +23,6 @@ import com.quemsi.model.dto.FlowExecution;
 import com.quemsi.model.dto.agent.AgentCommand;
 import com.quemsi.model.dto.agent.DelayAgentCommand;
 import com.quemsi.model.dto.agent.ExecuteFlow;
-import com.quemsi.model.dto.agent.GoogleDriveConnect;
 import com.quemsi.model.dto.agent.RetentionExecute;
 import com.quemsi.model.dto.agent.TestDatasource;
 import com.quemsi.model.dto.agent.UpdateAgentModel;
@@ -50,8 +47,6 @@ public class AgentCoordinator {
     @Autowired
     private ExecutorService vThreadExecutor;
     @Autowired
-    private GoogleDriveManager manager;
-    @Autowired
     private ObjectMapper objectMapper;
     @Autowired
     private CommandExecutor commandExecutor;
@@ -69,11 +64,11 @@ public class AgentCoordinator {
         if(model.getDatasources() != null){
             model.getDatasources().forEach(ds -> beanManager.registerDatasource(ds.getType(), ds.getName(), ds.getDbName(), ds.getUrl(), ds.getUsername(), ds.getPassword(), ds.isUseEnvVar()));
         }
-        if(model.getGoogleDrives() != null){
-            // model.getGoogleDrives().forEach(t -> beanManager.registerGoogleDrive(t.getName(), t.getCallbackBaseUrl(), t.getCallbackPort()));
-        }
         if(model.getLocalDrives() != null){
             model.getLocalDrives().forEach(t -> beanManager.registerLocalDrive(t.getName(), t.getStorageRoot(), t.getCapacity(), t.getUsedSize()));
+        }
+        if(model.getAzureBlobDrives() != null){
+            model.getAzureBlobDrives().forEach(a -> beanManager.registerAzureBlobDrive(a.getName(), a.getAccountName(), a.getAccountKey(), a.isUseEnvVar(), a.getStorageRoot(), a.getCapacity(), a.getUsedSize()));
         }
         if(model.getStorages() != null){
             model.getStorages().forEach(s -> beanManager.registerStroge(s.getName(), s.getType(), s.getLoc(), s.getRootPath(), s.getRetentionPolicy(), s.getCapacity(), s.getUsedSize()));
@@ -90,15 +85,6 @@ public class AgentCoordinator {
                 AgentModel model = apiManager.allModel(agentVersion);
                 log.debug("model : {}", DelayedFormatter.toDelayedString(Exceptions.wrapSupplier(() -> objectMapper.writeValueAsString(model))));
 				initialize(model);
-                //TODO: to be fixed
-                /*
-                String googleCredentialJson = apiManager.googleCredential();
-                BufferedWriter writer = new BufferedWriter(Files.newWriter(new File("credentials.json"), StandardCharsets.UTF_8));
-                writer.write(googleCredentialJson);
-                writer.close();
-                log.info("will initialize googledrives");
-                vThreadExecutor.execute(new InitGoogleDrives());
-                 */
                 initialized = true;
                 log.info("initialization completed");
                 apiCommandListener = new ApiCommandListener();
@@ -126,21 +112,6 @@ public class AgentCoordinator {
                     log.info("saving history {}", execution);
                     execution = apiManager.saveFlowExecution(execution);
                 }
-            } else if(command instanceof GoogleDriveConnect gDriveConnect) {
-                log.info("connecting google drive {}", gDriveConnect);
-                // GoogleDrive drive = beanManager.findGoogleDrive(gDriveConnect.getDriveName());
-                // if(gDriveConnect.isConnect() != drive.isConnected()){
-                //     if(drive.isConnected()){
-                //         drive.clearConnection();
-                //     } else {
-                //         try {
-                //             drive.connectToDrive();
-                //         } catch (GeneralSecurityException | IOException e) {
-                //             throw Exceptions.server("google-drive-error").withCause(e).get();
-                //         }
-                //     }
-                // }
-                // apiManager.send(UpdateGoogleDrive.builder().driveName(drive.getName()).connected(drive.isConnected()).build());
             } else if(command instanceof UpdateAgentModel updatedModel){
                 log.info("uupdating model {}", updatedModel);
                 initialize(updatedModel.getUpdatedModel());
@@ -199,26 +170,6 @@ public class AgentCoordinator {
                 if(listenNext){
                     vThreadExecutor.submit(this);
                 }
-            }
-        }
-    }
-
-    public class InitGoogleDrives implements Runnable{
-        @Override
-        public void run() {
-            manager.connectToDrives();
-        }
-    }
-
-    public class ConnectToGoogleDrive implements Runnable{
-        // private GoogleDrive googleDrive;
-
-        @Override
-        public void run() {
-            try{
-                // googleDrive.connectToDrive();
-            } catch (Exception ex){
-                // apiManager.send(NotifyError.builder().entityName(googleDrive.getName()).entityType(GoogleDrive.class.getSimpleName()).exception(Exceptions.server("unable-to-connect-drive").withCause(ex).get()).build());
             }
         }
     }

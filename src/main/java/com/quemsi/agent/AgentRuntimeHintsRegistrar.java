@@ -27,13 +27,10 @@ import com.quemsi.model.dto.TagType;
 import com.quemsi.model.dto.agent.AgentCommand;
 import com.quemsi.model.dto.agent.DelayAgentCommand;
 import com.quemsi.model.dto.agent.ExecuteFlow;
-import com.quemsi.model.dto.agent.GoogleDriveConnect;
 import com.quemsi.model.dto.agent.RetentionExecute;
 import com.quemsi.model.dto.agent.UpdateAgentModel;
 import com.quemsi.model.dto.agent.onapi.NotifyError;
 import com.quemsi.model.dto.agent.onapi.RetentionCompleted;
-import com.quemsi.model.dto.agent.onapi.UpdateGoogleDrive;
-// import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 
 @Configuration
 public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
@@ -41,15 +38,13 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
     @Override
     public void registerHints(RuntimeHints hints, ClassLoader classLoader) {
         hints.reflection()
-            // .registerType(GoogleClientSecrets.class, MemberCategory.values()).registerType(GoogleClientSecrets.Details.class, MemberCategory.values())
-            // .registerType(Gstorage.class, MemberCategory.values())
             .registerType(FileNameUtil.class, MemberCategory.values())
             .registerType(TimerImpl.class, MemberCategory.values())
             ;
         hints.serialization()
             .registerType(AgentError.class)
             .registerType(AgentModel.class)
-                .registerType(AgentModel.Datasource.class).registerType(AgentModel.GoogleDrive.class).registerType(AgentModel.LocalDrive.class).registerType(AgentModel.Storage.class).registerType(AgentModel.Timer.class)
+                .registerType(AgentModel.Datasource.class).registerType(AgentModel.LocalDrive.class).registerType(AgentModel.Storage.class).registerType(AgentModel.Timer.class).registerType(AgentModel.AzureBlobDrive.class)
             .registerType(DataFile.class)
             .registerType(DataFlows.class).registerType(DataFlows.FlowSummary.class)
             .registerType(DataGroup.class)
@@ -69,15 +64,11 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(AgentCommand.class)
             .registerType(DelayAgentCommand.class)
             .registerType(ExecuteFlow.class)
-            .registerType(GoogleDriveConnect.class)
             .registerType(RetentionExecute.class).registerType(RetentionExecute.FileInfo.class)
             .registerType(UpdateAgentModel.class)
 
             .registerType(NotifyError.class)
             .registerType(RetentionCompleted.class)
-            .registerType(UpdateGoogleDrive.class)
-            
-            // .registerType(TypeReference.of(GoogleClientSecrets.class)).registerType(TypeReference.of(GoogleClientSecrets.Details.class))
             ;
     }
 

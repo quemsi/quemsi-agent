@@ -3,7 +3,6 @@ package com.quemsi.agent.service;
 import java.util.List;
 import java.util.function.Supplier;
 
-// import org.quartz.Scheduler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -11,8 +10,6 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 import com.quemsi.agent.flow.TimerImpl;
-// import com.quemsi.agent.flow.gdrive.GoogleDrive;
-// import com.quemsi.agent.flow.gdrive.Gstorage;
 import com.quemsi.commons.util.BaseRuntimeException;
 import com.quemsi.commons.util.Exceptions;
 import com.quemsi.commons.util.FileNameUtil;
@@ -26,6 +23,8 @@ import com.quemsi.model.flow.db.DataSourceFactory;
 import com.quemsi.model.flow.db.mysql.DataSourceFactoryMySql;
 import com.quemsi.model.flow.db.postgres.DatasourceFactoryPostgres;
 import com.quemsi.model.flow.db.sqlserver.DatasourceFactorySqlserver;
+import com.quemsi.model.flow.out.ABStorage;
+import com.quemsi.model.flow.out.AzureBlobDrive;
 import com.quemsi.model.flow.out.LStorage;
 import com.quemsi.model.flow.out.LocalDrive;
 import com.quemsi.model.flow.out.Storage;
@@ -98,32 +97,36 @@ public class SpringBeanManager {
 		registerer.register();
 	}
 	
-	// public GoogleDrive findGoogleDrive(String name){
-	// 	return beanFactory.getBean(name, GoogleDrive.class);
-	// }
-
-	// public List<GoogleDrive> findGoogleDrives(){
-	// 	return List.copyOf(beanFactory.getBeansOfType(GoogleDrive.class).values());
-	// }
-
-	// public void registerGoogleDrive(String name, String callbackBaseUrl, Integer callbackPort) {
-	// 	BeanReqisterer<GoogleDrive> registerer = new BeanReqisterer<>(name, GoogleDrive.class, () -> new GoogleDrive());
-	// 	GoogleDrive googleDrive = registerer.getBean();
-	// 	googleDrive.setName(name);
-	// 	googleDrive.setCredentialFilePath(envVars.getGoogleDriveFilesRoot() + "/" + name);
-	// 	googleDrive.setTokensDirectoryPath(envVars.getGoogleDriveFilesRoot() + "/" + name);
-	// 	googleDrive.setCallbackBaseUrl(callbackBaseUrl);
-	// 	googleDrive.setCallbackPort(callbackPort);
-	// 	registerer.register();
-	// }
-
-	public void registerLocalDrive(String name, String storageRoot, long capacity, long usedSize) {
+	public void registerLocalDrive(String name, String storageRoot, Long capacity, Long usedSize) {
 		BeanReqisterer<LocalDrive> registerer = new BeanReqisterer<>(name, LocalDrive.class, () -> new LocalDrive());
 		LocalDrive localDrive = registerer.getBean();
 		localDrive.setName(name);
 		localDrive.setStorageRoot(storageRoot);
 		localDrive.setCapacity(capacity);
 		localDrive.setUsedSize(usedSize);
+		registerer.register();
+	}
+
+	public void registerAzureBlobDrive(String name, String accountName, String accountKey, boolean useEnvVar, String storageRoot, Long capacity, Long usedSize) {
+		BeanReqisterer<AzureBlobDrive> registerer = new BeanReqisterer<>(name, AzureBlobDrive.class, () -> new AzureBlobDrive());
+		AzureBlobDrive azureBlobDrive = registerer.getBean();
+		azureBlobDrive.setName(name);
+		azureBlobDrive.setAccountName(accountName);
+		if(useEnvVar){
+			Environment environment = context.getEnvironment();
+			log.debug("{} var value : {}", accountKey, environment.getProperty(accountKey));
+			azureBlobDrive.setAccountKey(environment.getProperty(accountKey));
+			if(StringUtils.isEmptyOrNull(azureBlobDrive.getAccountKey())){
+				BaseRuntimeException ex = Exceptions.badRequest("environment-vars-not-set").withExtra("vars", accountKey).get();
+				apiClient.send(NotifyError.builder().entityType("azure-blob-storage").entityName(name).exception(ex).build());
+				ex.printStackTrace();
+			}
+		}else{
+			azureBlobDrive.setAccountKey(accountKey);
+		}
+		azureBlobDrive.setStorageRoot(storageRoot);
+		azureBlobDrive.setCapacity(capacity);
+		azureBlobDrive.setUsedSize(usedSize);
 		registerer.register();
 	}
 
@@ -136,20 +139,22 @@ public class SpringBeanManager {
 	}
 
 	public void registerStroge(String name, StorageType type, String loc, String rootPath, String retentionPolicy, long capacity, long usedSize) {
-		if(StorageType.GDRIVE.equals(type)){
-			// BeanReqisterer<Gstorage> registerer = new BeanReqisterer<>(name, Gstorage.class, () -> new Gstorage());
-			// Gstorage gs = registerer.getBean();
-			// gs.setName(name);
-			// gs.setRootPath(rootPath);
-			// gs.setGoogleDrive(beanFactory.getBean(loc, GoogleDrive.class));
-			// gs.setRetentionPolicy(retentionPolicy);
-			// gs.setUtil(context.getBean(FileNameUtil.class));
-			// registerer.register();
-		} else if (StorageType.LOCAL.equals(type)){
+		if (StorageType.LOCAL.equals(type)){
 			BeanReqisterer<LStorage> registerer = new BeanReqisterer<>(name, LStorage.class, () -> new LStorage());
 			LStorage ls = registerer.getBean();
 			ls.setName(name);
 			ls.setLocalDrive(beanFactory.getBean(loc, LocalDrive.class));
+			ls.setRootPath(rootPath);
+			ls.setRetentionPolicy(retentionPolicy);
+			ls.setUsedSize(usedSize);
+			ls.setCapacity(capacity);
+			ls.setUtil(context.getBean(FileNameUtil.class));
+			registerer.register();
+		} else if (StorageType.AZUREBLOB.equals(type)){
+			BeanReqisterer<ABStorage> registerer = new BeanReqisterer<>(name, ABStorage.class, () -> new ABStorage());
+			ABStorage ls = registerer.getBean();
+			ls.setName(name);
+			ls.setAzureBlobDrive(beanFactory.getBean(loc, AzureBlobDrive.class));
 			ls.setRootPath(rootPath);
 			ls.setRetentionPolicy(retentionPolicy);
 			ls.setUsedSize(usedSize);
