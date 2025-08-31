@@ -154,7 +154,9 @@ public class SpringBeanManager {
 			BeanReqisterer<ABStorage> registerer = new BeanReqisterer<>(name, ABStorage.class, () -> new ABStorage());
 			ABStorage ls = registerer.getBean();
 			ls.setName(name);
-			ls.setAzureBlobDrive(beanFactory.getBean(loc, AzureBlobDrive.class));
+			AzureBlobDrive azureDrive = beanFactory.getBean(loc, AzureBlobDrive.class);
+			ls.setAzureBlobDrive(azureDrive);
+			ls.setUnderlyingStorage(new AzureBlobStorage(azureDrive));
 			ls.setRootPath(rootPath);
 			ls.setRetentionPolicy(retentionPolicy);
 			ls.setUsedSize(usedSize);
