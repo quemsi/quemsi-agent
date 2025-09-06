@@ -18,7 +18,6 @@ import com.quemsi.model.dto.DataVersionSummary;
 import com.quemsi.model.dto.DatasourceType;
 import com.quemsi.model.dto.FlowDetail;
 import com.quemsi.model.dto.FlowExecutionStatus;
-import com.quemsi.model.dto.FlowHistory;
 import com.quemsi.model.dto.NamedEntityReference;
 import com.quemsi.model.dto.ObjectReference;
 import com.quemsi.model.dto.StorageType;
@@ -53,7 +52,6 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(DataVersionSummary.class)
             .registerType(DatasourceType.class)
             .registerType(FlowDetail.class)
-            .registerType(FlowHistory.class)
             .registerType(FlowExecutionStatus.class)
             .registerType(NamedEntityReference.class)
             .registerType(ObjectReference.class)

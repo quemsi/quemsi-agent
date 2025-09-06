@@ -6,6 +6,7 @@ import java.util.Map;
 
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.common.StorageSharedKeyCredential;
+import com.quemsi.commons.util.BaseRuntimeException;
 import com.quemsi.commons.util.Exceptions;
 import com.quemsi.model.dto.DataFile;
 import com.quemsi.model.flow.DataPackage;
@@ -191,9 +192,10 @@ public class AzureBlobStorage implements Storage{
                 // Create a DataPackage from the blob
                 return new DataPackageBlob(blobClient, versionedFileName, properties.getBlobSize(), contentType);
                 
+            } catch(BaseRuntimeException bre){
+                throw bre;
             } catch (Exception e) {
-                log.error("Failed to retrieve file from Azure Blob Storage: {}", f.getName(), e);
-                return null;
+                throw Exceptions.server("unable-to-reach-azure-blob").withCause(e).get();
             }
         }).filter(dp -> dp != null).toList();
     }
