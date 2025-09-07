@@ -1,6 +1,8 @@
 package com.quemsi.agent.service;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
@@ -10,6 +12,7 @@ import com.quemsi.commons.util.BaseRuntimeException;
 import com.quemsi.commons.util.Exceptions;
 import com.quemsi.model.dto.DataFile;
 import com.quemsi.model.flow.DataPackage;
+import com.quemsi.model.flow.DataPackageFileResource;
 import com.quemsi.model.flow.Flow;
 import com.quemsi.model.flow.out.AzureBlobDrive;
 import com.quemsi.model.flow.out.Storage;
@@ -19,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobClient;
 import com.quemsi.commons.util.FileNameUtil;
+import com.quemsi.commons.util.FileResource;
 import com.quemsi.commons.util.StringUtils;
 
 
@@ -188,10 +192,12 @@ public class AzureBlobStorage implements Storage{
                         contentType = fileNameUtil.getFileType(versionedFileName);
                     }
                 }
-                
+                InputStream blobInputStream = blobClient.openInputStream();
+                ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+                org.apache.commons.io.IOUtils.copy(blobInputStream, outStream);
                 // Create a DataPackage from the blob
-                return new DataPackageBlob(blobClient, versionedFileName, properties.getBlobSize(), contentType);
-                
+                FileResource resource = FileResource.builder().name(versionedFileName).contentType(contentType).empty(outStream.size() > 0).originalFilename(versionedFileName).size(outStream.size()).data(outStream.toByteArray()).build();
+                return new DataPackageFileResource(resource);
             } catch(BaseRuntimeException bre){
                 throw bre;
             } catch (Exception e) {
