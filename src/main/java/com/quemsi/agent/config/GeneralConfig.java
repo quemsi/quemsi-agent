@@ -17,7 +17,11 @@ import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.quemsi.agent.AgentCoordinator;
-import com.quemsi.agent.service.CommandExecutor;
+import com.quemsi.agent.service.AgentCommandExecutor;
+import com.quemsi.agent.service.cmd.ExecuteExecuteFlow;
+import com.quemsi.agent.service.cmd.ExecuteRetentionExecute;
+import com.quemsi.agent.service.cmd.ExecuteTestDatasource;
+import com.quemsi.agent.service.cmd.ExecuteVersionDeleteRequest;
 import com.quemsi.commons.util.ApacheDurationDeserializer;
 import com.quemsi.commons.util.ApacheDurationSerializer;
 import com.quemsi.commons.util.DateUtils;
@@ -53,10 +57,30 @@ public class GeneralConfig {
 	}
 	
 	@Bean
-	public CommandExecutor commandExecutor(){
-		return new CommandExecutor();
+	public AgentCommandExecutor commandExecutor(){
+		return new AgentCommandExecutor();
 	}
 
+	@Bean
+	public ExecuteExecuteFlow executeExecuteFlow(){
+		return new ExecuteExecuteFlow();
+	}
+
+	@Bean
+	public ExecuteRetentionExecute executeRetentionExecute(){
+		return new ExecuteRetentionExecute();
+	}
+
+	@Bean
+	public ExecuteTestDatasource executeTestDatasource(){
+		return new ExecuteTestDatasource();
+	}
+
+	@Bean
+	public ExecuteVersionDeleteRequest executeVersionDeleteRequest(){
+		return new ExecuteVersionDeleteRequest();
+	}
+	
 	@Bean
 	public EnvironmentVars environmentVars() {
 		return new EnvironmentVars();

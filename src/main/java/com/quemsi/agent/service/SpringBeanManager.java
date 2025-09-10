@@ -15,6 +15,7 @@ import com.quemsi.commons.util.Exceptions;
 import com.quemsi.commons.util.FileNameUtil;
 import com.quemsi.commons.util.StringUtils;
 import com.quemsi.model.api.ApiClient;
+import com.quemsi.model.dto.AgentModel;
 import com.quemsi.model.dto.DatasourceType;
 import com.quemsi.model.dto.StorageType;
 import com.quemsi.model.dto.agent.onapi.NotifyError;
@@ -49,11 +50,11 @@ public class SpringBeanManager {
 		return List.copyOf(beanFactory.getBeansOfType(Timer.class).values());
 	}
 
-	public TimerImpl registerTimer(String name, String schedule) {
-		BeanReqisterer<TimerImpl> registerer = new BeanReqisterer<>(name, TimerImpl.class, () -> new TimerImpl());
+	public TimerImpl registerTimer(AgentModel.Timer timer) {
+		BeanReqisterer<TimerImpl> registerer = new BeanReqisterer<>(timer.getName(), TimerImpl.class, () -> new TimerImpl());
 		TimerImpl t = registerer.getBean();
-		t.setName(name);  
-		t.setSchedule(schedule);
+		t.setName(timer.getName());  
+		t.setSchedule(timer.getSchedule());
 		registerer.register(true);
 		if(!registerer.isNew()){
 			t.reset();
@@ -63,70 +64,71 @@ public class SpringBeanManager {
 		return t;
 	}
 	
-	public void registerDatasource(DatasourceType type, String name, String dbName, String url, String username, String password, boolean useEnvVar) {
+	public void registerDatasource(AgentModel.Datasource datasource) {
 		BeanReqisterer<? extends DataSourceFactory> registerer = null;
-		if(DatasourceType.MYSQL.equals(type)){
-			registerer = new BeanReqisterer<DataSourceFactoryMySql>(name, DataSourceFactoryMySql.class, () -> new DataSourceFactoryMySql());
-		} else if(DatasourceType.POSTGRES.equals(type)){
-			registerer = new BeanReqisterer<>(name, DatasourceFactoryPostgres.class, ()-> new DatasourceFactoryPostgres());
-		} else if(DatasourceType.SQLSERVER.equals(type)){
-			registerer = new BeanReqisterer<>(name, DatasourceFactorySqlserver.class, ()-> new DatasourceFactorySqlserver());
+		if(DatasourceType.MYSQL.equals(datasource.getType())){
+			registerer = new BeanReqisterer<DataSourceFactoryMySql>(datasource.getName(), DataSourceFactoryMySql.class, () -> new DataSourceFactoryMySql());
+		} else if(DatasourceType.POSTGRES.equals(datasource.getType())){
+			registerer = new BeanReqisterer<>(datasource.getName(), DatasourceFactoryPostgres.class, ()-> new DatasourceFactoryPostgres());
+		} else if(DatasourceType.SQLSERVER.equals(datasource.getType())){
+			registerer = new BeanReqisterer<>(datasource.getName(), DatasourceFactorySqlserver.class, ()-> new DatasourceFactorySqlserver());
 		} else {
-			throw Exceptions.server("not-implemented-datasource-type").withExtra("type", type).withExtra("name", name).get();
+			throw Exceptions.server("not-implemented-datasource-type").withExtra("type", datasource.getType()).withExtra("name", datasource.getName()).get();
 		}
 		DataSourceFactory dsFactory = registerer.getBean();
-		dsFactory.setName(name);
-		dsFactory.setDbName(dbName);
-		dsFactory.setUrl(url);
-		if(useEnvVar){
+		dsFactory.setName(datasource.getName());
+		dsFactory.setDbName(datasource.getDbName());
+		dsFactory.setSchema(datasource.getSchema());
+		dsFactory.setUrl(datasource.getUrl());
+		if(datasource.isUseEnvVar()){
 			Environment environment = context.getEnvironment();
 			log.debug("{} var value : {}", "MYSQLUSER", environment.getProperty("MYSQLUSER"));
 			log.debug("{} var value : {}", "MYSQLPASS", environment.getProperty("MYSQLPASS"));
-			dsFactory.setUsername(environment.getProperty(username));
-			dsFactory.setPassword(environment.getProperty(password));
+			dsFactory.setUsername(environment.getProperty(datasource.getUsername()));
+			dsFactory.setPassword(environment.getProperty(datasource.getPassword()));
 			
 			if(StringUtils.isEmptyOrNull(dsFactory.getUsername()) || StringUtils.isEmptyOrNull(dsFactory.getPassword())){
-				BaseRuntimeException ex = Exceptions.badRequest("environment-vars-not-set").withExtra("vars", username + "," + password).get();
-				apiClient.send(NotifyError.builder().entityType("datasource").entityName(name).exception(ex).build());
+				BaseRuntimeException ex = Exceptions.badRequest("environment-vars-not-set").withExtra("vars", datasource.getUsername() + "," + datasource.getPassword()).get();
+				apiClient.send(NotifyError.builder().entityType("datasource").entityName(datasource.getName()).exception(ex).build());
 				ex.printStackTrace();
 			}
 		}else{
-			dsFactory.setUsername(username);
-			dsFactory.setPassword(password);
+			dsFactory.setUsername(datasource.getUsername());
+			dsFactory.setPassword(datasource.getPassword());
 		}
 		registerer.register();
 	}
 	
-	public void registerLocalDrive(String name, String storageRoot, Long capacity, Long usedSize) {
-		BeanReqisterer<LocalDrive> registerer = new BeanReqisterer<>(name, LocalDrive.class, () -> new LocalDrive());
-		LocalDrive localDrive = registerer.getBean();
-		localDrive.setName(name);
-		localDrive.setStorageRoot(storageRoot);
-		localDrive.setCapacity(capacity);
-		localDrive.setUsedSize(usedSize);
+	public void registerLocalDrive(AgentModel.LocalDrive localDrive) {
+		BeanReqisterer<LocalDrive> registerer = new BeanReqisterer<>(localDrive.getName(), LocalDrive.class, () -> new LocalDrive());
+		LocalDrive drive = registerer.getBean();
+		drive.setName(localDrive.getName());
+		drive.setStorageRoot(localDrive.getStorageRoot());
+		drive.setCapacity(localDrive.getCapacity());
+		drive.setUsedSize(localDrive.getUsedSize());
 		registerer.register();
 	}
 
-	public void registerAzureBlobDrive(String name, String accountName, String accountKey, boolean useEnvVar, String storageRoot, Long capacity, Long usedSize) {
-		BeanReqisterer<AzureBlobDrive> registerer = new BeanReqisterer<>(name, AzureBlobDrive.class, () -> new AzureBlobDrive());
-		AzureBlobDrive azureBlobDrive = registerer.getBean();
-		azureBlobDrive.setName(name);
-		azureBlobDrive.setAccountName(accountName);
-		if(useEnvVar){
+	public void registerAzureBlobDrive(AgentModel.AzureBlobDrive azureBlobDrive) {
+		BeanReqisterer<AzureBlobDrive> registerer = new BeanReqisterer<>(azureBlobDrive.getName(), AzureBlobDrive.class, () -> new AzureBlobDrive());
+		AzureBlobDrive drive = registerer.getBean();
+		drive.setName(azureBlobDrive.getName());
+		drive.setAccountName(azureBlobDrive.getAccountName());
+		if(azureBlobDrive.isUseEnvVar()){
 			Environment environment = context.getEnvironment();
-			log.debug("{} var value : {}", accountKey, environment.getProperty(accountKey));
-			azureBlobDrive.setAccountKey(environment.getProperty(accountKey));
-			if(StringUtils.isEmptyOrNull(azureBlobDrive.getAccountKey())){
-				BaseRuntimeException ex = Exceptions.badRequest("environment-vars-not-set").withExtra("vars", accountKey).get();
-				apiClient.send(NotifyError.builder().entityType("azure-blob-storage").entityName(name).exception(ex).build());
+			log.debug("{} var value : {}", azureBlobDrive.getAccountKey(), environment.getProperty(azureBlobDrive.getAccountKey()));
+			drive.setAccountKey(environment.getProperty(azureBlobDrive.getAccountKey()));
+			if(StringUtils.isEmptyOrNull(drive.getAccountKey())){
+				BaseRuntimeException ex = Exceptions.badRequest("environment-vars-not-set").withExtra("vars", azureBlobDrive.getAccountKey()).get();
+				apiClient.send(NotifyError.builder().entityType("azure-blob-storage").entityName(azureBlobDrive.getName()).exception(ex).build());
 				ex.printStackTrace();
 			}
 		}else{
-			azureBlobDrive.setAccountKey(accountKey);
+			drive.setAccountKey(azureBlobDrive.getAccountKey());
 		}
-		azureBlobDrive.setStorageRoot(storageRoot);
-		azureBlobDrive.setCapacity(capacity);
-		azureBlobDrive.setUsedSize(usedSize);
+		drive.setStorageRoot(azureBlobDrive.getStorageRoot());
+		drive.setCapacity(azureBlobDrive.getCapacity());
+		drive.setUsedSize(azureBlobDrive.getUsedSize());
 		registerer.register();
 	}
 
@@ -138,33 +140,33 @@ public class SpringBeanManager {
 		return beanFactory.getBean(name, Storage.class);
 	}
 
-	public void registerStroge(String name, StorageType type, String loc, String rootPath, String retentionPolicy, long capacity, long usedSize) {
-		if (StorageType.LOCAL.equals(type)){
-			BeanReqisterer<LStorage> registerer = new BeanReqisterer<>(name, LStorage.class, () -> new LStorage());
+	public void registerStroge(AgentModel.Storage storage) {
+		if (StorageType.LOCAL.equals(storage.getType())){
+			BeanReqisterer<LStorage> registerer = new BeanReqisterer<>(storage.getName(), LStorage.class, () -> new LStorage());
 			LStorage ls = registerer.getBean();
-			ls.setName(name);
-			ls.setLocalDrive(beanFactory.getBean(loc, LocalDrive.class));
-			ls.setRootPath(rootPath);
-			ls.setRetentionPolicy(retentionPolicy);
-			ls.setUsedSize(usedSize);
-			ls.setCapacity(capacity);
+			ls.setName(storage.getName());
+			ls.setLocalDrive(beanFactory.getBean(storage.getLoc(), LocalDrive.class));
+			ls.setRootPath(storage.getRootPath());
+			ls.setRetentionPolicy(storage.getRetentionPolicy());
+			ls.setUsedSize(storage.getUsedSize());
+			ls.setCapacity(storage.getCapacity());
 			ls.setUtil(context.getBean(FileNameUtil.class));
 			registerer.register();
-		} else if (StorageType.AZUREBLOB.equals(type)){
-			BeanReqisterer<ABStorage> registerer = new BeanReqisterer<>(name, ABStorage.class, () -> new ABStorage());
+		} else if (StorageType.AZUREBLOB.equals(storage.getType())){
+			BeanReqisterer<ABStorage> registerer = new BeanReqisterer<>(storage.getName(), ABStorage.class, () -> new ABStorage());
 			ABStorage ls = registerer.getBean();
-			ls.setName(name);
-			AzureBlobDrive azureDrive = beanFactory.getBean(loc, AzureBlobDrive.class);
+			ls.setName(storage.getName());
+			AzureBlobDrive azureDrive = beanFactory.getBean(storage.getLoc(), AzureBlobDrive.class);
 			ls.setAzureBlobDrive(azureDrive);
 			ls.setUnderlyingStorage(new AzureBlobStorage(azureDrive));
-			ls.setRootPath(rootPath);
-			ls.setRetentionPolicy(retentionPolicy);
-			ls.setUsedSize(usedSize);
-			ls.setCapacity(capacity);
+			ls.setRootPath(storage.getRootPath());
+			ls.setRetentionPolicy(storage.getRetentionPolicy());
+			ls.setUsedSize(storage.getUsedSize());
+			ls.setCapacity(storage.getCapacity());
 			ls.setUtil(context.getBean(FileNameUtil.class));
 			registerer.register();
 		} else {
-			throw Exceptions.server("not-implemented-yet").withExtra("type", type).get();
+			throw Exceptions.server("not-implemented-yet").withExtra("type", storage.getType()).get();
 		}	
 	}
 

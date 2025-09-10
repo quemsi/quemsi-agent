@@ -1,7 +1,5 @@
-package com.quemsi.agent.service;
+package com.quemsi.agent.service.cmd;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,11 +8,12 @@ import com.quemsi.agent.api.ApiManager;
 import com.quemsi.commons.util.StringUtils;
 import com.quemsi.model.dto.agent.TestDatasource;
 import com.quemsi.model.dto.agent.onapi.TestDatasourceResult;
+import com.quemsi.model.flow.db.DataSourceFactory;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class CommandExecutor {
+public class ExecuteTestDatasource {
     @Autowired
 	private ApiManager apiManager;
     
@@ -45,16 +44,20 @@ public class CommandExecutor {
                 }
             }
             if(credentialsExists){
-                Connection conn = DriverManager.getConnection(cmd.getDatasource().getUrl(), username, password);
-                boolean reachable = conn.isValid(3);
+                DataSourceFactory factory = DataSourceFactory.create(cmd.getDatasource().getType());
+                
+                factory.setUrl(cmd.getDatasource().getUrl());
+                factory.setDbName(cmd.getDatasource().getDbName());
+                factory.setSchema(cmd.getDatasource().getSchema());
+                factory.setUsername(username);
+                factory.setPassword(password);
+                
+                boolean reachable = factory.healthCheck();
                 result.setSuccess(reachable);
                 if(reachable){
                     result.setMessage("connection-succeded");
                 } else {
                     result.setMessage("connection-unreachable");
-                }
-                if(conn != null && !conn.isClosed()){
-                    conn.close();
                 }
             }
         } catch(SQLException sex){
