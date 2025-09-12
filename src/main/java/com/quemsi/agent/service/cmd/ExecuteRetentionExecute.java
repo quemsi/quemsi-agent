@@ -33,7 +33,7 @@ public class ExecuteRetentionExecute {
                 log.debug("ignored", ex);
             }
         });
-        RetentionCompleted retentionCompleted = RetentionCompleted.builder().storageId(cmd.getStorageId()).storageName(cmd.getStorageName()).files(fileIds).build();
+        RetentionCompleted retentionCompleted = RetentionCompleted.builder().storageId(cmd.getStorageId()).storageName(cmd.getStorageName()).files(fileIds).versions(cmd.getVersions()).build();
         log.info("sending retention complete {}", retentionCompleted);
         apiManager.send(retentionCompleted);
     }
