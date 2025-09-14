@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.quemsi.agent.api.ApiManager;
 import com.quemsi.agent.service.SpringBeanManager;
+import com.quemsi.commons.util.FileNameUtil;
 import com.quemsi.model.dto.agent.VersionDeleteRequest;
 import com.quemsi.model.dto.agent.onapi.VersionDeleted;
 import com.quemsi.model.flow.out.Storage;
@@ -18,17 +19,19 @@ public class ExecuteVersionDeleteRequest {
     private SpringBeanManager beanManager;
     @Autowired
     private ApiManager apiManager;
+    @Autowired
+    private FileNameUtil util;
     
     public void execute(VersionDeleteRequest versionDeleteRequest){
         Storage storage = beanManager.findStorage(versionDeleteRequest.getVersion().getStorage().getName());
         versionDeleteRequest.getVersion().getFiles().forEach(f -> {
             try{
-                storage.deleteFile(f.getDir(), f.getName());
+                storage.deleteFile(f.getDir(), util.versionedFileName(f.getName(), f.getVersion()));
             }catch(IOException ex){
                 log.debug("ignored", ex);
             }
         });
-        VersionDeleted versionDeleted = VersionDeleted.builder().versionId(versionDeleteRequest.getVersion().getId()).build();
+        VersionDeleted versionDeleted = VersionDeleted.builder().correlationId(versionDeleteRequest.getCorrelationId()).versionId(versionDeleteRequest.getVersion().getId()).succeeded(true).build();
         log.info("sending version deleted {}", versionDeleted);
         apiManager.send(versionDeleted);
     }
