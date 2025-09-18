@@ -28,6 +28,7 @@ import com.quemsi.commons.util.StringUtils;
 
 @Slf4j
 public class AzureBlobStorage implements Storage{
+    public static final String AZURE_BLOB_ENDPOINT_FORMAT = "https://%s.blob.core.windows.net";
     private AzureBlobDrive azureBlobDrive;
     private BlobServiceClient client;
     private FileNameUtil fileNameUtil;
@@ -40,7 +41,7 @@ public class AzureBlobStorage implements Storage{
 
     public synchronized BlobServiceClient getBlobServiceClient() {
         if(client == null){
-            String endpoint = String.format("https://%s.blob.core.windows.net", azureBlobDrive.getAccountName());
+            String endpoint = String.format(AZURE_BLOB_ENDPOINT_FORMAT, azureBlobDrive.getAccountName());
             client = new com.azure.storage.blob.BlobServiceClientBuilder()
                 .endpoint(endpoint)
                 .credential(new StorageSharedKeyCredential(azureBlobDrive.getAccountName(), azureBlobDrive.getAccountKey()))

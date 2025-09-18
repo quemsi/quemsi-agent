@@ -20,6 +20,7 @@ import com.quemsi.agent.AgentCoordinator;
 import com.quemsi.agent.service.AgentCommandExecutor;
 import com.quemsi.agent.service.cmd.ExecuteExecuteFlow;
 import com.quemsi.agent.service.cmd.ExecuteRetentionExecute;
+import com.quemsi.agent.service.cmd.ExecuteTestAzureBlobDrive;
 import com.quemsi.agent.service.cmd.ExecuteTestDatasource;
 import com.quemsi.agent.service.cmd.ExecuteVersionDeleteRequest;
 import com.quemsi.commons.util.ApacheDurationDeserializer;
@@ -81,6 +82,11 @@ public class GeneralConfig {
 		return new ExecuteVersionDeleteRequest();
 	}
 	
+	@Bean
+	public ExecuteTestAzureBlobDrive executeTestAzureBlobDrive(){
+		return new ExecuteTestAzureBlobDrive();
+	}
+
 	@Bean
 	public EnvironmentVars environmentVars() {
 		return new EnvironmentVars();

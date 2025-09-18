@@ -20,6 +20,7 @@ import com.quemsi.model.dto.agent.AgentCommand;
 import com.quemsi.model.dto.agent.DelayAgentCommand;
 import com.quemsi.model.dto.agent.ExecuteFlow;
 import com.quemsi.model.dto.agent.RetentionExecute;
+import com.quemsi.model.dto.agent.TestAzureBlobDrive;
 import com.quemsi.model.dto.agent.TestDatasource;
 import com.quemsi.model.dto.agent.UpdateAgentModel;
 import com.quemsi.model.dto.agent.VersionDeleteRequest;
@@ -107,8 +108,9 @@ public class AgentCoordinator {
                 commandExecutor.execute(versionDeleteRequest);
             } else if(command instanceof TestDatasource testDatasource){
                 commandExecutor.execute(testDatasource);
-            }
-            else{
+            } else if(command instanceof TestAzureBlobDrive testAzureBlobDrive){
+                commandExecutor.execute(testAzureBlobDrive);
+            } else {
                 throw Exceptions.server("not-implemented").withExtra("commandName", command.getName()).get();
             }
         }
