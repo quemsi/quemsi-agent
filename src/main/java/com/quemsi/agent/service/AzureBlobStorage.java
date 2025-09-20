@@ -119,51 +119,6 @@ public class AzureBlobStorage implements Storage{
         });
     }
 
-    // @Override
-    // public List<DataPackage> getDataPackage(String dataName, DataType type, Long version) throws IOException {
-    //     String containerName = StringUtils.trim(azureBlobDrive.getStorageRoot(), "/", "/");
-    //     BlobContainerClient containerClient = getBlobServiceClient().getBlobContainerClient(containerName);
-        
-    //     // Generate versioned filename for the data type
-    //     String versionedFileName = fileNameUtil.versionedFileName(dataName + "." + type.getExt(), version);
-    //     String blobPath = dataName + "/" + versionedFileName;
-        
-    //     log.debug("Retrieving file from Azure Blob Storage at path: {}", blobPath);
-        
-    //     try {
-    //         BlobClient blobClient = containerClient.getBlobClient(blobPath);
-            
-    //         if (!blobClient.exists()) {
-    //             throw Exceptions.notFound("file-not-found-in-azure-blob")
-    //                 .withExtra("dataName", dataName)
-    //                 .withExtra("type", type.getExt())
-    //                 .withExtra("version", version)
-    //                 .withExtra("blobPath", blobPath)
-    //                 .get();
-    //         }
-            
-    //         // Get blob properties to determine content type and size
-    //         com.azure.storage.blob.models.BlobProperties properties = blobClient.getProperties();
-    //         String contentType = properties.getContentType();
-    //         if (contentType == null || contentType.isEmpty()) {
-    //             contentType = fileNameUtil.getFileType(versionedFileName);
-    //         }
-            
-    //         // Create a DataPackage from the blob
-    //         return List.of(new DataPackageBlob(blobClient, versionedFileName, properties.getBlobSize(), contentType));
-            
-    //     } catch (Exception e) {
-    //         log.error("Failed to retrieve file from Azure Blob Storage at path: {}", blobPath, e);
-    //         throw Exceptions.server("error-retrieving-file-from-azure-blob")
-    //             .withExtra("dataName", dataName)
-    //             .withExtra("type", type.getExt())
-    //             .withExtra("version", version)
-    //             .withExtra("blobPath", blobPath)
-    //             .withCause(e)
-    //             .get();
-    //     }
-    // }
-
     @Override
     public List<DataPackage> getFiles(List<DataFile> files) throws IOException {
         String containerName = StringUtils.trim(azureBlobDrive.getStorageRoot(), "/", "/");

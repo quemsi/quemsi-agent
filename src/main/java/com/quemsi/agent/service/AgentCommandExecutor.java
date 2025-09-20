@@ -5,11 +5,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.quemsi.agent.service.cmd.ExecuteExecuteFlow;
 import com.quemsi.agent.service.cmd.ExecuteRetentionExecute;
 import com.quemsi.agent.service.cmd.ExecuteTestAzureBlobDrive;
+import com.quemsi.agent.service.cmd.ExecuteTestAWSS3Drive;
 import com.quemsi.agent.service.cmd.ExecuteTestDatasource;
 import com.quemsi.agent.service.cmd.ExecuteVersionDeleteRequest;
 import com.quemsi.model.dto.agent.ExecuteFlow;
 import com.quemsi.model.dto.agent.RetentionExecute;
 import com.quemsi.model.dto.agent.TestAzureBlobDrive;
+import com.quemsi.model.dto.agent.TestAWSS3Drive;
 import com.quemsi.model.dto.agent.TestDatasource;
 import com.quemsi.model.dto.agent.VersionDeleteRequest;
 
@@ -27,6 +29,8 @@ public class AgentCommandExecutor {
     private ExecuteVersionDeleteRequest executeVersionDeleteRequest;
     @Autowired
     private ExecuteTestAzureBlobDrive executeTestAzureBlobDrive;
+    @Autowired
+    private ExecuteTestAWSS3Drive executeTestAWSS3Drive;
 
     public void execute(ExecuteFlow cmd){
         executeExecuteFlow.execute(cmd);
@@ -42,5 +46,8 @@ public class AgentCommandExecutor {
     }
     public void execute(TestAzureBlobDrive cmd){
         executeTestAzureBlobDrive.execute(cmd);
+    }
+    public void execute(TestAWSS3Drive cmd){
+        executeTestAWSS3Drive.execute(cmd);
     }
 }

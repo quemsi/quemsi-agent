@@ -25,7 +25,9 @@ import com.quemsi.model.flow.db.mysql.DataSourceFactoryMySql;
 import com.quemsi.model.flow.db.postgres.DatasourceFactoryPostgres;
 import com.quemsi.model.flow.db.sqlserver.DatasourceFactorySqlserver;
 import com.quemsi.model.flow.out.ABStorage;
+import com.quemsi.model.flow.out.AWS3Storage;
 import com.quemsi.model.flow.out.AzureBlobDrive;
+import com.quemsi.model.flow.out.AWSS3Drive;
 import com.quemsi.model.flow.out.LStorage;
 import com.quemsi.model.flow.out.LocalDrive;
 import com.quemsi.model.flow.out.Storage;
@@ -132,6 +134,35 @@ public class SpringBeanManager {
 		registerer.register();
 	}
 
+	public void registerAWSS3Drive(AgentModel.AWSS3Drive awsS3Drive) {
+		BeanReqisterer<AWSS3Drive> registerer = new BeanReqisterer<>(awsS3Drive.getName(), AWSS3Drive.class, () -> new AWSS3Drive());
+		AWSS3Drive drive = registerer.getBean();
+		drive.setName(awsS3Drive.getName());
+		drive.setAccessKey(awsS3Drive.getAccessKey());
+		drive.setSecretKey(awsS3Drive.getSecretKey());
+		drive.setRegion(awsS3Drive.getRegion());
+		drive.setBucketName(awsS3Drive.getBucketName());
+		if(awsS3Drive.isUseEnvVar()){
+			Environment environment = context.getEnvironment();
+			log.debug("{} var value : {}", awsS3Drive.getAccessKey(), environment.getProperty(awsS3Drive.getAccessKey()));
+			log.debug("{} var value : {}", awsS3Drive.getSecretKey(), environment.getProperty(awsS3Drive.getSecretKey()));
+			drive.setAccessKey(environment.getProperty(awsS3Drive.getAccessKey()));
+			drive.setSecretKey(environment.getProperty(awsS3Drive.getSecretKey()));
+			if(StringUtils.isEmptyOrNull(drive.getAccessKey()) || StringUtils.isEmptyOrNull(drive.getSecretKey())){
+				BaseRuntimeException ex = Exceptions.badRequest("environment-vars-not-set").withExtra("vars", awsS3Drive.getAccessKey() + "," + awsS3Drive.getSecretKey()).get();
+				apiClient.send(NotifyError.builder().entityType("aws-s3-storage").entityName(awsS3Drive.getName()).exception(ex).build());
+				ex.printStackTrace();
+			}
+		}else{
+			drive.setAccessKey(awsS3Drive.getAccessKey());
+			drive.setSecretKey(awsS3Drive.getSecretKey());
+		}
+		drive.setStorageRoot(awsS3Drive.getStorageRoot());
+		drive.setCapacity(awsS3Drive.getCapacity());
+		drive.setUsedSize(awsS3Drive.getUsedSize());
+		registerer.register();
+	}
+
 	public List<Storage> findStorages(){
 		return List.copyOf(beanFactory.getBeansOfType(Storage.class).values());
 	}
@@ -159,6 +190,19 @@ public class SpringBeanManager {
 			AzureBlobDrive azureDrive = beanFactory.getBean(storage.getLoc(), AzureBlobDrive.class);
 			ls.setAzureBlobDrive(azureDrive);
 			ls.setUnderlyingStorage(new AzureBlobStorage(azureDrive));
+			ls.setRootPath(storage.getRootPath());
+			ls.setRetentionPolicy(storage.getRetentionPolicy());
+			ls.setUsedSize(storage.getUsedSize());
+			ls.setCapacity(storage.getCapacity());
+			ls.setUtil(context.getBean(FileNameUtil.class));
+			registerer.register();
+		} else if (StorageType.AWSS3.equals(storage.getType())){
+			BeanReqisterer<AWS3Storage> registerer = new BeanReqisterer<>(storage.getName(), AWS3Storage.class, () -> new AWS3Storage());
+			AWS3Storage ls = registerer.getBean();
+			ls.setName(storage.getName());
+			AWSS3Drive awsS3Drive = beanFactory.getBean(storage.getLoc(), AWSS3Drive.class);
+			ls.setAwsS3Drive(awsS3Drive);
+			ls.setUnderlyingStorage(new AWSS3Storage(awsS3Drive));
 			ls.setRootPath(storage.getRootPath());
 			ls.setRetentionPolicy(storage.getRetentionPolicy());
 			ls.setUsedSize(storage.getUsedSize());

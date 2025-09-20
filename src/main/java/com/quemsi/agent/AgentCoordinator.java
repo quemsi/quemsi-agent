@@ -21,6 +21,7 @@ import com.quemsi.model.dto.agent.DelayAgentCommand;
 import com.quemsi.model.dto.agent.ExecuteFlow;
 import com.quemsi.model.dto.agent.RetentionExecute;
 import com.quemsi.model.dto.agent.TestAzureBlobDrive;
+import com.quemsi.model.dto.agent.TestAWSS3Drive;
 import com.quemsi.model.dto.agent.TestDatasource;
 import com.quemsi.model.dto.agent.UpdateAgentModel;
 import com.quemsi.model.dto.agent.VersionDeleteRequest;
@@ -62,6 +63,9 @@ public class AgentCoordinator {
         }
         if(model.getAzureBlobDrives() != null){
             model.getAzureBlobDrives().forEach(a -> beanManager.registerAzureBlobDrive(a));
+        }
+        if(model.getAwsS3Drives() != null){
+            model.getAwsS3Drives().forEach(a -> beanManager.registerAWSS3Drive(a));
         }
         if(model.getStorages() != null){
             model.getStorages().forEach(s -> beanManager.registerStroge(s));
@@ -110,6 +114,8 @@ public class AgentCoordinator {
                 commandExecutor.execute(testDatasource);
             } else if(command instanceof TestAzureBlobDrive testAzureBlobDrive){
                 commandExecutor.execute(testAzureBlobDrive);
+            } else if(command instanceof TestAWSS3Drive testAWSS3Drive){
+                commandExecutor.execute(testAWSS3Drive);
             } else {
                 throw Exceptions.server("not-implemented").withExtra("commandName", command.getName()).get();
             }
