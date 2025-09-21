@@ -3,6 +3,7 @@ package com.quemsi.agent.service;
 import java.util.List;
 import java.util.function.Supplier;
 
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -26,8 +27,8 @@ import com.quemsi.model.flow.db.postgres.DatasourceFactoryPostgres;
 import com.quemsi.model.flow.db.sqlserver.DatasourceFactorySqlserver;
 import com.quemsi.model.flow.out.ABStorage;
 import com.quemsi.model.flow.out.AWS3Storage;
-import com.quemsi.model.flow.out.AzureBlobDrive;
 import com.quemsi.model.flow.out.AWSS3Drive;
+import com.quemsi.model.flow.out.AzureBlobDrive;
 import com.quemsi.model.flow.out.LStorage;
 import com.quemsi.model.flow.out.LocalDrive;
 import com.quemsi.model.flow.out.Storage;
@@ -172,46 +173,63 @@ public class SpringBeanManager {
 	}
 
 	public void registerStroge(AgentModel.Storage storage) {
-		if (StorageType.LOCAL.equals(storage.getType())){
-			BeanReqisterer<LStorage> registerer = new BeanReqisterer<>(storage.getName(), LStorage.class, () -> new LStorage());
-			LStorage ls = registerer.getBean();
-			ls.setName(storage.getName());
-			ls.setLocalDrive(beanFactory.getBean(storage.getLoc(), LocalDrive.class));
-			ls.setRootPath(storage.getRootPath());
-			ls.setRetentionPolicy(storage.getRetentionPolicy());
-			ls.setUsedSize(storage.getUsedSize());
-			ls.setCapacity(storage.getCapacity());
-			ls.setUtil(context.getBean(FileNameUtil.class));
-			registerer.register();
-		} else if (StorageType.AZUREBLOB.equals(storage.getType())){
-			BeanReqisterer<ABStorage> registerer = new BeanReqisterer<>(storage.getName(), ABStorage.class, () -> new ABStorage());
-			ABStorage ls = registerer.getBean();
-			ls.setName(storage.getName());
-			AzureBlobDrive azureDrive = beanFactory.getBean(storage.getLoc(), AzureBlobDrive.class);
-			ls.setAzureBlobDrive(azureDrive);
-			ls.setUnderlyingStorage(new AzureBlobStorage(azureDrive));
-			ls.setRootPath(storage.getRootPath());
-			ls.setRetentionPolicy(storage.getRetentionPolicy());
-			ls.setUsedSize(storage.getUsedSize());
-			ls.setCapacity(storage.getCapacity());
-			ls.setUtil(context.getBean(FileNameUtil.class));
-			registerer.register();
-		} else if (StorageType.AWSS3.equals(storage.getType())){
-			BeanReqisterer<AWS3Storage> registerer = new BeanReqisterer<>(storage.getName(), AWS3Storage.class, () -> new AWS3Storage());
-			AWS3Storage ls = registerer.getBean();
-			ls.setName(storage.getName());
-			AWSS3Drive awsS3Drive = beanFactory.getBean(storage.getLoc(), AWSS3Drive.class);
-			ls.setAwsS3Drive(awsS3Drive);
-			ls.setUnderlyingStorage(new AWSS3Storage(awsS3Drive));
-			ls.setRootPath(storage.getRootPath());
-			ls.setRetentionPolicy(storage.getRetentionPolicy());
-			ls.setUsedSize(storage.getUsedSize());
-			ls.setCapacity(storage.getCapacity());
-			ls.setUtil(context.getBean(FileNameUtil.class));
-			registerer.register();
-		} else {
-			throw Exceptions.server("not-implemented-yet").withExtra("type", storage.getType()).get();
-		}	
+		try{
+			if (StorageType.LOCAL.equals(storage.getType())){
+				BeanReqisterer<LStorage> registerer = new BeanReqisterer<>(storage.getName(), LStorage.class, () -> new LStorage());
+				LStorage ls = registerer.getBean();
+				ls.setName(storage.getName());
+				try{
+					ls.setLocalDrive(beanFactory.getBean(storage.getLoc(), LocalDrive.class));
+				}catch(NoSuchBeanDefinitionException e){
+					throw Exceptions.server("not-existing-drive").withExtra("storageName", storage.getName()).withExtra("driveName", storage.getLoc()).withExtra("type", storage.getType()).get();
+				}
+				ls.setRootPath(storage.getRootPath());
+				ls.setRetentionPolicy(storage.getRetentionPolicy());
+				ls.setUsedSize(storage.getUsedSize());
+				ls.setCapacity(storage.getCapacity());
+				ls.setUtil(context.getBean(FileNameUtil.class));
+				registerer.register();
+			} else if (StorageType.AZUREBLOB.equals(storage.getType())){
+				BeanReqisterer<ABStorage> registerer = new BeanReqisterer<>(storage.getName(), ABStorage.class, () -> new ABStorage());
+				ABStorage ls = registerer.getBean();
+				ls.setName(storage.getName());
+				try{
+					AzureBlobDrive azureDrive = beanFactory.getBean(storage.getLoc(), AzureBlobDrive.class);
+					ls.setAzureBlobDrive(azureDrive);
+					ls.setUnderlyingStorage(new AzureBlobStorage(azureDrive));
+				}catch(NoSuchBeanDefinitionException e){
+					throw Exceptions.server("not-existing-drive").withExtra("storageName", storage.getName()).withExtra("driveName", storage.getLoc()).withExtra("type", storage.getType()).get();
+				}
+				ls.setRootPath(storage.getRootPath());
+				ls.setRetentionPolicy(storage.getRetentionPolicy());
+				ls.setUsedSize(storage.getUsedSize());
+				ls.setCapacity(storage.getCapacity());
+				ls.setUtil(context.getBean(FileNameUtil.class));
+				registerer.register();
+			} else if (StorageType.AWSS3.equals(storage.getType())){
+				BeanReqisterer<AWS3Storage> registerer = new BeanReqisterer<>(storage.getName(), AWS3Storage.class, () -> new AWS3Storage());
+				AWS3Storage ls = registerer.getBean();
+				ls.setName(storage.getName());
+				try{
+					AWSS3Drive awsS3Drive = beanFactory.getBean(storage.getLoc(), AWSS3Drive.class);
+					ls.setAwsS3Drive(awsS3Drive);
+					ls.setUnderlyingStorage(new AWSS3Storage(awsS3Drive));
+				}catch(NoSuchBeanDefinitionException e){
+					throw Exceptions.server("not-existing-drive").withExtra("storageName", storage.getName()).withExtra("driveName", storage.getLoc()).withExtra("type", storage.getType()).get();
+				}
+				ls.setRootPath(storage.getRootPath());
+				ls.setRetentionPolicy(storage.getRetentionPolicy());
+				ls.setUsedSize(storage.getUsedSize());
+				ls.setCapacity(storage.getCapacity());
+				ls.setUtil(context.getBean(FileNameUtil.class));
+				registerer.register();
+			} else {
+				throw Exceptions.server("not-implemented-yet").withExtra("type", storage.getType()).withExtra("name", storage.getName()).get();
+			}
+		}catch(BaseRuntimeException e){
+			log.error("error-in-registering-storage", e);
+			apiClient.send(NotifyError.builder().entityType("storage").entityName(storage.getName()).exception(e).build());
+		}
 	}
 
 	private class BeanReqisterer<T>{
