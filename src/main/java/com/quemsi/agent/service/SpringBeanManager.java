@@ -55,16 +55,21 @@ public class SpringBeanManager {
 
 	public TimerImpl registerTimer(AgentModel.Timer timer) {
 		BeanReqisterer<TimerImpl> registerer = new BeanReqisterer<>(timer.getName(), TimerImpl.class, () -> new TimerImpl());
-		TimerImpl t = registerer.getBean();
-		t.setName(timer.getName());  
-		t.setSchedule(timer.getSchedule());
-		registerer.register(true);
-		if(!registerer.isNew()){
-			t.reset();
+		if(!timer.isActive()){
+			registerer.destroy();
+			return null;
 		}else{
-			t.init();
+			TimerImpl t = registerer.getBean();
+			t.setName(timer.getName());  
+			t.setSchedule(timer.getSchedule());
+			registerer.register(true);
+			if(!registerer.isNew()){
+				t.reset();
+			}else{
+				t.init();
+			}
+			return t;
 		}
-		return t;
 	}
 	
 	public void registerDatasource(AgentModel.Datasource datasource) {
@@ -77,6 +82,10 @@ public class SpringBeanManager {
 			registerer = new BeanReqisterer<>(datasource.getName(), DatasourceFactorySqlserver.class, ()-> new DatasourceFactorySqlserver());
 		} else {
 			throw Exceptions.server("not-implemented-datasource-type").withExtra("type", datasource.getType()).withExtra("name", datasource.getName()).get();
+		}
+		if(!datasource.isActive()){
+			registerer.destroy();
+			return;
 		}
 		DataSourceFactory dsFactory = registerer.getBean();
 		dsFactory.setName(datasource.getName());
@@ -104,6 +113,10 @@ public class SpringBeanManager {
 	
 	public void registerLocalDrive(AgentModel.LocalDrive localDrive) {
 		BeanReqisterer<LocalDrive> registerer = new BeanReqisterer<>(localDrive.getName(), LocalDrive.class, () -> new LocalDrive());
+		if(!localDrive.isActive()){
+			registerer.destroy();
+			return;
+		}
 		LocalDrive drive = registerer.getBean();
 		drive.setName(localDrive.getName());
 		drive.setStorageRoot(localDrive.getStorageRoot());
@@ -114,6 +127,10 @@ public class SpringBeanManager {
 
 	public void registerAzureBlobDrive(AgentModel.AzureBlobDrive azureBlobDrive) {
 		BeanReqisterer<AzureBlobDrive> registerer = new BeanReqisterer<>(azureBlobDrive.getName(), AzureBlobDrive.class, () -> new AzureBlobDrive());
+		if(!azureBlobDrive.isActive()){
+			registerer.destroy();
+			return;
+		}
 		AzureBlobDrive drive = registerer.getBean();
 		drive.setName(azureBlobDrive.getName());
 		drive.setAccountName(azureBlobDrive.getAccountName());
@@ -137,6 +154,10 @@ public class SpringBeanManager {
 
 	public void registerAWSS3Drive(AgentModel.AWSS3Drive awsS3Drive) {
 		BeanReqisterer<AWSS3Drive> registerer = new BeanReqisterer<>(awsS3Drive.getName(), AWSS3Drive.class, () -> new AWSS3Drive());
+		if(!awsS3Drive.isActive()){
+			registerer.destroy();
+			return;
+		}
 		AWSS3Drive drive = registerer.getBean();
 		drive.setName(awsS3Drive.getName());
 		drive.setAccessKey(awsS3Drive.getAccessKey());
@@ -176,6 +197,10 @@ public class SpringBeanManager {
 		try{
 			if (StorageType.LOCAL.equals(storage.getType())){
 				BeanReqisterer<LStorage> registerer = new BeanReqisterer<>(storage.getName(), LStorage.class, () -> new LStorage());
+				if(!storage.isActive()){
+					registerer.destroy();
+					return;
+				}
 				LStorage ls = registerer.getBean();
 				ls.setName(storage.getName());
 				try{
@@ -191,6 +216,10 @@ public class SpringBeanManager {
 				registerer.register();
 			} else if (StorageType.AZUREBLOB.equals(storage.getType())){
 				BeanReqisterer<ABStorage> registerer = new BeanReqisterer<>(storage.getName(), ABStorage.class, () -> new ABStorage());
+				if(!storage.isActive()){
+					registerer.destroy();
+					return;
+				}
 				ABStorage ls = registerer.getBean();
 				ls.setName(storage.getName());
 				try{
@@ -208,6 +237,10 @@ public class SpringBeanManager {
 				registerer.register();
 			} else if (StorageType.AWSS3.equals(storage.getType())){
 				BeanReqisterer<AWS3Storage> registerer = new BeanReqisterer<>(storage.getName(), AWS3Storage.class, () -> new AWS3Storage());
+				if(!storage.isActive()){
+					registerer.destroy();
+					return;
+				}
 				AWS3Storage ls = registerer.getBean();
 				ls.setName(storage.getName());
 				try{
@@ -259,6 +292,9 @@ public class SpringBeanManager {
 				}
 				beanFactory.registerSingleton(name, bean);
 			}
+		}
+		public void destroy(){
+			beanFactory.destroySingleton(name);
 		}
 		public void register(){
 			register(false);

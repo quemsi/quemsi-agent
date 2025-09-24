@@ -111,7 +111,7 @@ public class AgentCoordinator {
             } else if(command instanceof VersionDeleteRequest versionDeleteRequest){
                 commandExecutor.execute(versionDeleteRequest);
             } else if(command instanceof TestDatasource testDatasource){
-                commandExecutor.execute(testDatasource);
+                    commandExecutor.execute(testDatasource);
             } else if(command instanceof TestAzureBlobDrive testAzureBlobDrive){
                 commandExecutor.execute(testAzureBlobDrive);
             } else if(command instanceof TestAWSS3Drive testAWSS3Drive){

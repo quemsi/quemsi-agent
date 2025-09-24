@@ -68,7 +68,7 @@ public class ExecuteTestDatasource {
             result.setErrorMessage(sex.getMessage());
         } catch(Exception ex){
             result.setSuccess(false);   
-            result.setMessage("connection-test-failed-no    -code");
+            result.setMessage("connection-test-failed-no-code");
             result.setErrorMessage(ex.getMessage());
         }
         apiManager.send(result);
