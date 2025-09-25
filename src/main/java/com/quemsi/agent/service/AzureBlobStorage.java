@@ -153,7 +153,7 @@ public class AzureBlobStorage implements Storage{
                 org.apache.commons.io.IOUtils.copy(blobInputStream, outStream);
                 // Create a DataPackage from the blob
                 FileResource resource = FileResource.builder().name(versionedFileName).contentType(contentType).empty(outStream.size() > 0).originalFilename(versionedFileName).size(outStream.size()).data(outStream.toByteArray()).build();
-                return new DataPackageFileResource(resource);
+                return new DataPackageFileResource(f.getName(), resource);
             } catch(BaseRuntimeException bre){
                 throw bre;
             } catch (Exception e) {

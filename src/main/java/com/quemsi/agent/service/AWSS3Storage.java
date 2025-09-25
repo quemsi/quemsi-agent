@@ -189,7 +189,7 @@ public class AWSS3Storage implements Storage {
                     .size(outStream.size())
                     .data(outStream.toByteArray())
                     .build();
-                return new DataPackageFileResource(resource);
+                return new DataPackageFileResource(f.getName(), resource);
             } catch (BaseRuntimeException bre) {
                 throw bre;
             } catch (Exception e) {
