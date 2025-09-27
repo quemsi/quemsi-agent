@@ -46,6 +46,8 @@ public class AgentCoordinator {
     @Autowired
     private AgentCommandExecutor commandExecutor;
     private static final int MAX_BACKOFF_SECONDS = 60;
+    private static final int MIN_BACKOFF_SECONDS = 5;
+
     private AtomicInteger backoff = new AtomicInteger(0);
 
     private ApiCommandListener apiCommandListener;
@@ -136,7 +138,7 @@ public class AgentCoordinator {
                 }
                 AgentCommand command = apiManager.nextCommand();
                 execute(command);
-                backoff.set(0);
+                resetBackoff();
             } catch (WebClientRequestException ignore){
                 incrementBackoff();
                 log.debug("Unable to reach api, will try again in {} seconds", apiRetry);
@@ -154,8 +156,16 @@ public class AgentCoordinator {
                 }
             }
         }
-        public void incrementBackoff(){
-            backoff.set(Math.min(backoff.get() + 10, MAX_BACKOFF_SECONDS));
+        public void resetBackoff() {
+            backoff.set(0);
+        }
+        public void incrementBackoff() {
+            int current = backoff.get();
+            if (current == 0) {
+                backoff.set(MIN_BACKOFF_SECONDS);
+            } else {
+                backoff.set(Math.min(current * 2, MAX_BACKOFF_SECONDS));
+            }
         }
     }
 }
