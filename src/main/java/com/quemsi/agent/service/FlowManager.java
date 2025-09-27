@@ -124,9 +124,9 @@ public class FlowManager {
 
 		@Override
 		public void run() {
-			Map<String, String> tags = Map.of("date", dateUtils.getDateString(LocalDateTime.now())
+			Map<String, String> tags = new HashMap<>(Map.of("date", dateUtils.getDateString(LocalDateTime.now())
 				, "time", dateUtils.getTimeString(LocalDateTime.now()),
-				"timer", this.timerName);
+				"timer", this.timerName));
 			FlowExecution execution = apiClient.initiate(flow.getName(), tags);
 			FlowExecution updatedExecution = flow.execute(execution.getVersion().getId(), tags, execution.getVersion().getFiles(), execution.getId());
 			if(updatedExecution != null){
