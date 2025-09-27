@@ -2,6 +2,7 @@ package com.quemsi.agent;
 
 import java.time.Duration;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,8 +21,8 @@ import com.quemsi.model.dto.agent.AgentCommand;
 import com.quemsi.model.dto.agent.DelayAgentCommand;
 import com.quemsi.model.dto.agent.ExecuteFlow;
 import com.quemsi.model.dto.agent.RetentionExecute;
-import com.quemsi.model.dto.agent.TestAzureBlobDrive;
 import com.quemsi.model.dto.agent.TestAWSS3Drive;
+import com.quemsi.model.dto.agent.TestAzureBlobDrive;
 import com.quemsi.model.dto.agent.TestDatasource;
 import com.quemsi.model.dto.agent.UpdateAgentModel;
 import com.quemsi.model.dto.agent.VersionDeleteRequest;
@@ -44,6 +45,8 @@ public class AgentCoordinator {
     private ObjectMapper objectMapper;
     @Autowired
     private AgentCommandExecutor commandExecutor;
+    private static final int MAX_BACKOFF_SECONDS = 60;
+    private AtomicInteger backoff = new AtomicInteger(0);
 
     private ApiCommandListener apiCommandListener;
     @Value("${spring.application.version}")
@@ -127,21 +130,32 @@ public class AgentCoordinator {
         public void run() {
             boolean listenNext = true;
             try{
+                if(backoff.get() > 0){
+                    log.debug("Waiting for {} seconds before next command", backoff.get());
+                    Exceptions.wrapRunnable(() -> Thread.sleep(Duration.ofSeconds(backoff.get()))).run();
+                }
                 AgentCommand command = apiManager.nextCommand();
                 execute(command);
+                backoff.set(0);
             } catch (WebClientRequestException ignore){
+                incrementBackoff();
                 log.debug("Unable to reach api, will try again in {} seconds", apiRetry);
                 log.trace("api error", ignore);
                 Exceptions.wrapRunnable(() -> Thread.sleep(Duration.ofSeconds(apiRetry))).run();;
             } catch(BaseRuntimeException bre){
+                incrementBackoff();
                 listenNext = !bre.getExtra().containsKey("exit");
             } catch(Exception e) {
+                incrementBackoff();
                 log.error("command-execution-error", e);
             } finally {
                 if(listenNext){
                     vThreadExecutor.submit(this);
                 }
             }
+        }
+        public void incrementBackoff(){
+            backoff.set(Math.min(backoff.get() + 10, MAX_BACKOFF_SECONDS));
         }
     }
 }
