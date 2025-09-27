@@ -87,10 +87,22 @@
 		<dependency>
 			<groupId>software.amazon.awssdk</groupId>
 			<artifactId>s3</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>commons-logging</groupId>
+					<artifactId>commons-logging</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>software.amazon.awssdk</groupId>
 			<artifactId>auth</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>commons-logging</groupId>
+					<artifactId>commons-logging</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>
@@ -161,7 +173,17 @@
 						<version>0.3.14</version>
 					</metadataRepository>
 					<buildArgs>
-						--verbose --initialize-at-run-time=sun.net.dns.ResolverConfigurationImpl
+						--verbose 
+						--initialize-at-run-time=sun.net.dns.ResolverConfigurationImpl
+						--initialize-at-build-time=org.apache.commons.logging.LogFactory
+						--initialize-at-build-time=org.slf4j.helpers.Reporter
+						--initialize-at-build-time=org.apache.commons.logging.LogFactoryService
+						--initialize-at-build-time=org.apache.commons.logging.impl.LogFactoryImpl
+						--initialize-at-build-time=org.apache.commons.logging.impl.SimpleLog
+						--initialize-at-build-time=org.apache.commons.logging.impl.NoOpLog
+						--initialize-at-build-time=org.apache.commons.logging.impl.Jdk14Logger
+						--initialize-at-build-time=org.apache.commons.logging.impl.Log4JLogger
+						--initialize-at-build-time=org.apache.commons.logging.impl.LogKitLogger
 					</buildArgs>
 				</configuration>
 			</plugin>
