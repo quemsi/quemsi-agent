@@ -3,6 +3,7 @@ package com.quemsi.agent.service;
 import java.util.List;
 import java.util.function.Supplier;
 
+import org.quartz.Scheduler;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
@@ -44,6 +45,8 @@ public class SpringBeanManager {
 	protected ApplicationContext context;
 	@Autowired
 	protected ApiClient apiClient;
+	@Autowired
+	private Scheduler scheduler;
 
 	public TimerImpl findTimer(String name){
 		return beanFactory.getBean(name, TimerImpl.class);
@@ -62,7 +65,8 @@ public class SpringBeanManager {
 			TimerImpl t = registerer.getBean();
 			t.setName(timer.getName());  
 			t.setSchedule(timer.getSchedule());
-			registerer.register(true);
+			t.setScheduler(scheduler);
+			registerer.register();
 			if(!registerer.isNew()){
 				t.reset();
 			}else{

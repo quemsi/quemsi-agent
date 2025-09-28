@@ -30,6 +30,21 @@ import com.quemsi.model.dto.agent.RetentionExecute;
 import com.quemsi.model.dto.agent.UpdateAgentModel;
 import com.quemsi.model.dto.agent.onapi.NotifyError;
 import com.quemsi.model.dto.agent.onapi.RetentionCompleted;
+import com.quemsi.model.dto.agent.TestDatasource;
+import com.quemsi.model.dto.agent.AgentCommandSync;
+import com.quemsi.model.dto.agent.TestAWSS3Drive;
+import com.quemsi.model.dto.agent.TestAzureBlobDrive;
+import com.quemsi.model.dto.agent.VersionDeleteRequest;
+import com.quemsi.model.dto.agent.onapi.TestAWSS3DriveResult;
+import com.quemsi.model.dto.agent.onapi.TestAzureBlobDriveResult;
+import com.quemsi.model.dto.agent.onapi.TestDatasourceResult;
+import com.quemsi.model.dto.agent.onapi.VersionDeleted;
+import com.quemsi.model.flow.db.sql.DbModel;
+import com.quemsi.model.flow.db.sql.DbTable;
+import com.quemsi.model.flow.db.sql.DbColumn;
+import com.quemsi.model.flow.db.sql.DbSequence;
+import com.quemsi.model.flow.in.TableData;
+import com.quemsi.model.flow.in.TableDataPage;
 
 @Configuration
 public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
@@ -39,6 +54,34 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
         hints.reflection()
             .registerType(FileNameUtil.class, MemberCategory.values())
             .registerType(TimerImpl.class, MemberCategory.values())
+            // Quartz job instantiation hints
+            .registerType(org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean.class, MemberCategory.values())
+            .registerType(org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean.MethodInvokingJob.class, MemberCategory.values())
+            .registerType(org.springframework.scheduling.quartz.AdaptableJobFactory.class, MemberCategory.values())
+            // DbModel and related classes for Jackson serialization
+            .registerType(DbModel.class, MemberCategory.values())
+            .registerType(DbModel.ReferencedColumn.class, MemberCategory.values())
+            .registerType(DbModel.TableReference.class, MemberCategory.values())
+            .registerType(DbModel.ReferenceInfo.class, MemberCategory.values())
+            .registerType(DbModel.IndexInfo.class, MemberCategory.values())
+            .registerType(DbTable.class, MemberCategory.values())
+            .registerType(DbColumn.class, MemberCategory.values())
+            .registerType(DbSequence.class, MemberCategory.values())
+            // TableData and related classes for Jackson serialization
+            .registerType(TableData.class, MemberCategory.values())
+            .registerType(TableData.DataPage.class, MemberCategory.values())
+            .registerType(TableDataPage.class, MemberCategory.values())
+            .registerType(TableDataPage.Request.class, MemberCategory.values())
+            // All AgentCommand subclasses for Jackson serialization
+            .registerType(AgentCommandSync.class, MemberCategory.values())
+            .registerType(TestDatasource.class, MemberCategory.values())
+            .registerType(TestAWSS3Drive.class, MemberCategory.values())
+            .registerType(TestAzureBlobDrive.class, MemberCategory.values())
+            .registerType(VersionDeleteRequest.class, MemberCategory.values())
+            .registerType(TestAWSS3DriveResult.class, MemberCategory.values())
+            .registerType(TestAzureBlobDriveResult.class, MemberCategory.values())
+            .registerType(TestDatasourceResult.class, MemberCategory.values())
+            .registerType(VersionDeleted.class, MemberCategory.values())
             ;
         hints.serialization()
             .registerType(AgentError.class)
