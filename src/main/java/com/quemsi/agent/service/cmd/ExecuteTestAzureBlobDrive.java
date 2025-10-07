@@ -10,6 +10,9 @@ import com.quemsi.commons.util.StringUtils;
 import com.quemsi.model.dto.agent.TestAzureBlobDrive;
 import com.quemsi.model.dto.agent.onapi.TestAzureBlobDriveResult;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class ExecuteTestAzureBlobDrive {
     @Autowired
     private ApiManager apiManager;
@@ -28,15 +31,22 @@ public class ExecuteTestAzureBlobDrive {
             }
         }
         try{
+            com.azure.core.http.policy.HttpPipelinePolicy timeoutPolicy = (context, next) -> {
+                context.setHttpRequest(context.getHttpRequest());
+                return next.process().timeout(java.time.Duration.ofSeconds(3L)).retry(2);
+            };
+            
             BlobServiceClient client = new com.azure.storage.blob.BlobServiceClientBuilder()
                 .endpoint(endpoint)
                 .credential(new StorageSharedKeyCredential(accountName, accountKey))
+                .addPolicy(timeoutPolicy)
                 .buildClient();
             client.listBlobContainers().iterator().hasNext();
             TestAzureBlobDriveResult result = builder.success(true).build();
             apiManager.send(result);
         }catch(Exception ex){
-            TestAzureBlobDriveResult result = builder.success(false).errorCode(500).errorMessage(ex.getMessage()).build();
+            log.error("azure-blob-drive-failed", ex);
+            TestAzureBlobDriveResult result = builder.success(false).errorCode(500).errorMessage(ex.getMessage()!=null?ex.getMessage():"azure-blob-drive-failed").build();
             apiManager.send(result);
         }
     }
