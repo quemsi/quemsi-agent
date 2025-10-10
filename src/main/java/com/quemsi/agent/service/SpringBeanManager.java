@@ -138,6 +138,7 @@ public class SpringBeanManager {
 		AzureBlobDrive drive = registerer.getBean();
 		drive.setName(azureBlobDrive.getName());
 		drive.setAccountName(azureBlobDrive.getAccountName());
+		drive.setStorageRoot(azureBlobDrive.getStorageRoot());
 		if(azureBlobDrive.isUseEnvVar()){
 			Environment environment = context.getEnvironment();
 			log.debug("{} var value : {}", azureBlobDrive.getAccountKey(), environment.getProperty(azureBlobDrive.getAccountKey()));
@@ -168,6 +169,7 @@ public class SpringBeanManager {
 		drive.setSecretKey(awsS3Drive.getSecretKey());
 		drive.setRegion(awsS3Drive.getRegion());
 		drive.setBucketName(awsS3Drive.getBucketName());
+		drive.setStorageRoot(awsS3Drive.getStorageRoot());
 		if(awsS3Drive.isUseEnvVar()){
 			Environment environment = context.getEnvironment();
 			log.debug("{} var value : {}", awsS3Drive.getAccessKey(), environment.getProperty(awsS3Drive.getAccessKey()));
@@ -229,15 +231,18 @@ public class SpringBeanManager {
 				try{
 					AzureBlobDrive azureDrive = beanFactory.getBean(storage.getLoc(), AzureBlobDrive.class);
 					ls.setAzureBlobDrive(azureDrive);
-					ls.setUnderlyingStorage(new AzureBlobStorage(azureDrive));
+					AzureBlobStorage abStorage = new AzureBlobStorage(azureDrive);
+					abStorage.setName(storage.getName());
+					abStorage.setRootPath(storage.getRootPath());
+					abStorage.setCapacity(storage.getCapacity());
+					abStorage.setUsedSize(storage.getUsedSize());
+					ls.setUnderlyingStorage(abStorage);
+					abStorage.setRetentionPolicy(storage.getRetentionPolicy());
+					abStorage.setUtil(context.getBean(FileNameUtil.class));
+					abStorage.createContainer(abStorage.containerName());
 				}catch(NoSuchBeanDefinitionException e){
 					throw Exceptions.server("not-existing-drive").withExtra("storageName", storage.getName()).withExtra("driveName", storage.getLoc()).withExtra("type", storage.getType()).get();
 				}
-				ls.setRootPath(storage.getRootPath());
-				ls.setRetentionPolicy(storage.getRetentionPolicy());
-				ls.setUsedSize(storage.getUsedSize());
-				ls.setCapacity(storage.getCapacity());
-				ls.setUtil(context.getBean(FileNameUtil.class));
 				registerer.register();
 			} else if (StorageType.AWSS3.equals(storage.getType())){
 				BeanReqisterer<AWS3Storage> registerer = new BeanReqisterer<>(storage.getName(), AWS3Storage.class, () -> new AWS3Storage());
@@ -250,15 +255,16 @@ public class SpringBeanManager {
 				try{
 					AWSS3Drive awsS3Drive = beanFactory.getBean(storage.getLoc(), AWSS3Drive.class);
 					ls.setAwsS3Drive(awsS3Drive);
-					ls.setUnderlyingStorage(new AWSS3Storage(awsS3Drive));
+					AWSS3Storage awsS3Storage = new AWSS3Storage(awsS3Drive);
+					awsS3Storage.setRootPath(storage.getRootPath());
+					awsS3Storage.setCapacity(storage.getCapacity());
+					awsS3Storage.setUsedSize(storage.getUsedSize());
+					awsS3Storage.setRetentionPolicy(storage.getRetentionPolicy());
+					awsS3Storage.setUtil(context.getBean(FileNameUtil.class));
+					ls.setUnderlyingStorage(awsS3Storage);
 				}catch(NoSuchBeanDefinitionException e){
 					throw Exceptions.server("not-existing-drive").withExtra("storageName", storage.getName()).withExtra("driveName", storage.getLoc()).withExtra("type", storage.getType()).get();
 				}
-				ls.setRootPath(storage.getRootPath());
-				ls.setRetentionPolicy(storage.getRetentionPolicy());
-				ls.setUsedSize(storage.getUsedSize());
-				ls.setCapacity(storage.getCapacity());
-				ls.setUtil(context.getBean(FileNameUtil.class));
 				registerer.register();
 			} else {
 				throw Exceptions.server("not-implemented-yet").withExtra("type", storage.getType()).withExtra("name", storage.getName()).get();

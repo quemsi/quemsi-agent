@@ -6,10 +6,15 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
+import com.azure.storage.blob.BlobClient;
+import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.common.StorageSharedKeyCredential;
 import com.quemsi.commons.util.BaseRuntimeException;
 import com.quemsi.commons.util.Exceptions;
+import com.quemsi.commons.util.FileNameUtil;
+import com.quemsi.commons.util.FileResource;
+import com.quemsi.commons.util.StringUtils;
 import com.quemsi.model.dto.DataFile;
 import com.quemsi.model.flow.DataPackage;
 import com.quemsi.model.flow.DataPackageFileResource;
@@ -18,12 +23,9 @@ import com.quemsi.model.flow.out.AzureBlobDrive;
 import com.quemsi.model.flow.out.Storage;
 
 import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import com.azure.storage.blob.BlobContainerClient;
-import com.azure.storage.blob.BlobClient;
-import com.quemsi.commons.util.FileNameUtil;
-import com.quemsi.commons.util.FileResource;
-import com.quemsi.commons.util.StringUtils;
 
 
 @Slf4j
@@ -31,12 +33,32 @@ public class AzureBlobStorage implements Storage{
     public static final String AZURE_BLOB_ENDPOINT_FORMAT = "https://%s.blob.core.windows.net";
     private AzureBlobDrive azureBlobDrive;
     private BlobServiceClient client;
-    private FileNameUtil fileNameUtil;
+    @Getter
+    @Setter
+    private String name;
+    @Setter
+    private String retentionPolicy;
+    @Setter
+    private Long usedSize;
+    @Setter
+    private Long capacity;
+    @Getter
+    @Setter
+    private String rootPath;
+    @Setter
+    private FileNameUtil util;
     
+    public String containerName() {
+        String containerName = StringUtils.trim(azureBlobDrive.getStorageRoot(), "/", "/");
+        if(containerName.isEmpty()){
+            containerName = rootPath;
+        }
+        return containerName;
+    }
+
     @Builder
     public AzureBlobStorage(AzureBlobDrive azureBlobDrive) {
         this.azureBlobDrive = azureBlobDrive;
-        this.fileNameUtil = new FileNameUtil();
     }
 
     public synchronized BlobServiceClient getBlobServiceClient() {
@@ -52,23 +74,11 @@ public class AzureBlobStorage implements Storage{
     }
 
     @Override
-    public String getName() {
-        return azureBlobDrive.getName();
-    }
-
-    @Override
     public boolean recordFiles() {
         return true;
     }
 
-    @Override
-    public String getRootPath() {
-        return azureBlobDrive.getStorageRoot();
-    }
-
-    @Override
-    public void init(Flow f) {
-        String containerName = StringUtils.trim(azureBlobDrive.getStorageRoot(), "/", "/");
+    public void createContainer(String containerName) {
         try {
             getBlobServiceClient().createBlobContainer(containerName);
             log.info("Created blob container: {}", containerName);
@@ -83,20 +93,26 @@ public class AzureBlobStorage implements Storage{
     }
 
     @Override
+    public void init(Flow f) {
+        String containerName = containerName();
+        createContainer(containerName);
+    }
+
+    @Override
     public void store(String dataName, List<DataPackage> dataPackages, Long version) {
         if(dataPackages.isEmpty()){
             throw Exceptions.badRequest("datapackages-empty").withExtra("versionId", version).get();
         }
-        
-        String containerName = StringUtils.trim(azureBlobDrive.getStorageRoot(), "/", "/");
+        String containerName = containerName();
         BlobContainerClient containerClient = getBlobServiceClient().getBlobContainerClient(containerName);
         
         dataPackages.forEach(dp -> {
             log.info("Storing file to Azure Blob Storage: {}", dp.getName());
             
             // Generate versioned filename using FileNameUtil
-            String versionedFileName = fileNameUtil.versionedFileName(dp.getName(), version);
-            String blobPath = dataName + "/" + versionedFileName;
+            String fileFolder = StringUtils.removePathPrefix(StringUtils.trim(rootPath, "/", "/"), containerName);
+            String versionedFileName = util.versionedFileName(dp.getName(), version);
+            String blobPath = StringUtils.buildPath("/", fileFolder, dataName, versionedFileName);
             
             log.info("Destination blob path: {}", blobPath);
             
@@ -121,14 +137,15 @@ public class AzureBlobStorage implements Storage{
 
     @Override
     public List<DataPackage> getFiles(List<DataFile> files) throws IOException {
-        String containerName = StringUtils.trim(azureBlobDrive.getStorageRoot(), "/", "/");
+        String containerName = containerName();
         BlobContainerClient containerClient = getBlobServiceClient().getBlobContainerClient(containerName);
-        
         return files.stream().<DataPackage>map(f -> {
             try {
                 // Generate versioned filename using FileNameUtil
-                String versionedFileName = fileNameUtil.versionedFileName(f.getName(), f.getVersion());
-                String blobPath = f.getDir() + "/" + versionedFileName;
+                String versionedFileName = util.versionedFileName(f.getName(), f.getVersion());
+                String fileFolder = StringUtils.trim(StringUtils.ensureSeperator(azureBlobDrive.getStorageRoot(), rootPath), "/", "/");
+                fileFolder = StringUtils.removePathPrefix(fileFolder, containerName);
+                String blobPath = fileFolder + "/" + f.getDir() + "/" + versionedFileName;
                 
                 log.info("Retrieving file from Azure Blob Storage at path: {}", blobPath);
                 
@@ -145,7 +162,7 @@ public class AzureBlobStorage implements Storage{
                 if (contentType == null || contentType.isEmpty()) {
                     contentType = properties.getContentType();
                     if (contentType == null || contentType.isEmpty()) {
-                        contentType = fileNameUtil.getFileType(versionedFileName);
+                        contentType = util.getFileType(versionedFileName);
                     }
                 }
                 InputStream blobInputStream = blobClient.openInputStream();
@@ -164,10 +181,12 @@ public class AzureBlobStorage implements Storage{
 
     @Override
     public void deleteFile(String dir, String fileName) throws IOException {
-        String containerName = StringUtils.trim(azureBlobDrive.getStorageRoot(), "/", "/");
+        String containerName = containerName();
         BlobContainerClient containerClient = getBlobServiceClient().getBlobContainerClient(containerName);
         
-        String blobPath = dir + "/" + fileName;
+        String fileFolder = StringUtils.trim(StringUtils.ensureSeperator(azureBlobDrive.getStorageRoot(), rootPath), "/", "/");
+        fileFolder = StringUtils.removePathPrefix(fileFolder, containerName);
+        String blobPath = StringUtils.buildPath("/", fileFolder, dir, fileName);
         log.debug("Deleting file from Azure Blob Storage at path: {}", blobPath);
         
         try {
@@ -206,6 +225,8 @@ public class AzureBlobStorage implements Storage{
         props.put("type", Storage.class.getSimpleName());
         props.put("accountName", azureBlobDrive.getAccountName());
         props.put("storageRoot", azureBlobDrive.getStorageRoot());
+        props.put("rootPath", rootPath);
+        props.put("retentionPolicy", retentionPolicy);
         props.put("capacity", azureBlobDrive.getCapacity());
         props.put("usedSize", azureBlobDrive.getUsedSize());
     }

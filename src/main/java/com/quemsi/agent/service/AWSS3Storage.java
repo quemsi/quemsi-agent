@@ -8,6 +8,9 @@ import java.util.Map;
 
 import com.quemsi.commons.util.BaseRuntimeException;
 import com.quemsi.commons.util.Exceptions;
+import com.quemsi.commons.util.FileNameUtil;
+import com.quemsi.commons.util.FileResource;
+import com.quemsi.commons.util.StringUtils;
 import com.quemsi.model.dto.DataFile;
 import com.quemsi.model.flow.DataPackage;
 import com.quemsi.model.flow.DataPackageFileResource;
@@ -16,6 +19,7 @@ import com.quemsi.model.flow.out.AWSS3Drive;
 import com.quemsi.model.flow.out.Storage;
 
 import lombok.Builder;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -31,19 +35,25 @@ import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
-import com.quemsi.commons.util.FileNameUtil;
-import com.quemsi.commons.util.FileResource;
 
 @Slf4j
 public class AWSS3Storage implements Storage {
     private AWSS3Drive awsS3Drive;
     private S3Client s3Client;
-    private FileNameUtil fileNameUtil;
-    
+    @Setter
+    private String retentionPolicy;
+    @Setter
+    private Long usedSize;
+    @Setter
+    private Long capacity;
+    @Setter
+    private String rootPath;
+    @Setter
+    private FileNameUtil util;
+
     @Builder
     public AWSS3Storage(AWSS3Drive awsS3Drive) {
         this.awsS3Drive = awsS3Drive;
-        this.fileNameUtil = new FileNameUtil();
     }
 
     public synchronized S3Client getS3Client() {
@@ -80,7 +90,7 @@ public class AWSS3Storage implements Storage {
 
     @Override
     public String getRootPath() {
-        return awsS3Drive.getStorageRoot();
+        return StringUtils.ensureSeperator(awsS3Drive.getStorageRoot(), rootPath);
     }
 
     @Override
@@ -112,8 +122,9 @@ public class AWSS3Storage implements Storage {
             log.info("Storing file to AWS S3: {}", dp.getName());
             
             // Generate versioned filename using FileNameUtil
-            String versionedFileName = fileNameUtil.versionedFileName(dp.getName(), version);
-            String s3Key = dataName + "/" + versionedFileName;
+            String fileFolder = StringUtils.trim(StringUtils.ensureSeperator(awsS3Drive.getStorageRoot(), rootPath), "/", null);
+            String versionedFileName = util.versionedFileName(dp.getName(), version);
+            String s3Key = fileFolder + "/" + dataName + "/" + versionedFileName;
             
             log.info("Destination S3 key: {}", s3Key);
             
@@ -147,8 +158,9 @@ public class AWSS3Storage implements Storage {
         return files.stream().<DataPackage>map(f -> {
             try {
                 // Generate versioned filename using FileNameUtil
-                String versionedFileName = fileNameUtil.versionedFileName(f.getName(), f.getVersion());
-                String s3Key = f.getDir() + "/" + versionedFileName;
+                String fileFolder = StringUtils.trim(StringUtils.ensureSeperator(awsS3Drive.getStorageRoot(), rootPath), "/", null);
+                String versionedFileName = util.versionedFileName(f.getName(), f.getVersion());
+                String s3Key = StringUtils.buildPath("/", fileFolder ,f.getDir(), versionedFileName);
                 
                 log.info("Retrieving file from AWS S3 at key: {}", s3Key);
                 
@@ -177,7 +189,7 @@ public class AWSS3Storage implements Storage {
                 // Determine content type
                 String contentType = f.getContentType();
                 if (contentType == null || contentType.isEmpty()) {
-                    contentType = fileNameUtil.getFileType(versionedFileName);
+                    contentType = util.getFileType(versionedFileName);
                 }
                 
                 // Create a DataPackage from the S3 object
@@ -202,7 +214,7 @@ public class AWSS3Storage implements Storage {
     public void deleteFile(String dir, String fileName) throws IOException {
         String bucketName = awsS3Drive.getBucketName();
         
-        String s3Key = dir + "/" + fileName;
+        String s3Key = StringUtils.trim(StringUtils.ensureSeperator(awsS3Drive.getStorageRoot(), rootPath) + "/" + dir + "/" + fileName, "/", null);
         log.debug("Deleting file from AWS S3 at key: {}", s3Key);
         
         try {
@@ -242,6 +254,8 @@ public class AWSS3Storage implements Storage {
         props.put("region", awsS3Drive.getRegion());
         props.put("bucketName", awsS3Drive.getBucketName());
         props.put("storageRoot", awsS3Drive.getStorageRoot());
+        props.put("rootPath", rootPath);
+        props.put("retentionPolicy", retentionPolicy);
         props.put("capacity", awsS3Drive.getCapacity());
         props.put("usedSize", awsS3Drive.getUsedSize());
     }
