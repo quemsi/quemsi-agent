@@ -15,6 +15,7 @@ import com.quemsi.model.dto.DataFile;
 import com.quemsi.model.flow.DataPackage;
 import com.quemsi.model.flow.DataPackageFileResource;
 import com.quemsi.model.flow.Flow;
+import com.quemsi.model.flow.FlowContext;
 import com.quemsi.model.flow.out.AWSS3Drive;
 import com.quemsi.model.flow.out.Storage;
 
@@ -111,7 +112,7 @@ public class AWSS3Storage implements Storage {
     }
 
     @Override
-    public void store(String dataName, List<DataPackage> dataPackages, Long version) {
+    public void store(FlowContext context, String dataName, List<DataPackage> dataPackages, Long version) {
         if (dataPackages.isEmpty()) {
             throw Exceptions.badRequest("datapackages-empty").withExtra("versionId", version).get();
         }
@@ -152,7 +153,7 @@ public class AWSS3Storage implements Storage {
     }
 
     @Override
-    public List<DataPackage> getFiles(List<DataFile> files) throws IOException {
+    public List<DataPackage> getFiles(FlowContext context, List<DataFile> files) throws IOException {
         String bucketName = awsS3Drive.getBucketName();
         
         return files.stream().<DataPackage>map(f -> {

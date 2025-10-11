@@ -19,6 +19,7 @@ import com.quemsi.model.dto.DataFile;
 import com.quemsi.model.flow.DataPackage;
 import com.quemsi.model.flow.DataPackageFileResource;
 import com.quemsi.model.flow.Flow;
+import com.quemsi.model.flow.FlowContext;
 import com.quemsi.model.flow.out.AzureBlobDrive;
 import com.quemsi.model.flow.out.Storage;
 
@@ -99,7 +100,7 @@ public class AzureBlobStorage implements Storage{
     }
 
     @Override
-    public void store(String dataName, List<DataPackage> dataPackages, Long version) {
+    public void store(FlowContext context, String dataName, List<DataPackage> dataPackages, Long version) {
         if(dataPackages.isEmpty()){
             throw Exceptions.badRequest("datapackages-empty").withExtra("versionId", version).get();
         }
@@ -136,7 +137,7 @@ public class AzureBlobStorage implements Storage{
     }
 
     @Override
-    public List<DataPackage> getFiles(List<DataFile> files) throws IOException {
+    public List<DataPackage> getFiles(FlowContext context, List<DataFile> files) throws IOException {
         String containerName = containerName();
         BlobContainerClient containerClient = getBlobServiceClient().getBlobContainerClient(containerName);
         return files.stream().<DataPackage>map(f -> {
@@ -145,7 +146,7 @@ public class AzureBlobStorage implements Storage{
                 String versionedFileName = util.versionedFileName(f.getName(), f.getVersion());
                 String fileFolder = StringUtils.trim(StringUtils.ensureSeperator(azureBlobDrive.getStorageRoot(), rootPath), "/", "/");
                 fileFolder = StringUtils.removePathPrefix(fileFolder, containerName);
-                String blobPath = fileFolder + "/" + f.getDir() + "/" + versionedFileName;
+                String blobPath = StringUtils.buildPath("/", fileFolder, f.getDir(), versionedFileName);
                 
                 log.info("Retrieving file from Azure Blob Storage at path: {}", blobPath);
                 
