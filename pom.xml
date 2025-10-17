@@ -85,6 +85,10 @@
 				<artifactId>azure-identity</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-xml</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>software.amazon.awssdk</groupId>
 			<artifactId>s3</artifactId>
 			<exclusions>
@@ -139,7 +143,7 @@
 			<dependency>
 					<groupId>com.azure</groupId>
 					<artifactId>azure-sdk-bom</artifactId>
-					<version>1.2.37</version>
+					<version>1.3.0</version>
 					<type>pom</type>
 					<scope>import</scope>
 			</dependency>
@@ -179,17 +183,28 @@
 						<version>0.3.14</version>
 					</metadataRepository>
 					<buildArgs>
-						--verbose 
-						--initialize-at-run-time=sun.net.dns.ResolverConfigurationImpl
-						--initialize-at-build-time=org.apache.commons.logging.LogFactory
-						--initialize-at-build-time=org.slf4j.helpers.Reporter
-						--initialize-at-build-time=org.apache.commons.logging.LogFactoryService
-						--initialize-at-build-time=org.apache.commons.logging.impl.LogFactoryImpl
-						--initialize-at-build-time=org.apache.commons.logging.impl.SimpleLog
-						--initialize-at-build-time=org.apache.commons.logging.impl.NoOpLog
-						--initialize-at-build-time=org.apache.commons.logging.impl.Jdk14Logger
-						--initialize-at-build-time=org.apache.commons.logging.impl.Log4JLogger
-						--initialize-at-build-time=org.apache.commons.logging.impl.LogKitLogger
+						<arg>--verbose</arg>
+						<arg>-H:ClassInitialization=org.springframework.http.codec.xml.XmlEventDecoder:rerun</arg>
+						<arg>-H:ClassInitialization=org.springframework.util.xml.StaxUtils:rerun</arg>
+						<arg>-H:ClassInitialization=org.springframework.util.ClassUtils:rerun</arg>
+						<arg>-H:ClassInitialization=org.springframework.util.ConcurrentReferenceHashMap:rerun</arg>
+						<arg>-H:ClassInitialization=javax.xml.stream.XMLInputFactory:rerun</arg>
+						<arg>-H:ClassInitialization=javax.xml.stream.FactoryFinder:rerun</arg>
+						<arg>-H:ClassInitialization=org.codehaus.stax2.XMLInputFactory2:rerun</arg>
+						<arg>-H:ClassInitialization=com.ctc.wstx.stax.WstxInputFactory:rerun</arg>
+						<arg>-H:ClassInitialization=com.ctc.wstx.api.CommonConfig:rerun</arg>
+						<arg>-H:ClassInitialization=com.ctc.wstx.api.ReaderConfig:rerun</arg>
+						<arg>-H:ClassInitialization=com.ctc.wstx.util.DefaultXmlSymbolTable:rerun</arg>
+						<arg>--initialize-at-run-time=sun.net.dns.ResolverConfigurationImpl</arg>
+						<arg>--initialize-at-build-time=org.apache.commons.logging.LogFactory</arg>
+						<arg>--initialize-at-build-time=org.slf4j.helpers.Reporter</arg>
+						<arg>--initialize-at-build-time=org.apache.commons.logging.LogFactoryService</arg>
+						<arg>--initialize-at-build-time=org.apache.commons.logging.impl.LogFactoryImpl</arg>
+						<arg>--initialize-at-build-time=org.apache.commons.logging.impl.SimpleLog</arg>
+						<arg>--initialize-at-build-time=org.apache.commons.logging.impl.NoOpLog</arg>
+						<arg>--initialize-at-build-time=org.apache.commons.logging.impl.Jdk14Logger</arg>
+						<arg>--initialize-at-build-time=org.apache.commons.logging.impl.Log4JLogger</arg>
+						<arg>--initialize-at-build-time=org.apache.commons.logging.impl.LogKitLogger</arg>
 					</buildArgs>
 					<systemProperties>
 						<spring.application.version>${project.version}</spring.application.version>
