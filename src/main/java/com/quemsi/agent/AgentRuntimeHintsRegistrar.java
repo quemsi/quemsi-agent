@@ -107,7 +107,11 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(ExecuteFlow.class)
             .registerType(RetentionExecute.class).registerType(RetentionExecute.FileInfo.class)
             .registerType(UpdateAgentModel.class)
-
+            .registerType(TestAWSS3Drive.class)
+            .registerType(TestAzureBlobDrive.class)
+            .registerType(TestDatasourceResult.class)
+            .registerType(TestAWSS3DriveResult.class)
+            .registerType(TestAzureBlobDriveResult.class)
             .registerType(NotifyError.class)
             .registerType(RetentionCompleted.class)
             ;
