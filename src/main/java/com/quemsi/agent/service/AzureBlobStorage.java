@@ -84,7 +84,7 @@ public class AzureBlobStorage implements Storage{
             getBlobServiceClient().createBlobContainer(containerName);
             log.info("Created blob container: {}", containerName);
         } catch (com.azure.storage.blob.models.BlobStorageException e) {
-            if (e.getStatusCode() == 409) { // Container already exists
+            if (e.getStatusCode() == 409) { /* 409 - Conflict - Container already exists */
                 log.debug("Blob container '{}' already exists.", containerName);
             } else {
                 log.warn("Failed to create blob container '{}': {}", containerName, e.getMessage());
@@ -110,7 +110,7 @@ public class AzureBlobStorage implements Storage{
         dataPackages.forEach(dp -> {
             log.info("Storing file to Azure Blob Storage: {}", dp.getName());
             
-            // Generate versioned filename using FileNameUtil
+            /* Generate versioned filename using FileNameUtil */
             String fileFolder = StringUtils.removePathPrefix(StringUtils.trim(rootPath, "/", "/"), containerName);
             String versionedFileName = util.versionedFileName(dp.getName(), version);
             String blobPath = StringUtils.buildPath("/", fileFolder, dataName, versionedFileName);
@@ -120,7 +120,7 @@ public class AzureBlobStorage implements Storage{
             try {
                 BlobClient blobClient = containerClient.getBlobClient(blobPath);
                 
-                // Upload the inputstream to Azure Blob Storage
+                /* Upload the inputstream to Azure Blob Storage */
                 blobClient.upload(dp.getInputStream(), dp.getLength(), true);
                 
                 log.info("Successfully uploaded file {} to Azure Blob Storage at path: {}", dp.getName(), blobPath);
@@ -142,7 +142,7 @@ public class AzureBlobStorage implements Storage{
         BlobContainerClient containerClient = getBlobServiceClient().getBlobContainerClient(containerName);
         return files.stream().<DataPackage>map(f -> {
             try {
-                // Generate versioned filename using FileNameUtil
+                /* Generate versioned filename using FileNameUtil */
                 String versionedFileName = util.versionedFileName(f.getName(), f.getVersion());
                 String fileFolder = StringUtils.trim(StringUtils.ensureSeperator(azureBlobDrive.getStorageRoot(), rootPath), "/", "/");
                 fileFolder = StringUtils.removePathPrefix(fileFolder, containerName);
@@ -157,7 +157,7 @@ public class AzureBlobStorage implements Storage{
                     throw Exceptions.notFound("file-not-found").withExtra("containerName", containerName).withExtra("versionedFileName", versionedFileName).get();
                 }
                 
-                // Get blob properties to determine content type and size
+                /* Get blob properties to determine content type and size */
                 com.azure.storage.blob.models.BlobProperties properties = blobClient.getProperties();
                 String contentType = f.getContentType();
                 if (contentType == null || contentType.isEmpty()) {
@@ -169,7 +169,7 @@ public class AzureBlobStorage implements Storage{
                 InputStream blobInputStream = blobClient.openInputStream();
                 ByteArrayOutputStream outStream = new ByteArrayOutputStream();
                 org.apache.commons.io.IOUtils.copy(blobInputStream, outStream);
-                // Create a DataPackage from the blob
+                /* Create a DataPackage from the blob */
                 FileResource resource = FileResource.builder().name(versionedFileName).contentType(contentType).empty(outStream.size() > 0).originalFilename(versionedFileName).size(outStream.size()).data(outStream.toByteArray()).build();
                 return new DataPackageFileResource(f.getName(), resource);
             } catch(BaseRuntimeException bre){

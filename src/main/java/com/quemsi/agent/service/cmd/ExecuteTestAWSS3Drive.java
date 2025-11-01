@@ -57,7 +57,7 @@ public class ExecuteTestAWSS3Drive {
                 .overrideConfiguration(clientConfig)
                 .build();
                 
-            // Test the connection by checking if we can access the bucket
+            /* Test the connection by checking if we can access the bucket */
             HeadBucketRequest headBucketRequest = HeadBucketRequest.builder()
                 .bucket(bucketName)
                 .build();

@@ -54,11 +54,11 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
         hints.reflection()
             .registerType(FileNameUtil.class, MemberCategory.values())
             .registerType(TimerImpl.class, MemberCategory.values())
-            // Quartz job instantiation hints
+            /* Quartz job instantiation hints */
             .registerType(org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean.class, MemberCategory.values())
             .registerType(org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean.MethodInvokingJob.class, MemberCategory.values())
             .registerType(org.springframework.scheduling.quartz.AdaptableJobFactory.class, MemberCategory.values())
-            // DbModel and related classes for Jackson serialization
+            /* DbModel and related classes for Jackson serialization */
             .registerType(DbModel.class, MemberCategory.values())
             .registerType(DbModel.ReferencedColumn.class, MemberCategory.values())
             .registerType(DbModel.TableReference.class, MemberCategory.values())
@@ -67,12 +67,12 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(DbTable.class, MemberCategory.values())
             .registerType(DbColumn.class, MemberCategory.values())
             .registerType(DbSequence.class, MemberCategory.values())
-            // TableData and related classes for Jackson serialization
+            /* TableData and related classes for Jackson serialization */
             .registerType(TableData.class, MemberCategory.values())
             .registerType(TableData.DataPage.class, MemberCategory.values())
             .registerType(TableDataPage.class, MemberCategory.values())
             .registerType(TableDataPage.Request.class, MemberCategory.values())
-            // All AgentCommand subclasses for Jackson serialization
+            /* All AgentCommand subclasses for Jackson serialization */
             .registerType(AgentCommandSync.class, MemberCategory.values())
             .registerType(TestDatasource.class, MemberCategory.values())
             .registerType(TestAWSS3Drive.class, MemberCategory.values())

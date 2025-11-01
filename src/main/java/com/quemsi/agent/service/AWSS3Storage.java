@@ -69,7 +69,7 @@ public class AWSS3Storage implements Storage {
                 .credentialsProvider(StaticCredentialsProvider.create(awsCreds))
                 .build();
                 
-            // Test the connection
+            /* Test the connection */
             try {
                 s3Client.headBucket(builder -> builder.bucket(awsS3Drive.getBucketName()));
             } catch (Exception e) {
@@ -122,7 +122,7 @@ public class AWSS3Storage implements Storage {
         dataPackages.forEach(dp -> {
             log.info("Storing file to AWS S3: {}", dp.getName());
             
-            // Generate versioned filename using FileNameUtil
+            /* Generate versioned filename using FileNameUtil */
             String fileFolder = StringUtils.trim(StringUtils.ensureSeperator(awsS3Drive.getStorageRoot(), rootPath), "/", null);
             String versionedFileName = util.versionedFileName(dp.getName(), version);
             String s3Key = fileFolder + "/" + dataName + "/" + versionedFileName;
@@ -158,14 +158,14 @@ public class AWSS3Storage implements Storage {
         
         return files.stream().<DataPackage>map(f -> {
             try {
-                // Generate versioned filename using FileNameUtil
+                /* Generate versioned filename using FileNameUtil */
                 String fileFolder = StringUtils.trim(StringUtils.ensureSeperator(awsS3Drive.getStorageRoot(), rootPath), "/", null);
                 String versionedFileName = util.versionedFileName(f.getName(), f.getVersion());
                 String s3Key = StringUtils.buildPath("/", fileFolder ,f.getDir(), versionedFileName);
                 
                 log.info("Retrieving file from AWS S3 at key: {}", s3Key);
                 
-                // Check if object exists
+                /* Check if object exists */
                 try {
                     HeadObjectRequest headObjectRequest = HeadObjectRequest.builder()
                         .bucket(bucketName)
@@ -177,7 +177,7 @@ public class AWSS3Storage implements Storage {
                     throw Exceptions.notFound("file-not-found").withExtra("bucketName", bucketName).withExtra("versionedFileName", versionedFileName).get();
                 }
                 
-                // Get object
+                /* Get object */
                 GetObjectRequest getObjectRequest = GetObjectRequest.builder()
                     .bucket(bucketName)
                     .key(s3Key)
@@ -187,13 +187,13 @@ public class AWSS3Storage implements Storage {
                 ByteArrayOutputStream outStream = new ByteArrayOutputStream();
                 org.apache.commons.io.IOUtils.copy(s3InputStream, outStream);
                 
-                // Determine content type
+                /* Determine content type */
                 String contentType = f.getContentType();
                 if (contentType == null || contentType.isEmpty()) {
                     contentType = util.getFileType(versionedFileName);
                 }
                 
-                // Create a DataPackage from the S3 object
+                /* Create a DataPackage from the S3 object */
                 FileResource resource = FileResource.builder()
                     .name(versionedFileName)
                     .contentType(contentType)
