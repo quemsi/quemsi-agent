@@ -60,7 +60,6 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(org.springframework.scheduling.quartz.AdaptableJobFactory.class, MemberCategory.values())
             /* DbModel and related classes for Jackson serialization */
             .registerType(DbModel.class, MemberCategory.values())
-            .registerType(DbModel.ReferencedColumn.class, MemberCategory.values())
             .registerType(DbModel.TableReference.class, MemberCategory.values())
             .registerType(DbModel.ReferenceInfo.class, MemberCategory.values())
             .registerType(DbModel.IndexInfo.class, MemberCategory.values())
