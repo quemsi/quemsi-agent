@@ -5,6 +5,7 @@ import org.springframework.aot.hint.RuntimeHints;
 import org.springframework.aot.hint.RuntimeHintsRegistrar;
 import org.springframework.context.annotation.Configuration;
 
+import com.quemsi.agent.flow.TimerImpl;
 import com.quemsi.commons.util.FileNameUtil;
 import com.quemsi.model.dto.AgentError;
 import com.quemsi.model.dto.AgentModel;
@@ -17,7 +18,6 @@ import com.quemsi.model.dto.DataVersionSummary;
 import com.quemsi.model.dto.DatasourceType;
 import com.quemsi.model.dto.FlowDetail;
 import com.quemsi.model.dto.FlowExecutionStatus;
-import com.quemsi.model.dto.FlowHistory;
 import com.quemsi.model.dto.NamedEntityReference;
 import com.quemsi.model.dto.ObjectReference;
 import com.quemsi.model.dto.StorageType;
@@ -26,13 +26,25 @@ import com.quemsi.model.dto.TagType;
 import com.quemsi.model.dto.agent.AgentCommand;
 import com.quemsi.model.dto.agent.DelayAgentCommand;
 import com.quemsi.model.dto.agent.ExecuteFlow;
-import com.quemsi.model.dto.agent.GoogleDriveConnect;
 import com.quemsi.model.dto.agent.RetentionExecute;
 import com.quemsi.model.dto.agent.UpdateAgentModel;
 import com.quemsi.model.dto.agent.onapi.NotifyError;
 import com.quemsi.model.dto.agent.onapi.RetentionCompleted;
-import com.quemsi.model.dto.agent.onapi.UpdateGoogleDrive;
-// import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
+import com.quemsi.model.dto.agent.TestDatasource;
+import com.quemsi.model.dto.agent.AgentCommandSync;
+import com.quemsi.model.dto.agent.TestAWSS3Drive;
+import com.quemsi.model.dto.agent.TestAzureBlobDrive;
+import com.quemsi.model.dto.agent.VersionDeleteRequest;
+import com.quemsi.model.dto.agent.onapi.TestAWSS3DriveResult;
+import com.quemsi.model.dto.agent.onapi.TestAzureBlobDriveResult;
+import com.quemsi.model.dto.agent.onapi.TestDatasourceResult;
+import com.quemsi.model.dto.agent.onapi.VersionDeleted;
+import com.quemsi.model.flow.db.sql.DbModel;
+import com.quemsi.model.flow.db.sql.DbTable;
+import com.quemsi.model.flow.db.sql.DbColumn;
+import com.quemsi.model.flow.db.sql.DbSequence;
+import com.quemsi.model.flow.in.TableData;
+import com.quemsi.model.flow.in.TableDataPage;
 
 @Configuration
 public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
@@ -40,14 +52,40 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
     @Override
     public void registerHints(RuntimeHints hints, ClassLoader classLoader) {
         hints.reflection()
-            // .registerType(GoogleClientSecrets.class, MemberCategory.values()).registerType(GoogleClientSecrets.Details.class, MemberCategory.values())
-            // .registerType(Gstorage.class, MemberCategory.values())
             .registerType(FileNameUtil.class, MemberCategory.values())
+            .registerType(TimerImpl.class, MemberCategory.values())
+            /* Quartz job instantiation hints */
+            .registerType(org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean.class, MemberCategory.values())
+            .registerType(org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean.MethodInvokingJob.class, MemberCategory.values())
+            .registerType(org.springframework.scheduling.quartz.AdaptableJobFactory.class, MemberCategory.values())
+            /* DbModel and related classes for Jackson serialization */
+            .registerType(DbModel.class, MemberCategory.values())
+            .registerType(DbModel.TableReference.class, MemberCategory.values())
+            .registerType(DbModel.ReferenceInfo.class, MemberCategory.values())
+            .registerType(DbModel.IndexInfo.class, MemberCategory.values())
+            .registerType(DbTable.class, MemberCategory.values())
+            .registerType(DbColumn.class, MemberCategory.values())
+            .registerType(DbSequence.class, MemberCategory.values())
+            /* TableData and related classes for Jackson serialization */
+            .registerType(TableData.class, MemberCategory.values())
+            .registerType(TableData.DataPage.class, MemberCategory.values())
+            .registerType(TableDataPage.class, MemberCategory.values())
+            .registerType(TableDataPage.Request.class, MemberCategory.values())
+            /* All AgentCommand subclasses for Jackson serialization */
+            .registerType(AgentCommandSync.class, MemberCategory.values())
+            .registerType(TestDatasource.class, MemberCategory.values())
+            .registerType(TestAWSS3Drive.class, MemberCategory.values())
+            .registerType(TestAzureBlobDrive.class, MemberCategory.values())
+            .registerType(VersionDeleteRequest.class, MemberCategory.values())
+            .registerType(TestAWSS3DriveResult.class, MemberCategory.values())
+            .registerType(TestAzureBlobDriveResult.class, MemberCategory.values())
+            .registerType(TestDatasourceResult.class, MemberCategory.values())
+            .registerType(VersionDeleted.class, MemberCategory.values())
             ;
         hints.serialization()
             .registerType(AgentError.class)
             .registerType(AgentModel.class)
-                .registerType(AgentModel.Datasource.class).registerType(AgentModel.GoogleDrive.class).registerType(AgentModel.LocalDrive.class).registerType(AgentModel.Storage.class).registerType(AgentModel.Timer.class)
+                .registerType(AgentModel.Datasource.class).registerType(AgentModel.LocalDrive.class).registerType(AgentModel.Storage.class).registerType(AgentModel.Timer.class).registerType(AgentModel.AzureBlobDrive.class)
             .registerType(DataFile.class)
             .registerType(DataFlows.class).registerType(DataFlows.FlowSummary.class)
             .registerType(DataGroup.class)
@@ -56,7 +94,6 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(DataVersionSummary.class)
             .registerType(DatasourceType.class)
             .registerType(FlowDetail.class)
-            .registerType(FlowHistory.class)
             .registerType(FlowExecutionStatus.class)
             .registerType(NamedEntityReference.class)
             .registerType(ObjectReference.class)
@@ -67,15 +104,15 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(AgentCommand.class)
             .registerType(DelayAgentCommand.class)
             .registerType(ExecuteFlow.class)
-            .registerType(GoogleDriveConnect.class)
             .registerType(RetentionExecute.class).registerType(RetentionExecute.FileInfo.class)
             .registerType(UpdateAgentModel.class)
-
+            .registerType(TestAWSS3Drive.class)
+            .registerType(TestAzureBlobDrive.class)
+            .registerType(TestDatasourceResult.class)
+            .registerType(TestAWSS3DriveResult.class)
+            .registerType(TestAzureBlobDriveResult.class)
             .registerType(NotifyError.class)
             .registerType(RetentionCompleted.class)
-            .registerType(UpdateGoogleDrive.class)
-
-            // .registerType(TypeReference.of(GoogleClientSecrets.class)).registerType(TypeReference.of(GoogleClientSecrets.Details.class))
             ;
     }
 

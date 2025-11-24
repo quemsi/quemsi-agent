@@ -48,6 +48,15 @@ public class FlowManager {
 	public Flow createNewFlow(FlowDetail flow) {
 		String model = null;
 		try {
+			if(!flow.isActive()){
+				Flow old = flows.containsKey(flow.getName())?flows.get(flow.getName()):null;
+				if(old != null && old.getTimerName() != null){
+					TimerImpl oldTimer = beanManager.findTimer(old.getTimerName());
+					oldTimer.remove(old.getName());
+					flows.remove(flow.getName());
+				}
+				return old;
+			}
 			model = flow.getModel();
 			JsonNode node = objectMapper.readTree(model.getBytes(Charset.forName("UTF-8")));
 			Flow f = flowObjectProvider.getObject();
@@ -77,6 +86,7 @@ public class FlowManager {
 			if(flow.getTimer() != null){
 				TimerImpl timer = beanManager.findTimer(flow.getTimer());
 				timer.add(new FlowRunnable(f, flow.getTimer()));
+				f.setTimerName(timer.getName());
 			}
 			f.initialize();
 			flows.put(name, f);
@@ -114,9 +124,9 @@ public class FlowManager {
 
 		@Override
 		public void run() {
-			Map<String, String> tags = Map.of("date", dateUtils.getDateString(LocalDateTime.now())
+			Map<String, String> tags = new HashMap<>(Map.of("date", dateUtils.getDateString(LocalDateTime.now())
 				, "time", dateUtils.getTimeString(LocalDateTime.now()),
-				"timer", this.timerName);
+				"timer", this.timerName));
 			FlowExecution execution = apiClient.initiate(flow.getName(), tags);
 			FlowExecution updatedExecution = flow.execute(execution.getVersion().getId(), tags, execution.getVersion().getFiles(), execution.getId());
 			if(updatedExecution != null){

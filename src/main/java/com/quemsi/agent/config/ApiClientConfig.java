@@ -20,6 +20,7 @@ import com.quemsi.agent.api.TokenApi;
 
 import lombok.extern.slf4j.Slf4j;
 import reactor.netty.http.client.HttpClient;
+import reactor.netty.resources.ConnectionProvider;
 
 @Slf4j
 @Configuration(proxyBeanMethods = false)
@@ -108,7 +109,14 @@ public class ApiClientConfig {
 
     @Bean
     public ReactorClientHttpConnector clientConnector(){
-        HttpClient httpClient = HttpClient.create()
+        ConnectionProvider provider = ConnectionProvider.builder("fixed")
+            .maxConnections(50)
+            .maxIdleTime(Duration.ofSeconds(20))
+            .maxLifeTime(Duration.ofSeconds(60))
+            .pendingAcquireTimeout(Duration.ofSeconds(60))
+            .evictInBackground(Duration.ofSeconds(120))
+            .build();
+        HttpClient httpClient = HttpClient.create(provider)
             .responseTimeout(Duration.ofSeconds(30)); 
         ReactorClientHttpConnector connector = new ReactorClientHttpConnector(httpClient);
         return connector;

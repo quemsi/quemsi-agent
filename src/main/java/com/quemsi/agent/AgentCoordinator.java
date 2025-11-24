@@ -1,10 +1,8 @@
 package com.quemsi.agent;
 
-import java.io.IOException;
 import java.time.Duration;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,26 +10,22 @@ import org.springframework.web.reactive.function.client.WebClientRequestExceptio
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.quemsi.agent.api.ApiManager;
-// import com.quemsi.agent.flow.gdrive.GoogleDrive;
+import com.quemsi.agent.service.AgentCommandExecutor;
 import com.quemsi.agent.service.FlowManager;
-import com.quemsi.agent.service.GoogleDriveManager;
 import com.quemsi.agent.service.SpringBeanManager;
 import com.quemsi.commons.util.BaseRuntimeException;
 import com.quemsi.commons.util.DelayedFormatter;
 import com.quemsi.commons.util.Exceptions;
 import com.quemsi.model.dto.AgentModel;
-import com.quemsi.model.dto.FlowExecution;
 import com.quemsi.model.dto.agent.AgentCommand;
 import com.quemsi.model.dto.agent.DelayAgentCommand;
 import com.quemsi.model.dto.agent.ExecuteFlow;
-import com.quemsi.model.dto.agent.GoogleDriveConnect;
 import com.quemsi.model.dto.agent.RetentionExecute;
+import com.quemsi.model.dto.agent.TestAWSS3Drive;
+import com.quemsi.model.dto.agent.TestAzureBlobDrive;
+import com.quemsi.model.dto.agent.TestDatasource;
 import com.quemsi.model.dto.agent.UpdateAgentModel;
 import com.quemsi.model.dto.agent.VersionDeleteRequest;
-import com.quemsi.model.dto.agent.onapi.RetentionCompleted;
-import com.quemsi.model.dto.agent.onapi.VersionDeleted;
-import com.quemsi.model.flow.Flow;
-import com.quemsi.model.flow.out.Storage;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -48,9 +42,13 @@ public class AgentCoordinator {
     @Autowired
     private ExecutorService vThreadExecutor;
     @Autowired
-    private GoogleDriveManager manager;
-    @Autowired
     private ObjectMapper objectMapper;
+    @Autowired
+    private AgentCommandExecutor commandExecutor;
+    private static final int MAX_BACKOFF_SECONDS = 60;
+    private static final int MIN_BACKOFF_SECONDS = 5;
+
+    private AtomicInteger backoff = new AtomicInteger(0);
 
     private ApiCommandListener apiCommandListener;
     @Value("${spring.application.version}")
@@ -60,19 +58,22 @@ public class AgentCoordinator {
 	
     public void initialize(AgentModel model){
         if(model.getTimers() != null){
-            model.getTimers().forEach(t -> beanManager.registerTimer(t.getName(), t.getSchedule()));
+            model.getTimers().forEach(t -> beanManager.registerTimer(t));
         }
         if(model.getDatasources() != null){
-            model.getDatasources().forEach(ds -> beanManager.registerDatasource(ds.getName(), ds.getDbName(), ds.getUrl(), ds.getUsername(), ds.getPassword(), ds.isUseEnvVar()));
-        }
-        if(model.getGoogleDrives() != null){
-            // model.getGoogleDrives().forEach(t -> beanManager.registerGoogleDrive(t.getName(), t.getCallbackBaseUrl(), t.getCallbackPort()));
+            model.getDatasources().forEach(ds -> beanManager.registerDatasource(ds));
         }
         if(model.getLocalDrives() != null){
-            model.getLocalDrives().forEach(t -> beanManager.registerLocalDrive(t.getName(), t.getStorageRoot(), t.getCapacity(), t.getUsedSize()));
+            model.getLocalDrives().forEach(t -> beanManager.registerLocalDrive(t));
+        }
+        if(model.getAzureBlobDrives() != null){
+            model.getAzureBlobDrives().forEach(a -> beanManager.registerAzureBlobDrive(a));
+        }
+        if(model.getAwsS3Drives() != null){
+            model.getAwsS3Drives().forEach(a -> beanManager.registerAWSS3Drive(a));
         }
         if(model.getStorages() != null){
-            model.getStorages().forEach(s -> beanManager.registerStroge(s.getName(), s.getType(), s.getLoc(), s.getRootPath(), s.getRetentionPolicy(), s.getCapacity(), s.getUsedSize()));
+            model.getStorages().forEach(s -> beanManager.registerStroge(s));
         }
         if(model.getFlows() != null){
             model.getFlows().forEach(f -> flowManager.createNewFlow(f));
@@ -86,15 +87,6 @@ public class AgentCoordinator {
                 AgentModel model = apiManager.allModel(agentVersion);
                 log.debug("model : {}", DelayedFormatter.toDelayedString(Exceptions.wrapSupplier(() -> objectMapper.writeValueAsString(model))));
 				initialize(model);
-                //TODO: to be fixed
-                /*
-                String googleCredentialJson = apiManager.googleCredential();
-                BufferedWriter writer = new BufferedWriter(Files.newWriter(new File("credentials.json"), StandardCharsets.UTF_8));
-                writer.write(googleCredentialJson);
-                writer.close();
-                log.info("will initialize googledrives");
-                vThreadExecutor.execute(new InitGoogleDrives());
-                 */
                 initialized = true;
                 log.info("initialization completed");
                 apiCommandListener = new ApiCommandListener();
@@ -113,62 +105,25 @@ public class AgentCoordinator {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
-        } else if(command instanceof ExecuteFlow executeFlow){
-            log.info("executing flow {}", executeFlow);
-            Flow flow = flowManager.findByName(executeFlow.getFlowName()).orElseThrow(Exceptions.notFound("invalid-flow-name").withExtra("flowName", executeFlow.getFlowName()).supplier());
-            FlowExecution execution = flow.execute(executeFlow.getVersionId(), executeFlow.getTags(), executeFlow.getFiles(), executeFlow.getFlowExecutionId());
-            if(execution != null){
-                log.info("saving history {}", execution);
-                execution = apiManager.saveFlowExecution(execution);
+        } else {
+            if(command instanceof ExecuteFlow executeFlow){
+                commandExecutor.execute(executeFlow);
+            } else if(command instanceof UpdateAgentModel updatedModel){
+                log.info("uupdating model {}", updatedModel);
+                initialize(updatedModel.getUpdatedModel());
+            } else if(command instanceof RetentionExecute retentionExecute){
+                commandExecutor.execute(retentionExecute);
+            } else if(command instanceof VersionDeleteRequest versionDeleteRequest){
+                commandExecutor.execute(versionDeleteRequest);
+            } else if(command instanceof TestDatasource testDatasource){
+                    commandExecutor.execute(testDatasource);
+            } else if(command instanceof TestAzureBlobDrive testAzureBlobDrive){
+                commandExecutor.execute(testAzureBlobDrive);
+            } else if(command instanceof TestAWSS3Drive testAWSS3Drive){
+                commandExecutor.execute(testAWSS3Drive);
+            } else {
+                throw Exceptions.server("not-implemented").withExtra("commandName", command.getName()).get();
             }
-        } else if(command instanceof GoogleDriveConnect gDriveConnect) {
-            log.info("connecting google drive {}", gDriveConnect);
-            // GoogleDrive drive = beanManager.findGoogleDrive(gDriveConnect.getDriveName());
-            // if(gDriveConnect.isConnect() != drive.isConnected()){
-            //     if(drive.isConnected()){
-            //         drive.clearConnection();
-            //     } else {
-            //         try {
-            //             drive.connectToDrive();
-            //         } catch (GeneralSecurityException | IOException e) {
-            //             throw Exceptions.server("google-drive-error").withCause(e).get();
-            //         }
-            //     }
-            // }
-            // apiManager.send(UpdateGoogleDrive.builder().driveName(drive.getName()).connected(drive.isConnected()).build());
-        } else if(command instanceof UpdateAgentModel updatedModel){
-            log.info("uupdating model {}", updatedModel);
-            initialize(updatedModel.getUpdatedModel());
-        } else if(command instanceof RetentionExecute retentionExecute){
-            log.info("executing retention {}", retentionExecute);
-            Storage storage = beanManager.findStorage(retentionExecute.getStorageName());
-            List<Long> fileIds = new LinkedList<>();
-            retentionExecute.getFiles().forEach(f -> {
-                try{
-                    storage.deleteFile(f.getDir(), f.getName());
-                    fileIds.add(f.getId());
-                }catch(IOException ex){
-                    log.debug("ignored", ex);
-                }
-            });
-            RetentionCompleted retentionCompleted = RetentionCompleted.builder().storageId(retentionExecute.getStorageId()).storageName(retentionExecute.getStorageName()).files(fileIds).build();
-            log.info("sending retention complete {}", retentionCompleted);
-            apiManager.send(retentionCompleted);
-        } else if(command instanceof VersionDeleteRequest versionDeleteRequest){
-            Storage storage = beanManager.findStorage(versionDeleteRequest.getVersion().getStorage().getName());
-            versionDeleteRequest.getVersion().getFiles().forEach(f -> {
-                try{
-                    storage.deleteFile(f.getDir(), f.getName());
-                }catch(IOException ex){
-                    log.debug("ignored", ex);
-                }
-            });
-            VersionDeleted versionDeleted = VersionDeleted.builder().versionId(versionDeleteRequest.getVersion().getId()).build();
-            log.info("sending version deleted {}", versionDeleted);
-            apiManager.send(versionDeleted);
-        }
-        else{
-            throw Exceptions.server("not-implemented").withExtra("commandName", command.getName()).get();
         }
     }
 				
@@ -177,15 +132,23 @@ public class AgentCoordinator {
         public void run() {
             boolean listenNext = true;
             try{
+                if(backoff.get() > 0){
+                    log.debug("Waiting for {} seconds before next command", backoff.get());
+                    Exceptions.wrapRunnable(() -> Thread.sleep(Duration.ofSeconds(backoff.get()))).run();
+                }
                 AgentCommand command = apiManager.nextCommand();
                 execute(command);
+                resetBackoff();
             } catch (WebClientRequestException ignore){
+                incrementBackoff();
                 log.debug("Unable to reach api, will try again in {} seconds", apiRetry);
                 log.trace("api error", ignore);
                 Exceptions.wrapRunnable(() -> Thread.sleep(Duration.ofSeconds(apiRetry))).run();;
             } catch(BaseRuntimeException bre){
+                incrementBackoff();
                 listenNext = !bre.getExtra().containsKey("exit");
             } catch(Exception e) {
+                incrementBackoff();
                 log.error("command-execution-error", e);
             } finally {
                 if(listenNext){
@@ -193,24 +156,15 @@ public class AgentCoordinator {
                 }
             }
         }
-    }
-
-    public class InitGoogleDrives implements Runnable{
-        @Override
-        public void run() {
-            manager.connectToDrives();
+        public void resetBackoff() {
+            backoff.set(0);
         }
-    }
-
-    public class ConnectToGoogleDrive implements Runnable{
-        // private GoogleDrive googleDrive;
-
-        @Override
-        public void run() {
-            try{
-                // googleDrive.connectToDrive();
-            } catch (Exception ex){
-                // apiManager.send(NotifyError.builder().entityName(googleDrive.getName()).entityType(GoogleDrive.class.getSimpleName()).exception(Exceptions.server("unable-to-connect-drive").withCause(ex).get()).build());
+        public void incrementBackoff() {
+            int current = backoff.get();
+            if (current == 0) {
+                backoff.set(MIN_BACKOFF_SECONDS);
+            } else {
+                backoff.set(Math.min(current * 2, MAX_BACKOFF_SECONDS));
             }
         }
     }

@@ -5,18 +5,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.quemsi.agent.AgentCoordinator;
-import com.quemsi.commons.util.ApacheDurationDeserializer;
-import com.quemsi.commons.util.ApacheDurationSerializer;
-import com.quemsi.commons.util.DateUtils;
-import com.quemsi.commons.util.FileNameUtil;
-import com.quemsi.commons.util.JsonUtils;
-import com.quemsi.model.flow.db.sql.SqlParser;
-import com.quemsi.model.flow.in.MySqlBackupProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
@@ -25,6 +16,20 @@ import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
+import com.quemsi.agent.AgentCoordinator;
+import com.quemsi.agent.service.AgentCommandExecutor;
+import com.quemsi.agent.service.cmd.ExecuteExecuteFlow;
+import com.quemsi.agent.service.cmd.ExecuteRetentionExecute;
+import com.quemsi.agent.service.cmd.ExecuteTestAWSS3Drive;
+import com.quemsi.agent.service.cmd.ExecuteTestAzureBlobDrive;
+import com.quemsi.agent.service.cmd.ExecuteTestDatasource;
+import com.quemsi.agent.service.cmd.ExecuteVersionDeleteRequest;
+import com.quemsi.commons.util.ApacheDurationDeserializer;
+import com.quemsi.commons.util.ApacheDurationSerializer;
+import com.quemsi.commons.util.DateUtils;
+import com.quemsi.commons.util.FileNameUtil;
+import com.quemsi.commons.util.JsonUtils;
+import com.quemsi.model.flow.db.sql.SqlParser;
 
 @Configuration(proxyBeanMethods = false)
 public class GeneralConfig {
@@ -54,16 +59,45 @@ public class GeneralConfig {
 	}
 	
 	@Bean
+	public AgentCommandExecutor commandExecutor(){
+		return new AgentCommandExecutor();
+	}
+
+	@Bean
+	public ExecuteExecuteFlow executeExecuteFlow(){
+		return new ExecuteExecuteFlow();
+	}
+
+	@Bean
+	public ExecuteRetentionExecute executeRetentionExecute(){
+		return new ExecuteRetentionExecute();
+	}
+
+	@Bean
+	public ExecuteTestDatasource executeTestDatasource(){
+		return new ExecuteTestDatasource();
+	}
+
+	@Bean
+	public ExecuteVersionDeleteRequest executeVersionDeleteRequest(){
+		return new ExecuteVersionDeleteRequest();
+	}
+	
+	@Bean
+	public ExecuteTestAzureBlobDrive executeTestAzureBlobDrive(){
+		return new ExecuteTestAzureBlobDrive();
+	}
+
+	@Bean
+	public ExecuteTestAWSS3Drive executeTestAWSS3Drive(){
+		return new ExecuteTestAWSS3Drive();
+	}
+
+	@Bean
 	public EnvironmentVars environmentVars() {
 		return new EnvironmentVars();
 	}
     
-	@Bean
-	@ConfigurationProperties(prefix = "mysqlbackup")
-	public MySqlBackupProperties mySqlBackupProperties(){
-		return new MySqlBackupProperties();
-	}
-
     @Bean(destroyMethod = "shutdown")
 	public ExecutorService vThreadExecutor(){
 		return Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("command-executor-service").factory());
