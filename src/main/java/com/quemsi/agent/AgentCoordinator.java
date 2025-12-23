@@ -24,6 +24,7 @@ import com.quemsi.model.dto.agent.RetentionExecute;
 import com.quemsi.model.dto.agent.TestAWSS3Drive;
 import com.quemsi.model.dto.agent.TestAzureBlobDrive;
 import com.quemsi.model.dto.agent.TestDatasource;
+import com.quemsi.model.dto.agent.TestFolderAccess;
 import com.quemsi.model.dto.agent.UpdateAgentModel;
 import com.quemsi.model.dto.agent.VersionDeleteRequest;
 
@@ -116,7 +117,9 @@ public class AgentCoordinator {
             } else if(command instanceof VersionDeleteRequest versionDeleteRequest){
                 commandExecutor.execute(versionDeleteRequest);
             } else if(command instanceof TestDatasource testDatasource){
-                    commandExecutor.execute(testDatasource);
+                commandExecutor.execute(testDatasource);
+            } else if(command instanceof TestFolderAccess testFolderAccess){
+                commandExecutor.execute(testFolderAccess);
             } else if(command instanceof TestAzureBlobDrive testAzureBlobDrive){
                 commandExecutor.execute(testAzureBlobDrive);
             } else if(command instanceof TestAWSS3Drive testAWSS3Drive){

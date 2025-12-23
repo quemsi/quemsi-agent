@@ -24,25 +24,27 @@ import com.quemsi.model.dto.StorageType;
 import com.quemsi.model.dto.Tag;
 import com.quemsi.model.dto.TagType;
 import com.quemsi.model.dto.agent.AgentCommand;
+import com.quemsi.model.dto.agent.AgentCommandSync;
 import com.quemsi.model.dto.agent.DelayAgentCommand;
 import com.quemsi.model.dto.agent.ExecuteFlow;
 import com.quemsi.model.dto.agent.RetentionExecute;
-import com.quemsi.model.dto.agent.UpdateAgentModel;
-import com.quemsi.model.dto.agent.onapi.NotifyError;
-import com.quemsi.model.dto.agent.onapi.RetentionCompleted;
-import com.quemsi.model.dto.agent.TestDatasource;
-import com.quemsi.model.dto.agent.AgentCommandSync;
 import com.quemsi.model.dto.agent.TestAWSS3Drive;
 import com.quemsi.model.dto.agent.TestAzureBlobDrive;
+import com.quemsi.model.dto.agent.TestDatasource;
+import com.quemsi.model.dto.agent.TestFolderAccess;
+import com.quemsi.model.dto.agent.UpdateAgentModel;
 import com.quemsi.model.dto.agent.VersionDeleteRequest;
+import com.quemsi.model.dto.agent.onapi.NotifyError;
+import com.quemsi.model.dto.agent.onapi.RetentionCompleted;
 import com.quemsi.model.dto.agent.onapi.TestAWSS3DriveResult;
 import com.quemsi.model.dto.agent.onapi.TestAzureBlobDriveResult;
 import com.quemsi.model.dto.agent.onapi.TestDatasourceResult;
+import com.quemsi.model.dto.agent.onapi.TestFolderAccessResult;
 import com.quemsi.model.dto.agent.onapi.VersionDeleted;
-import com.quemsi.model.flow.db.sql.DbModel;
-import com.quemsi.model.flow.db.sql.DbTable;
 import com.quemsi.model.flow.db.sql.DbColumn;
+import com.quemsi.model.flow.db.sql.DbModel;
 import com.quemsi.model.flow.db.sql.DbSequence;
+import com.quemsi.model.flow.db.sql.DbTable;
 import com.quemsi.model.flow.in.TableData;
 import com.quemsi.model.flow.in.TableDataPage;
 
@@ -81,6 +83,8 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(TestAzureBlobDriveResult.class, MemberCategory.values())
             .registerType(TestDatasourceResult.class, MemberCategory.values())
             .registerType(VersionDeleted.class, MemberCategory.values())
+            .registerType(TestFolderAccess.class, MemberCategory.values())
+            .registerType(TestFolderAccessResult.class, MemberCategory.values())
             ;
         hints.serialization()
             .registerType(AgentError.class)
@@ -111,8 +115,11 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(TestDatasourceResult.class)
             .registerType(TestAWSS3DriveResult.class)
             .registerType(TestAzureBlobDriveResult.class)
+            .registerType(TestFolderAccess.class)
+            .registerType(TestFolderAccessResult.class)
             .registerType(NotifyError.class)
             .registerType(RetentionCompleted.class)
+            .registerType(VersionDeleted.class)
             ;
     }
 

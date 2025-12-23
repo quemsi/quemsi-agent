@@ -4,15 +4,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.quemsi.agent.service.cmd.ExecuteExecuteFlow;
 import com.quemsi.agent.service.cmd.ExecuteRetentionExecute;
-import com.quemsi.agent.service.cmd.ExecuteTestAzureBlobDrive;
 import com.quemsi.agent.service.cmd.ExecuteTestAWSS3Drive;
+import com.quemsi.agent.service.cmd.ExecuteTestAzureBlobDrive;
 import com.quemsi.agent.service.cmd.ExecuteTestDatasource;
+import com.quemsi.agent.service.cmd.ExecuteTestFolderAccess;
 import com.quemsi.agent.service.cmd.ExecuteVersionDeleteRequest;
 import com.quemsi.model.dto.agent.ExecuteFlow;
 import com.quemsi.model.dto.agent.RetentionExecute;
-import com.quemsi.model.dto.agent.TestAzureBlobDrive;
 import com.quemsi.model.dto.agent.TestAWSS3Drive;
+import com.quemsi.model.dto.agent.TestAzureBlobDrive;
 import com.quemsi.model.dto.agent.TestDatasource;
+import com.quemsi.model.dto.agent.TestFolderAccess;
 import com.quemsi.model.dto.agent.VersionDeleteRequest;
 
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +26,9 @@ public class AgentCommandExecutor {
     @Autowired
     private ExecuteRetentionExecute executeRetentionExecute;
     @Autowired
-    private ExecuteTestDatasource cmdTestDataExecutor;
+    private ExecuteTestDatasource executeTestDataExecutor;
+    @Autowired
+    private ExecuteTestFolderAccess executeTestFolderAccess;
     @Autowired
     private ExecuteVersionDeleteRequest executeVersionDeleteRequest;
     @Autowired
@@ -42,7 +46,10 @@ public class AgentCommandExecutor {
         executeVersionDeleteRequest.execute(cmd);
     }
     public void execute(TestDatasource cmd){
-        cmdTestDataExecutor.execute(cmd);
+        executeTestDataExecutor.execute(cmd);
+    }
+    public void execute(TestFolderAccess cmd){
+        executeTestFolderAccess.execute(cmd);
     }
     public void execute(TestAzureBlobDrive cmd){
         executeTestAzureBlobDrive.execute(cmd);
