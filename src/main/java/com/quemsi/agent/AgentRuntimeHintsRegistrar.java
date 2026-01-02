@@ -23,6 +23,7 @@ import com.quemsi.model.dto.ObjectReference;
 import com.quemsi.model.dto.StorageType;
 import com.quemsi.model.dto.Tag;
 import com.quemsi.model.dto.TagType;
+import com.quemsi.model.dto.UpdateSequences;
 import com.quemsi.model.dto.agent.AgentCommand;
 import com.quemsi.model.dto.agent.AgentCommandSync;
 import com.quemsi.model.dto.agent.DelayAgentCommand;
@@ -104,6 +105,8 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(StorageType.class)
             .registerType(Tag.class)
             .registerType(TagType.class)
+            .registerType(UpdateSequences.class)
+            .registerType(UpdateSequences.SequenceMapping.class)
 
             .registerType(AgentCommand.class)
             .registerType(DelayAgentCommand.class)
