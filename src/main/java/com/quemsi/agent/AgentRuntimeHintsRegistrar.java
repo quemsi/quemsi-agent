@@ -66,6 +66,8 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(DbModel.TableReference.class, MemberCategory.values())
             .registerType(DbModel.ReferenceInfo.class, MemberCategory.values())
             .registerType(DbModel.IndexInfo.class, MemberCategory.values())
+            .registerType(DbModel.ContraintInfo.class, MemberCategory.values())
+            .registerType(DbModel.CheckConstraint.class, MemberCategory.values())
             .registerType(DbTable.class, MemberCategory.values())
             .registerType(DbColumn.class, MemberCategory.values())
             .registerType(DbSequence.class, MemberCategory.values())
