@@ -83,7 +83,9 @@ public class SpringBeanManager {
 		} else if(DatasourceType.POSTGRES.equals(datasource.getType())){
 			registerer = new BeanReqisterer<>(datasource.getName(), DatasourceFactoryPostgres.class, ()-> new DatasourceFactoryPostgres());
 		} else if(DatasourceType.SQLSERVER.equals(datasource.getType())){
-			registerer = new BeanReqisterer<>(datasource.getName(), DatasourceFactorySqlserver.class, ()-> new DatasourceFactorySqlserver());
+			registerer = new BeanReqisterer<>(datasource.getName(), DatasourceFactorySqlserver.class, ()-> new DatasourceFactorySqlserver(DatasourceType.SQLSERVER));
+		} else if(DatasourceType.SQLSERVERWIN.equals(datasource.getType())){
+			registerer = new BeanReqisterer<>(datasource.getName(), DatasourceFactorySqlserver.class, ()-> new DatasourceFactorySqlserver(DatasourceType.SQLSERVERWIN));
 		} else {
 			throw Exceptions.server("not-implemented-datasource-type").withExtra("type", datasource.getType()).withExtra("name", datasource.getName()).get();
 		}
