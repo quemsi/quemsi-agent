@@ -48,7 +48,7 @@ public class ExecuteTestDatasource {
                 
                 factory.setUrl(cmd.getDatasource().getUrl());
                 factory.setDbName(cmd.getDatasource().getDbName());
-                factory.setSchema(cmd.getDatasource().getSchema());
+                factory.setSchemas(cmd.getDatasource().getSchemas());
                 factory.setUsername(username);
                 factory.setPassword(password);
                 

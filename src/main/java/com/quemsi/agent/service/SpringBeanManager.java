@@ -94,7 +94,7 @@ public class SpringBeanManager {
 		DataSourceFactory dsFactory = registerer.getBean();
 		dsFactory.setName(datasource.getName());
 		dsFactory.setDbName(datasource.getDbName());
-		dsFactory.setSchema(datasource.getSchema());
+		dsFactory.setSchemas(datasource.getSchemas());
 		dsFactory.setUrl(datasource.getUrl());
 		if(datasource.isUseEnvVar()){
 			Environment environment = context.getEnvironment();
