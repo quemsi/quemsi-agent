@@ -31,3 +31,7 @@ logging:
   level:
     root: INFO
     com.givlon.indexer.service: INFO
+quemsi:
+  logging:
+    batch-size: 50
+    flush-interval-seconds: 5

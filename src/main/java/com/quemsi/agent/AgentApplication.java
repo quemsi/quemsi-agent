@@ -3,6 +3,7 @@ package com.quemsi.agent;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ImportRuntimeHints;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication(exclude = {
     org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration.class,
@@ -15,6 +16,7 @@ import org.springframework.context.annotation.ImportRuntimeHints;
     org.springframework.boot.autoconfigure.web.reactive.WebFluxAutoConfiguration.class
 })
 @ImportRuntimeHints(AgentRuntimeHintsRegistrar.class)
+@EnableScheduling
 public class AgentApplication {
 
 	public static void main(String[] args) {

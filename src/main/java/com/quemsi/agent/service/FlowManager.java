@@ -44,6 +44,8 @@ public class FlowManager {
 	private ApiClient apiClient;
 	@Autowired
 	private DateUtils dateUtils;
+	@Autowired(required = false)
+	private AgentBatchedLogger agentBatchedLogger;
 	
 	public Flow createNewFlow(FlowDetail flow) {
 		String model = null;
@@ -87,6 +89,12 @@ public class FlowManager {
 				TimerImpl timer = beanManager.findTimer(flow.getTimer());
 				timer.add(new FlowRunnable(f, flow.getTimer()));
 				f.setTimerName(timer.getName());
+			}
+			// Set log writer if available
+			if (agentBatchedLogger != null) {
+				f.setLogWriter((agentId, flowExecutionId, flowExecutionStepId, level, message) -> {
+					agentBatchedLogger.log(agentId, flowExecutionId, flowExecutionStepId, level, message);
+				});
 			}
 			f.initialize();
 			flows.put(name, f);

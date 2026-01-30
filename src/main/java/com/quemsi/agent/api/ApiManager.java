@@ -133,4 +133,8 @@ public class ApiManager implements ApiClient{
     public DataVersion findVersion(String flowName, Map<String, String> tags) {
         return quemsiApi.findVersion(this.authHeader(), flowName, tags);
     }
+    
+    public QuemsiApi getQuemsiApi() {
+        return quemsiApi;
+    }
 }
