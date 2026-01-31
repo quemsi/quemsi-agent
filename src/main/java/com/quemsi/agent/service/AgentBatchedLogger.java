@@ -55,6 +55,7 @@ public class AgentBatchedLogger {
     }
     
     public void log(Long agentId, Long flowExecutionId, Long flowExecutionStepId, String level, String message) {
+        log.info("Logging message: {} {} {} {} {}", agentId, flowExecutionId, flowExecutionStepId, level, message);
         AgentLogRecord logRecord = AgentLogRecord.builder()
             .agentId(agentId)
             .flowExecutionId(flowExecutionId)
