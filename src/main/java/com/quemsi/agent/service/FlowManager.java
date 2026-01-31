@@ -13,11 +13,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.quemsi.agent.config.AgentProperties;
 import com.quemsi.agent.flow.TimerImpl;
 import com.quemsi.agent.flow.TimerImpl.NamedRunnable;
 import com.quemsi.commons.util.BaseRuntimeException;
 import com.quemsi.commons.util.DateUtils;
 import com.quemsi.commons.util.Exceptions;
+import com.quemsi.commons.util.LogMessage;
 import com.quemsi.model.api.ApiClient;
 import com.quemsi.model.dto.FlowDetail;
 import com.quemsi.model.dto.FlowExecution;
@@ -27,9 +29,7 @@ import com.quemsi.model.flow.Step;
 import com.quemsi.model.flow.factories.StepFactory;
 
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 public class FlowManager {
 	private Map<String, Flow> flows = new HashMap<>();
 	@Autowired
@@ -40,6 +40,8 @@ public class FlowManager {
 	private ObjectProvider<Flow> flowObjectProvider;
 	@Autowired
 	private SpringBeanManager beanManager;
+	@Autowired
+	private AgentProperties agentProperties;
 	@Autowired
 	private ApiClient apiClient;
 	@Autowired
@@ -100,10 +102,10 @@ public class FlowManager {
 			flows.put(name, f);
 			return f;
 		} catch(BaseRuntimeException bre){
-			log.error("error-in-initializing-flow", bre);
+			agentBatchedLogger.logError(agentProperties.getAgentId(), null, null, LogMessage.error("error-in-initializing-flow", bre));
 			apiClient.send(NotifyError.builder().exception(bre).build());
 		} catch (Exception ex){
-			log.error("error-in-creating-flow", ex);
+			agentBatchedLogger.logError(agentProperties.getAgentId(), null, null, LogMessage.error("error-in-creating-flow", ex));
 			BaseRuntimeException e = Exceptions.server("error-creating-flow").withCause(ex)
 				.onEntity("flow", flow.getName())
 				.withExtra("detailMessage", ex.getMessage()).get();
@@ -138,7 +140,6 @@ public class FlowManager {
 			FlowExecution execution = apiClient.initiate(flow.getName(), tags);
 			FlowExecution updatedExecution = flow.execute(execution.getVersion().getId(), tags, execution.getVersion().getFiles(), execution.getId());
 			if(updatedExecution != null){
-                log.info("saving execution {}", updatedExecution);
                 updatedExecution = apiClient.saveFlowExecution(updatedExecution);
             }
 		}
