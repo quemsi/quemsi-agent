@@ -92,8 +92,8 @@ public class FlowManager {
 			}
 			// Set log writer if available
 			if (agentBatchedLogger != null) {
-				f.setLogWriter((agentId, flowExecutionId, flowExecutionStepId, level, message) -> {
-					agentBatchedLogger.log(agentId, flowExecutionId, flowExecutionStepId, level, message);
+				f.setLogWriter((agentId, flowExecutionId, flowExecutionStepId, message) -> {
+					agentBatchedLogger.log(agentId, flowExecutionId, flowExecutionStepId, message.getLevel(), message.toString());
 				});
 			}
 			f.initialize();
