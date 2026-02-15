@@ -34,10 +34,9 @@ import com.quemsi.model.flow.out.LStorage;
 import com.quemsi.model.flow.out.LocalDrive;
 import com.quemsi.model.flow.out.Storage;
 
-import lombok.extern.slf4j.Slf4j;
+import com.quemsi.commons.util.LogMessage;
 
 @Service
-@Slf4j
 public class SpringBeanManager {
 	@Autowired
 	private DefaultListableBeanFactory beanFactory;
@@ -47,6 +46,8 @@ public class SpringBeanManager {
 	protected ApiClient apiClient;
 	@Autowired
 	private Scheduler scheduler;
+	@Autowired(required = false)
+	private AgentBatchedLogger agentBatchedLogger;
 
 	public TimerImpl findTimer(String name){
 		return beanFactory.getBean(name, TimerImpl.class);
@@ -98,8 +99,10 @@ public class SpringBeanManager {
 		dsFactory.setUrl(datasource.getUrl());
 		if(datasource.isUseEnvVar()){
 			Environment environment = context.getEnvironment();
-			log.debug("{} var value : {}", "MYSQLUSER", environment.getProperty("MYSQLUSER"));
-			log.debug("{} var value : {}", "MYSQLPASS", environment.getProperty("MYSQLPASS"));
+			if (agentBatchedLogger != null) {
+				agentBatchedLogger.logDebug(null, null, LogMessage.debug("{} var value : {}", "MYSQLUSER", environment.getProperty("MYSQLUSER")));
+				agentBatchedLogger.logDebug(null, null, LogMessage.debug("{} var value : {}", "MYSQLPASS", environment.getProperty("MYSQLPASS")));
+			}
 			dsFactory.setUsername(environment.getProperty(datasource.getUsername()));
 			dsFactory.setPassword(environment.getProperty(datasource.getPassword()));
 			
@@ -141,7 +144,9 @@ public class SpringBeanManager {
 		drive.setStorageRoot(azureBlobDrive.getStorageRoot());
 		if(azureBlobDrive.isUseEnvVar()){
 			Environment environment = context.getEnvironment();
-			log.debug("{} var value : {}", azureBlobDrive.getAccountKey(), environment.getProperty(azureBlobDrive.getAccountKey()));
+			if (agentBatchedLogger != null) {
+				agentBatchedLogger.logDebug(null, null, LogMessage.debug("{} var value : {}", azureBlobDrive.getAccountKey(), environment.getProperty(azureBlobDrive.getAccountKey())));
+			}
 			drive.setAccountKey(environment.getProperty(azureBlobDrive.getAccountKey()));
 			if(StringUtils.isEmptyOrNull(drive.getAccountKey())){
 				BaseRuntimeException ex = Exceptions.badRequest("environment-vars-not-set").withExtra("vars", azureBlobDrive.getAccountKey()).get();
@@ -172,8 +177,10 @@ public class SpringBeanManager {
 		drive.setStorageRoot(awsS3Drive.getStorageRoot());
 		if(awsS3Drive.isUseEnvVar()){
 			Environment environment = context.getEnvironment();
-			log.debug("{} var value : {}", awsS3Drive.getAccessKey(), environment.getProperty(awsS3Drive.getAccessKey()));
-			log.debug("{} var value : {}", awsS3Drive.getSecretKey(), environment.getProperty(awsS3Drive.getSecretKey()));
+			if (agentBatchedLogger != null) {
+				agentBatchedLogger.logDebug(null, null, LogMessage.debug("{} var value : {}", awsS3Drive.getAccessKey(), environment.getProperty(awsS3Drive.getAccessKey())));
+				agentBatchedLogger.logDebug(null, null, LogMessage.debug("{} var value : {}", awsS3Drive.getSecretKey(), environment.getProperty(awsS3Drive.getSecretKey())));
+			}
 			drive.setAccessKey(environment.getProperty(awsS3Drive.getAccessKey()));
 			drive.setSecretKey(environment.getProperty(awsS3Drive.getSecretKey()));
 			if(StringUtils.isEmptyOrNull(drive.getAccessKey()) || StringUtils.isEmptyOrNull(drive.getSecretKey())){
@@ -270,7 +277,9 @@ public class SpringBeanManager {
 				throw Exceptions.server("not-implemented-yet").withExtra("type", storage.getType()).withExtra("name", storage.getName()).get();
 			}
 		}catch(BaseRuntimeException e){
-			log.error("error-in-registering-storage", e);
+			if (agentBatchedLogger != null) {
+				agentBatchedLogger.logError(null, null, LogMessage.error("error-in-registering-storage", e));
+			}
 			apiClient.send(NotifyError.builder().entityType("storage").entityName(storage.getName()).exception(e).build());
 		}
 	}

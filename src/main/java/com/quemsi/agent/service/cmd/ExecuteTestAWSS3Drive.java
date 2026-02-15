@@ -3,13 +3,14 @@ package com.quemsi.agent.service.cmd;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.quemsi.agent.api.ApiManager;
+import com.quemsi.agent.service.AgentBatchedLogger;
+import com.quemsi.commons.util.LogMessage;
 import com.quemsi.commons.util.StringUtils;
 import com.quemsi.model.dto.agent.TestAWSS3Drive;
 import com.quemsi.model.dto.agent.onapi.TestAWSS3DriveResult;
 
 import java.time.Duration;
 
-import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
@@ -17,10 +18,11 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
 
-@Slf4j
 public class ExecuteTestAWSS3Drive {
     @Autowired
     private ApiManager apiManager;
+    @Autowired
+    private AgentBatchedLogger agentBatchedLogger;
     
     public void execute(TestAWSS3Drive testAWSS3Drive){
         String accessKey = testAWSS3Drive.getAccessKey();
@@ -28,7 +30,7 @@ public class ExecuteTestAWSS3Drive {
         String region = testAWSS3Drive.getRegion();
         String bucketName = testAWSS3Drive.getBucketName();
 
-        log.info("Executing test AWS S3 drive with access key: {}, secret key: {}, region: {}, bucket name: {}", accessKey, secretKey, region, bucketName);
+        agentBatchedLogger.logInfo(null, null, LogMessage.info("Executing test AWS S3 drive with access key: {}, secret key: {}, region: {}, bucket name: {}", accessKey, secretKey, region, bucketName));
 
         TestAWSS3DriveResult.TestAWSS3DriveResultBuilder builder = TestAWSS3DriveResult.builder()
             .correlationId(testAWSS3Drive.getCorrelationId());

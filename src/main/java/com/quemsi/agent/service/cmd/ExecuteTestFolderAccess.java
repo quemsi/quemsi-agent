@@ -7,17 +7,18 @@ import java.io.IOException;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.quemsi.agent.api.ApiManager;
+import com.quemsi.agent.service.AgentBatchedLogger;
+import com.quemsi.commons.util.LogMessage;
 import com.quemsi.commons.util.StringUtils;
 import com.quemsi.model.dto.agent.TestFolderAccess;
 import com.quemsi.model.dto.agent.onapi.TestFolderAccessResult;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public class ExecuteTestFolderAccess {
     private static final String FOLDER_ACCESS_TEST_FILE = "test.txt";
     @Autowired
 	private ApiManager apiManager;
+    @Autowired
+    private AgentBatchedLogger agentBatchedLogger;
     
     public void execute(TestFolderAccess cmd){
         TestFolderAccessResult result = TestFolderAccessResult.builder().agentId(cmd.getAgentId()).correlationId(cmd.getCorrelationId())
@@ -39,7 +40,7 @@ public class ExecuteTestFolderAccess {
                 result.setSuccess(true);
                 result.setMessage("folder-access-test-success");
             } catch(IOException ioe){
-                log.error("folder-access-test-failed", ioe);
+                agentBatchedLogger.logError(null, null, LogMessage.error("folder-access-test-failed", ioe));
                 result.setSuccess(false);
                 result.setMessage("folder-access-test-failed");
                 result.setErrorMessage(ioe.getMessage());
@@ -55,11 +56,11 @@ public class ExecuteTestFolderAccess {
                     File file = new File(filePath);
                     if(file.exists()){
                         if(!file.delete()){
-                            log.error("folder-access-test-failed", "failed to delete test file");
+                            agentBatchedLogger.logError(null, null, LogMessage.error("folder-access-test-failed", "failed to delete test file"));
                         }
                     }
                 }catch(Exception ex){
-                    log.error("folder-access-test-failed", ex);
+                    agentBatchedLogger.logError(null, null, LogMessage.error("folder-access-test-failed", ex));
                 }
             }
         } else {

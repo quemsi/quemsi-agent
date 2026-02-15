@@ -12,17 +12,19 @@ import org.quartz.TriggerKey;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean;
 
+import com.quemsi.agent.service.AgentBatchedLogger;
 import com.quemsi.commons.util.Exceptions;
+import com.quemsi.commons.util.LogMessage;
 
 import lombok.Getter;
 import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 public class TimerImpl {
     @Autowired
 	@Setter
 	private Scheduler scheduler;
+    @Autowired(required = false)
+    private AgentBatchedLogger agentBatchedLogger;
 	@Setter
 	@Getter
 	private String name;
@@ -42,7 +44,9 @@ public class TimerImpl {
 		runnables.remove(name);
 	}
 	public void tick() {
-		log.info("{} timer ticks", this.name);
+		if (agentBatchedLogger != null) {
+			agentBatchedLogger.logInfo(null, null, LogMessage.info("{} timer ticks", this.name));
+		}
 		if(!runnables.isEmpty()) {
 			runnables.values().forEach(Runnable::run);
 		}
@@ -75,9 +79,13 @@ public class TimerImpl {
             	.build();
             scheduler.scheduleJob(job, trigger);
             this.initialized = true;
-            log.debug("{} timer scheduled", this.name);
+            if (agentBatchedLogger != null) {
+                agentBatchedLogger.logDebug(null, null, LogMessage.debug("{} timer scheduled", this.name));
+            }
         } catch (Throwable se) {
-            log.error("error creating timer " + this.name, se);
+            if (agentBatchedLogger != null) {
+                agentBatchedLogger.logError(null, null, LogMessage.error("error creating timer " + this.name, se));
+            }
         }
 	}
 	

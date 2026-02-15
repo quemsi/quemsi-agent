@@ -14,6 +14,7 @@ import com.quemsi.commons.util.BaseRuntimeException;
 import com.quemsi.commons.util.Exceptions;
 import com.quemsi.commons.util.FileNameUtil;
 import com.quemsi.commons.util.FileResource;
+import com.quemsi.commons.util.LogMessage;
 import com.quemsi.commons.util.StringUtils;
 import com.quemsi.model.dto.DataFile;
 import com.quemsi.model.flow.DataPackage;
@@ -26,10 +27,8 @@ import com.quemsi.model.flow.out.Storage;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 
-
-@Slf4j
 public class AzureBlobStorage implements Storage{
     public static final String AZURE_BLOB_ENDPOINT_FORMAT = "https://%s.blob.core.windows.net";
     private AzureBlobDrive azureBlobDrive;
@@ -48,6 +47,16 @@ public class AzureBlobStorage implements Storage{
     private String rootPath;
     @Setter
     private FileNameUtil util;
+    @Autowired(required = false)
+    private AgentBatchedLogger agentBatchedLogger;
+    
+    private Long getFlowExecutionId(FlowContext context) {
+        return context != null && context.getExecution() != null ? context.getExecution().getId() : null;
+    }
+    
+    private Long getFlowExecutionStepId(FlowContext context) {
+        return context != null && context.getCurrentStep() != null ? context.getCurrentStep().getId() : null;
+    }
     
     public String containerName() {
         String containerName = StringUtils.trim(azureBlobDrive.getStorageRoot(), "/", "/");
@@ -82,12 +91,18 @@ public class AzureBlobStorage implements Storage{
     public void createContainer(String containerName) {
         try {
             getBlobServiceClient().createBlobContainer(containerName);
-            log.info("Created blob container: {}", containerName);
+            if (agentBatchedLogger != null) {
+                agentBatchedLogger.logInfo(null, null, LogMessage.info("Created blob container: {}", containerName));
+            }
         } catch (com.azure.storage.blob.models.BlobStorageException e) {
             if (e.getStatusCode() == 409) { /* 409 - Conflict - Container already exists */
-                log.debug("Blob container '{}' already exists.", containerName);
+                if (agentBatchedLogger != null) {
+                    agentBatchedLogger.logDebug(null, null, LogMessage.debug("Blob container '{}' already exists.", containerName));
+                }
             } else {
-                log.warn("Failed to create blob container '{}': {}", containerName, e.getMessage());
+                if (agentBatchedLogger != null) {
+                    agentBatchedLogger.logWarn(null, null, LogMessage.warn("Failed to create blob container '{}': {}", containerName, e.getMessage()));
+                }
                 throw Exceptions.server("unable-to-create-azure-blob-container").withExtra("containerName", containerName).withCause(e).get();
             }
         }
@@ -107,15 +122,21 @@ public class AzureBlobStorage implements Storage{
         String containerName = containerName();
         BlobContainerClient containerClient = getBlobServiceClient().getBlobContainerClient(containerName);
         
+        Long flowExecutionId = getFlowExecutionId(context);
+        Long flowExecutionStepId = getFlowExecutionStepId(context);
         dataPackages.forEach(dp -> {
-            log.info("Storing file to Azure Blob Storage: {}", dp.getName());
+            if (agentBatchedLogger != null) {
+                agentBatchedLogger.logInfo(flowExecutionId, flowExecutionStepId, LogMessage.info("Storing file to Azure Blob Storage: {}", dp.getName()));
+            }
             
             /* Generate versioned filename using FileNameUtil */
             String fileFolder = StringUtils.removePathPrefix(StringUtils.trim(rootPath, "/", "/"), containerName);
             String versionedFileName = util.versionedFileName(dp.getName(), version);
             String blobPath = StringUtils.buildPath("/", fileFolder, dataName, versionedFileName);
             
-            log.info("Destination blob path: {}", blobPath);
+            if (agentBatchedLogger != null) {
+                agentBatchedLogger.logInfo(flowExecutionId, flowExecutionStepId, LogMessage.info("Destination blob path: {}", blobPath));
+            }
             
             try {
                 BlobClient blobClient = containerClient.getBlobClient(blobPath);
@@ -123,9 +144,13 @@ public class AzureBlobStorage implements Storage{
                 /* Upload the inputstream to Azure Blob Storage */
                 blobClient.upload(dp.getInputStream(), dp.getLength(), true);
                 
-                log.info("Successfully uploaded file {} to Azure Blob Storage at path: {}", dp.getName(), blobPath);
+                if (agentBatchedLogger != null) {
+                    agentBatchedLogger.logInfo(flowExecutionId, flowExecutionStepId, LogMessage.info("Successfully uploaded file {} to Azure Blob Storage at path: {}", dp.getName(), blobPath));
+                }
             } catch (Exception e) {
-                log.error("Failed to upload file {} to Azure Blob Storage", dp.getName(), e);
+                if (agentBatchedLogger != null) {
+                    agentBatchedLogger.logError(flowExecutionId, flowExecutionStepId, LogMessage.error("Failed to upload file {} to Azure Blob Storage", dp.getName(), e));
+                }
                 throw Exceptions.server("error-storing-file-to-azure-blob")
                     .withExtra("fileName", dp.getName())
                     .withExtra("blobPath", blobPath)
@@ -140,6 +165,8 @@ public class AzureBlobStorage implements Storage{
     public List<DataPackage> getFiles(FlowContext context, List<DataFile> files) throws IOException {
         String containerName = containerName();
         BlobContainerClient containerClient = getBlobServiceClient().getBlobContainerClient(containerName);
+        Long flowExecutionId = getFlowExecutionId(context);
+        Long flowExecutionStepId = getFlowExecutionStepId(context);
         return files.stream().<DataPackage>map(f -> {
             try {
                 /* Generate versioned filename using FileNameUtil */
@@ -148,12 +175,16 @@ public class AzureBlobStorage implements Storage{
                 fileFolder = StringUtils.removePathPrefix(fileFolder, containerName);
                 String blobPath = StringUtils.buildPath("/", fileFolder, f.getDir(), versionedFileName);
                 
-                log.info("Retrieving file from Azure Blob Storage at path: {}", blobPath);
+                if (agentBatchedLogger != null) {
+                    agentBatchedLogger.logInfo(flowExecutionId, flowExecutionStepId, LogMessage.info("Retrieving file from Azure Blob Storage at path: {}", blobPath));
+                }
                 
                 BlobClient blobClient = containerClient.getBlobClient(blobPath);
                 
                 if (!blobClient.exists()) {
-                    log.warn("File not found in Azure Blob Storage at path: {}", blobPath);
+                    if (agentBatchedLogger != null) {
+                        agentBatchedLogger.logWarn(flowExecutionId, flowExecutionStepId, LogMessage.warn("File not found in Azure Blob Storage at path: {}", blobPath));
+                    }
                     throw Exceptions.notFound("file-not-found").withExtra("containerName", containerName).withExtra("versionedFileName", versionedFileName).get();
                 }
                 
@@ -188,19 +219,27 @@ public class AzureBlobStorage implements Storage{
         String fileFolder = StringUtils.trim(StringUtils.ensureSeperator(azureBlobDrive.getStorageRoot(), rootPath), "/", "/");
         fileFolder = StringUtils.removePathPrefix(fileFolder, containerName);
         String blobPath = StringUtils.buildPath("/", fileFolder, dir, fileName);
-        log.debug("Deleting file from Azure Blob Storage at path: {}", blobPath);
+        if (agentBatchedLogger != null) {
+            agentBatchedLogger.logDebug(null, null, LogMessage.debug("Deleting file from Azure Blob Storage at path: {}", blobPath));
+        }
         
         try {
             BlobClient blobClient = containerClient.getBlobClient(blobPath);
             
             if (blobClient.exists()) {
                 blobClient.delete();
-                log.info("Successfully deleted file from Azure Blob Storage at path: {}", blobPath);
+                if (agentBatchedLogger != null) {
+                    agentBatchedLogger.logInfo(null, null, LogMessage.info("Successfully deleted file from Azure Blob Storage at path: {}", blobPath));
+                }
             } else {
-                log.warn("File not found in Azure Blob Storage at path: {}", blobPath);
+                if (agentBatchedLogger != null) {
+                    agentBatchedLogger.logWarn(null, null, LogMessage.warn("File not found in Azure Blob Storage at path: {}", blobPath));
+                }
             }
         } catch (Exception e) {
-            log.error("Failed to delete file from Azure Blob Storage at path: {}", blobPath, e);
+            if (agentBatchedLogger != null) {
+                agentBatchedLogger.logError(null, null, LogMessage.error("Failed to delete file from Azure Blob Storage at path: {}", blobPath, e));
+            }
             throw Exceptions.server("error-deleting-file-from-azure-blob")
                 .withExtra("dir", dir)
                 .withExtra("fileName", fileName)
