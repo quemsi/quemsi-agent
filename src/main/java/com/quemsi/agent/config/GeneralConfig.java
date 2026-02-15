@@ -3,6 +3,7 @@ package com.quemsi.agent.config;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
@@ -53,6 +54,11 @@ public class GeneralConfig {
             .featuresToDisable(MapperFeature.DEFAULT_VIEW_INCLUSION);       
         };
     }
+
+	@Bean
+	public ScheduledExecutorService scheduledExecutorService(){
+		return  Executors.newSingleThreadScheduledExecutor();
+	}
 
 	@Bean
 	public AgentCoordinator agentController(){

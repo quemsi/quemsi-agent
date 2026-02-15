@@ -5,9 +5,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -30,14 +32,17 @@ public class AgentBatchedLogger {
     private final long flushIntervalSeconds;
     private BlockingQueue<AgentLogRecord> logQueue;
     private AtomicBoolean running;
+    private ScheduledExecutorService scheduledExecutorService;
+    private ScheduledFuture<?> scheduledFuture;
 
-    public AgentBatchedLogger(ApiManager apiManager, AgentProperties agentProperties,
-                              @Value("${quemsi.logging.batch-size:50}") int batchSize,
+    public AgentBatchedLogger(ApiManager apiManager, AgentProperties agentProperties, ScheduledExecutorService scheduledExecutorService,
+                              @Value("${quemsi.logging.batch-size:10}") int batchSize,
                               @Value("${quemsi.logging.flush-interval-seconds:5}") long flushIntervalSeconds) {
         this.apiManager = apiManager;
         this.agentProperties = agentProperties;
         this.batchSize = batchSize;
         this.flushIntervalSeconds = flushIntervalSeconds;
+        this.scheduledExecutorService = scheduledExecutorService;
     }
     
     @PostConstruct
@@ -45,11 +50,7 @@ public class AgentBatchedLogger {
         // Initialize in @PostConstruct to ensure it runs on the actual bean instance, not proxy
         logQueue = new LinkedBlockingQueue<>();
         running = new AtomicBoolean(true);
-    }
-    
-    // @Scheduled(fixedDelayString = "${quemsi.logging.flush-interval-seconds:5}", timeUnit = TimeUnit.SECONDS)
-    public void scheduledFlush() {
-        flushLogs();
+        scheduledFuture = scheduledExecutorService.schedule(() -> flushAndReset(), flushIntervalSeconds, TimeUnit.SECONDS);
     }
     
     @PreDestroy
@@ -92,9 +93,27 @@ public class AgentBatchedLogger {
             
             // Check if we should flush immediately
             if (logQueue.size() >= batchSize) {
+                resetScheduled();
                 flushLogs();
             }
         }
+    }
+
+    public void resetScheduled(){
+        if(scheduledFuture != null){
+            scheduledFuture.cancel(false);
+        }
+        scheduledFuture = scheduledExecutorService.schedule(() -> flushAndReset(), flushIntervalSeconds, TimeUnit.SECONDS);
+    }
+
+    public void flushAndReset(){
+        if(logQueue != null && !logQueue.isEmpty()){
+            flushLogs();
+        }
+        if(scheduledFuture != null){
+            scheduledFuture.cancel(false);
+        }
+        scheduledFuture = scheduledExecutorService.schedule(() -> flushAndReset(), flushIntervalSeconds, TimeUnit.SECONDS);
     }
     
     public void logInfo(Long flowExecutionId, Long flowExecutionStepId, LogMessage message) {
@@ -118,7 +137,7 @@ public class AgentBatchedLogger {
         log(flowExecutionId, flowExecutionStepId, level, message);
     }
     
-    private void flushLogs() {
+    private synchronized void flushLogs() {
         if (!running.get() && logQueue.isEmpty()) {
             return;
         }
