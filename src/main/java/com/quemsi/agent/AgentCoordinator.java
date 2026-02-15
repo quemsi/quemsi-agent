@@ -10,12 +10,14 @@ import org.springframework.web.reactive.function.client.WebClientRequestExceptio
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.quemsi.agent.api.ApiManager;
+import com.quemsi.agent.service.AgentBatchedLogger;
 import com.quemsi.agent.service.AgentCommandExecutor;
 import com.quemsi.agent.service.FlowManager;
 import com.quemsi.agent.service.SpringBeanManager;
 import com.quemsi.commons.util.BaseRuntimeException;
 import com.quemsi.commons.util.DelayedFormatter;
 import com.quemsi.commons.util.Exceptions;
+import com.quemsi.commons.util.LogMessage;
 import com.quemsi.model.dto.AgentModel;
 import com.quemsi.model.dto.agent.AgentCommand;
 import com.quemsi.model.dto.agent.DelayAgentCommand;
@@ -28,9 +30,6 @@ import com.quemsi.model.dto.agent.TestFolderAccess;
 import com.quemsi.model.dto.agent.UpdateAgentModel;
 import com.quemsi.model.dto.agent.VersionDeleteRequest;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public class AgentCoordinator {
     @Value("${api.retry:5}")
     private long apiRetry;
@@ -46,6 +45,8 @@ public class AgentCoordinator {
     private ObjectMapper objectMapper;
     @Autowired
     private AgentCommandExecutor commandExecutor;
+    @Autowired
+    private AgentBatchedLogger agentBatchedLogger;
     private static final int MAX_BACKOFF_SECONDS = 60;
     private static final int MIN_BACKOFF_SECONDS = 5;
 
@@ -84,12 +85,12 @@ public class AgentCoordinator {
     public void start() {
         while(!this.initialized){
             try{
-                log.info("quemsi-agent:{}", agentVersion);
+                agentBatchedLogger.logInfo(null, null, LogMessage.info("quemsi-agent:{}", agentVersion));
                 AgentModel model = apiManager.allModel(agentVersion);
-                log.debug("model : {}", DelayedFormatter.toDelayedString(Exceptions.wrapSupplier(() -> objectMapper.writeValueAsString(model))));
+                agentBatchedLogger.logDebug(null, null, LogMessage.debug("model : {}", DelayedFormatter.toDelayedString(Exceptions.wrapSupplier(() -> objectMapper.writeValueAsString(model)))));
 				initialize(model);
                 initialized = true;
-                log.info("initialization completed");
+                agentBatchedLogger.logInfo(null, null, LogMessage.info("initialization completed"));
                 apiCommandListener = new ApiCommandListener();
                 vThreadExecutor.submit(apiCommandListener);
             }catch(WebClientRequestException ex){
@@ -99,7 +100,7 @@ public class AgentCoordinator {
     }
 
     public void execute(AgentCommand command){
-        log.info("recived command  : {}", command);
+        agentBatchedLogger.logInfo(null, null, LogMessage.info("recived command  : {}", command));
         if(command instanceof DelayAgentCommand delayAgent){
             try {
                 Thread.sleep(delayAgent.getDelay());
@@ -110,7 +111,7 @@ public class AgentCoordinator {
             if(command instanceof ExecuteFlow executeFlow){
                 commandExecutor.execute(executeFlow);
             } else if(command instanceof UpdateAgentModel updatedModel){
-                log.info("uupdating model {}", updatedModel);
+                agentBatchedLogger.logInfo(null, null, LogMessage.info("uupdating model {}", updatedModel));
                 initialize(updatedModel.getUpdatedModel());
             } else if(command instanceof RetentionExecute retentionExecute){
                 commandExecutor.execute(retentionExecute);
@@ -136,7 +137,7 @@ public class AgentCoordinator {
             boolean listenNext = true;
             try{
                 if(backoff.get() > 0){
-                    log.debug("Waiting for {} seconds before next command", backoff.get());
+                    agentBatchedLogger.logDebug(null, null, LogMessage.debug("Waiting for {} seconds before next command", backoff.get()));
                     Exceptions.wrapRunnable(() -> Thread.sleep(Duration.ofSeconds(backoff.get()))).run();
                 }
                 AgentCommand command = apiManager.nextCommand();
@@ -144,15 +145,15 @@ public class AgentCoordinator {
                 resetBackoff();
             } catch (WebClientRequestException ignore){
                 incrementBackoff();
-                log.debug("Unable to reach api, will try again in {} seconds", apiRetry);
-                log.trace("api error", ignore);
+                agentBatchedLogger.logDebug(null, null, LogMessage.debug("Unable to reach api, will try again in {} seconds", apiRetry));
+                agentBatchedLogger.logDebug(null, null, LogMessage.debug("api error", ignore));
                 Exceptions.wrapRunnable(() -> Thread.sleep(Duration.ofSeconds(apiRetry))).run();;
             } catch(BaseRuntimeException bre){
                 incrementBackoff();
                 listenNext = !bre.getExtra().containsKey("exit");
             } catch(Exception e) {
                 incrementBackoff();
-                log.error("command-execution-error", e);
+                agentBatchedLogger.logError(null, null, LogMessage.error("command-execution-error", e));
             } finally {
                 if(listenNext){
                     vThreadExecutor.submit(this);

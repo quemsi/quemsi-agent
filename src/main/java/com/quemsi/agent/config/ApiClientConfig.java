@@ -18,11 +18,9 @@ import com.quemsi.agent.api.ApiManager;
 import com.quemsi.agent.api.QuemsiApi;
 import com.quemsi.agent.api.TokenApi;
 
-import lombok.extern.slf4j.Slf4j;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.resources.ConnectionProvider;
 
-@Slf4j
 @Configuration(proxyBeanMethods = false)
 public class ApiClientConfig {
     @Value("${quemsi-api.server-url}")
@@ -31,6 +29,7 @@ public class ApiClientConfig {
     private String keycloakUrl;
     @Value("${quemsi-api.log-request-detail:false}")
     private boolean logRequestDetails;
+    
     
     @Bean
     public ApiManager apiManager(TokenApi tokenApi, QuemsiApi quemsiApi){
@@ -44,9 +43,7 @@ public class ApiClientConfig {
 
     @Bean
     public HttpServiceProxyFactory apiServiceProxyFactory(WebClientAdapter apiExchangeAdapter) {
-        log.info("HttpServiceProxyFactory is being initialized");
         HttpServiceProxyFactory factory = HttpServiceProxyFactory.builderFor(apiExchangeAdapter).build();
-        log.info("apiServiceProxyFactory is initialized: {}", factory);
         return factory;
     }
 
@@ -59,7 +56,6 @@ public class ApiClientConfig {
 
     @Bean
     public WebClient apiWebClient(ReactorClientHttpConnector clientConnector, ObjectMapper objectMapper) {
-        log.info("Api webClient is being initialized baseUrl : {}", serverUrl);
         WebClient webClient = WebClient
                 .builder()
                 .clientConnector(clientConnector)
@@ -69,7 +65,6 @@ public class ApiClientConfig {
                 .baseUrl(serverUrl)
                 .build();
         
-        log.info("apiWebClient is initialized: {}", webClient);
         return webClient;
     }
 
@@ -80,9 +75,7 @@ public class ApiClientConfig {
     
     @Bean
     public HttpServiceProxyFactory keycloakServiceProxyFactory(WebClientAdapter keycloakExchangeAdapter) {
-        log.info("HttpServiceProxyFactory is being initialized");
         HttpServiceProxyFactory factory = HttpServiceProxyFactory.builderFor(keycloakExchangeAdapter).build();
-        log.info("apiServiceProxyFactory is initialized: {}", factory);
         return factory;
     }
 
@@ -95,15 +88,12 @@ public class ApiClientConfig {
 
     @Bean
     public WebClient keycloakWebClient(ReactorClientHttpConnector clientConnector) {
-        log.info("Api webClient is being initialized");
         WebClient webClient = WebClient
                 .builder()
                 .clientConnector(clientConnector)
                 .codecs(configurer -> configurer.defaultCodecs().enableLoggingRequestDetails(logRequestDetails))
                 .baseUrl(keycloakUrl)
                 .build();
-        
-        log.info("apiWebClient is initialized: {}", webClient);
         return webClient;
     }
 

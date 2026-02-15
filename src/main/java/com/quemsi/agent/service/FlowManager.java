@@ -13,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.quemsi.agent.config.AgentProperties;
 import com.quemsi.agent.flow.TimerImpl;
 import com.quemsi.agent.flow.TimerImpl.NamedRunnable;
 import com.quemsi.commons.util.BaseRuntimeException;
@@ -40,8 +39,6 @@ public class FlowManager {
 	private ObjectProvider<Flow> flowObjectProvider;
 	@Autowired
 	private SpringBeanManager beanManager;
-	@Autowired
-	private AgentProperties agentProperties;
 	@Autowired
 	private ApiClient apiClient;
 	@Autowired
@@ -95,17 +92,21 @@ public class FlowManager {
 			// Set log writer if available
 			if (agentBatchedLogger != null) {
 				f.setLogWriter((agentId, flowExecutionId, flowExecutionStepId, message) -> {
-					agentBatchedLogger.log(agentId, flowExecutionId, flowExecutionStepId, message.getLevel(), message.toString());
+					agentBatchedLogger.logWithAgentId(agentId, flowExecutionId, flowExecutionStepId, message.getLevel(), message.toString());
 				});
 			}
 			f.initialize();
 			flows.put(name, f);
 			return f;
 		} catch(BaseRuntimeException bre){
-			agentBatchedLogger.logError(agentProperties.getAgentId(), null, null, LogMessage.error("error-in-initializing-flow", bre));
+			if (agentBatchedLogger != null) {
+				agentBatchedLogger.logError(null, null, LogMessage.error("error-in-initializing-flow", bre));
+			}
 			apiClient.send(NotifyError.builder().exception(bre).build());
 		} catch (Exception ex){
-			agentBatchedLogger.logError(agentProperties.getAgentId(), null, null, LogMessage.error("error-in-creating-flow", ex));
+			if (agentBatchedLogger != null) {
+				agentBatchedLogger.logError(null, null, LogMessage.error("error-in-creating-flow", ex));
+			}
 			BaseRuntimeException e = Exceptions.server("error-creating-flow").withCause(ex)
 				.onEntity("flow", flow.getName())
 				.withExtra("detailMessage", ex.getMessage()).get();

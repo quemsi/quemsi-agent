@@ -62,6 +62,8 @@ public class AgentApplication {
 					}
 				}
 				
+				// Note: System.out.println used here because this runs before Spring context initialization
+				// AgentBatchedLogger is not available at this point
 				System.out.println("quemsi-agent version: " + version);
 				System.exit(0);
 			}

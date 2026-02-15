@@ -5,17 +5,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.common.StorageSharedKeyCredential;
 import com.quemsi.agent.api.ApiManager;
+import com.quemsi.agent.service.AgentBatchedLogger;
 import com.quemsi.agent.service.AzureBlobStorage;
+import com.quemsi.commons.util.LogMessage;
 import com.quemsi.commons.util.StringUtils;
 import com.quemsi.model.dto.agent.TestAzureBlobDrive;
 import com.quemsi.model.dto.agent.onapi.TestAzureBlobDriveResult;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public class ExecuteTestAzureBlobDrive {
     @Autowired
     private ApiManager apiManager;
+    @Autowired
+    private AgentBatchedLogger agentBatchedLogger;
     
     public void execute(TestAzureBlobDrive testAzureBlobDrive){
         String endpoint = String.format(AzureBlobStorage.AZURE_BLOB_ENDPOINT_FORMAT, testAzureBlobDrive.getAccountName());
@@ -45,7 +46,7 @@ public class ExecuteTestAzureBlobDrive {
             TestAzureBlobDriveResult result = builder.success(true).build();
             apiManager.send(result);
         }catch(Exception ex){
-            log.error("azure-blob-drive-failed", ex);
+            agentBatchedLogger.logError(null, null, LogMessage.error("azure-blob-drive-failed", ex));
             TestAzureBlobDriveResult result = builder.success(false).errorCode(500).errorMessage(ex.getMessage()!=null?ex.getMessage():"azure-blob-drive-failed").build();
             apiManager.send(result);
         }

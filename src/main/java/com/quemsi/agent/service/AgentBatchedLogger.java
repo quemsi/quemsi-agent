@@ -5,42 +5,49 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.quemsi.agent.api.ApiManager;
+import com.quemsi.agent.config.AgentProperties;
 import com.quemsi.commons.util.LogMessage;
 import com.quemsi.model.dto.AgentLogRecord;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class AgentBatchedLogger {
     
-    @Autowired
-    private ApiManager apiManager;
-    
-    @Value("${quemsi.logging.batch-size:50}")
-    private int batchSize;
-    
-    @Value("${quemsi.logging.flush-interval-seconds:5}")
-    private long flushIntervalSeconds;
-    
-    private final BlockingQueue<AgentLogRecord> logQueue = new LinkedBlockingQueue<>();
-    private final AtomicBoolean running = new AtomicBoolean(false);
+    private final ApiManager apiManager;
+    private final AgentProperties agentProperties;
+    private final int batchSize;
+    private final long flushIntervalSeconds;
+    private BlockingQueue<AgentLogRecord> logQueue;
+    private AtomicBoolean running;
+
+    public AgentBatchedLogger(ApiManager apiManager, AgentProperties agentProperties,
+                              @Value("${quemsi.logging.batch-size:50}") int batchSize,
+                              @Value("${quemsi.logging.flush-interval-seconds:5}") long flushIntervalSeconds) {
+        this.apiManager = apiManager;
+        this.agentProperties = agentProperties;
+        this.batchSize = batchSize;
+        this.flushIntervalSeconds = flushIntervalSeconds;
+    }
     
     @PostConstruct
     public void init() {
-        running.set(true);
+        // Initialize in @PostConstruct to ensure it runs on the actual bean instance, not proxy
+        logQueue = new LinkedBlockingQueue<>();
+        running = new AtomicBoolean(true);
     }
     
-    @Scheduled(fixedDelayString = "${quemsi.logging.flush-interval-seconds:5}", timeUnit = TimeUnit.SECONDS)
+    // @Scheduled(fixedDelayString = "${quemsi.logging.flush-interval-seconds:5}", timeUnit = TimeUnit.SECONDS)
     public void scheduledFlush() {
         flushLogs();
     }
@@ -51,7 +58,8 @@ public class AgentBatchedLogger {
         flushLogs(); // Flush remaining logs on shutdown
     }
     
-    public void log(Long agentId, Long flowExecutionId, Long flowExecutionStepId, String level, String message) {
+    public void log(Long flowExecutionId, Long flowExecutionStepId, String level, String message) {
+        Long agentId = agentProperties != null ? agentProperties.getAgentId() : null;
         AgentLogRecord logRecord = AgentLogRecord.builder()
             .agentId(agentId)
             .flowExecutionId(flowExecutionId)
@@ -61,28 +69,53 @@ public class AgentBatchedLogger {
             .timestamp(LocalDateTime.now())
             .build();
         
-        logQueue.offer(logRecord);
-        
-        // Check if we should flush immediately
-        if (logQueue.size() >= batchSize) {
-            flushLogs();
+        // Log to SLF4J for local debugging
+        String logMessage = message;
+        switch (level) {
+            case "INFO":
+                log.info(logMessage);
+                break;
+            case "WARN":
+                log.warn(logMessage);
+                break;
+            case "ERROR":
+                log.error(logMessage);
+                break;
+            case "DEBUG":
+                log.debug(logMessage);
+                break;
+            default:
+                log.info(logMessage);
+        }
+        if(logQueue != null){
+            logQueue.offer(logRecord);
+            
+            // Check if we should flush immediately
+            if (logQueue.size() >= batchSize) {
+                flushLogs();
+            }
         }
     }
     
-    public void logInfo(Long agentId, Long flowExecutionId, Long flowExecutionStepId, LogMessage message) {
-        log(agentId, flowExecutionId, flowExecutionStepId, message.getLevel(), message.toString());
+    public void logInfo(Long flowExecutionId, Long flowExecutionStepId, LogMessage message) {
+        log(flowExecutionId, flowExecutionStepId, message.getLevel(), message.toString());
     }
     
-    public void logWarn(Long agentId, Long flowExecutionId, Long flowExecutionStepId, LogMessage message) {
-        log(agentId, flowExecutionId, flowExecutionStepId, message.getLevel(), message.toString());
+    public void logWarn(Long flowExecutionId, Long flowExecutionStepId, LogMessage message) {
+        log(flowExecutionId, flowExecutionStepId, message.getLevel(), message.toString());
     }
     
-    public void logError(Long agentId, Long flowExecutionId, Long flowExecutionStepId, LogMessage message) {
-        log(agentId, flowExecutionId, flowExecutionStepId, message.getLevel(), message.toString());
+    public void logError(Long flowExecutionId, Long flowExecutionStepId, LogMessage message) {
+        log(flowExecutionId, flowExecutionStepId, message.getLevel(), message.toString());
     }
     
-    public void logDebug(Long agentId, Long flowExecutionId, Long flowExecutionStepId, LogMessage message) {
-        log(agentId, flowExecutionId, flowExecutionStepId, message.getLevel(), message.toString());
+    public void logDebug(Long flowExecutionId, Long flowExecutionStepId, LogMessage message) {
+        log(flowExecutionId, flowExecutionStepId, message.getLevel(), message.toString());
+    }
+    
+    // Method to match FlowContext.LogWriter interface (agentId is ignored, obtained from AgentProperties)
+    public void logWithAgentId(Long agentId, Long flowExecutionId, Long flowExecutionStepId, String level, String message) {
+        log(flowExecutionId, flowExecutionStepId, level, message);
     }
     
     private void flushLogs() {

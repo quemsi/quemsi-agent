@@ -17,9 +17,6 @@ import com.quemsi.model.dto.agent.TestDatasource;
 import com.quemsi.model.dto.agent.TestFolderAccess;
 import com.quemsi.model.dto.agent.VersionDeleteRequest;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public class AgentCommandExecutor {
     @Autowired
     private ExecuteExecuteFlow executeExecuteFlow;

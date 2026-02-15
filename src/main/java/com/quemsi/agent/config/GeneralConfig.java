@@ -32,7 +32,7 @@ import com.quemsi.commons.util.FileNameUtil;
 import com.quemsi.commons.util.JsonUtils;
 import com.quemsi.model.flow.db.sql.SqlParser;
 
-@Configuration(proxyBeanMethods = false)
+@Configuration(proxyBeanMethods = true)
 public class GeneralConfig {
 	private static final String dateFormat = "yyyy-MM-dd";
     private static final String dateTimeFormat = "yyyy-MM-dd HH:mm:ss";
