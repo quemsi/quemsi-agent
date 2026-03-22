@@ -23,6 +23,7 @@ import com.quemsi.model.dto.ObjectReference;
 import com.quemsi.model.dto.StorageType;
 import com.quemsi.model.dto.Tag;
 import com.quemsi.model.dto.TagType;
+import com.quemsi.model.dto.UpdateSchemaConfig;
 import com.quemsi.model.dto.UpdateSequences;
 import com.quemsi.model.dto.agent.AgentCommand;
 import com.quemsi.model.dto.agent.AgentCommandSync;
@@ -88,6 +89,9 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(VersionDeleted.class, MemberCategory.values())
             .registerType(TestFolderAccess.class, MemberCategory.values())
             .registerType(TestFolderAccessResult.class, MemberCategory.values())
+            .registerType(UpdateSchemaConfig.class, MemberCategory.values())
+            .registerType(UpdateSequences.class, MemberCategory.values())
+            .registerType(UpdateSequences.SequenceMapping.class, MemberCategory.values())
             ;
         hints.serialization()
             .registerType(AgentError.class)
@@ -125,6 +129,9 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(NotifyError.class)
             .registerType(RetentionCompleted.class)
             .registerType(VersionDeleted.class)
+            .registerType(UpdateSchemaConfig.class)
+            .registerType(UpdateSequences.class)
+            .registerType(UpdateSequences.SequenceMapping.class)
             ;
     }
 
