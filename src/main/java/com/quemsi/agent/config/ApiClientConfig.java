@@ -97,18 +97,21 @@ public class ApiClientConfig {
         return webClient;
     }
 
-    @Bean
-    public ReactorClientHttpConnector clientConnector(){
-        ConnectionProvider provider = ConnectionProvider.builder("fixed")
+    @Bean(destroyMethod = "dispose")
+    public ConnectionProvider connectionProvider() {
+        return ConnectionProvider.builder("fixed")
             .maxConnections(50)
             .maxIdleTime(Duration.ofSeconds(20))
             .maxLifeTime(Duration.ofSeconds(60))
             .pendingAcquireTimeout(Duration.ofSeconds(60))
             .evictInBackground(Duration.ofSeconds(120))
             .build();
-        HttpClient httpClient = HttpClient.create(provider)
-            .responseTimeout(Duration.ofSeconds(30)); 
-        ReactorClientHttpConnector connector = new ReactorClientHttpConnector(httpClient);
-        return connector;
+    }
+
+    @Bean
+    public ReactorClientHttpConnector clientConnector(ConnectionProvider connectionProvider) {
+        HttpClient httpClient = HttpClient.create(connectionProvider)
+            .responseTimeout(Duration.ofSeconds(30));
+        return new ReactorClientHttpConnector(httpClient);
     }
 }

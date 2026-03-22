@@ -2,6 +2,7 @@ package com.quemsi.agent;
 
 import java.time.Duration;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +32,9 @@ import com.quemsi.model.dto.agent.UpdateAgentModel;
 import com.quemsi.model.dto.agent.VersionDeleteRequest;
 
 public class AgentCoordinator {
+
+    private static final long SLEEP_SLICE_MS = 100;
+
     @Value("${api.retry:5}")
     private long apiRetry;
 	@Autowired
@@ -51,6 +55,8 @@ public class AgentCoordinator {
     private static final int MIN_BACKOFF_SECONDS = 5;
 
     private AtomicInteger backoff = new AtomicInteger(0);
+
+    private final AtomicBoolean commandLoopActive = new AtomicBoolean(true);
 
     private ApiCommandListener apiCommandListener;
     @Value("${spring.application.version}")
@@ -99,14 +105,37 @@ public class AgentCoordinator {
         }
     }
 
+    /**
+     * Stops the {@link ApiCommandListener} loop from resubmitting; used during application shutdown.
+     */
+    public void stopCommandLoop() {
+        commandLoopActive.set(false);
+    }
+
+    /**
+     * Sleeps up to {@code totalMillis} in small slices so shutdown can cut the wait short.
+     */
+    private void sleepMillisInterruptible(long totalMillis) {
+        long remaining = totalMillis;
+        while (remaining > 0 && commandLoopActive.get()) {
+            if (Thread.currentThread().isInterrupted()) {
+                return;
+            }
+            long chunk = Math.min(SLEEP_SLICE_MS, remaining);
+            try {
+                Thread.sleep(chunk);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+            remaining -= chunk;
+        }
+    }
+
     public void execute(AgentCommand command){
         agentBatchedLogger.logInfo(null, null, LogMessage.info("recived command  : {}", command));
         if(command instanceof DelayAgentCommand delayAgent){
-            try {
-                Thread.sleep(delayAgent.getDelay());
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
+            sleepMillisInterruptible(delayAgent.getDelay());
         } else {
             if(command instanceof ExecuteFlow executeFlow){
                 commandExecutor.execute(executeFlow);
@@ -134,11 +163,17 @@ public class AgentCoordinator {
     public class ApiCommandListener implements Runnable{
         @Override
         public void run() {
+            if (!commandLoopActive.get()) {
+                return;
+            }
             boolean listenNext = true;
             try{
                 if(backoff.get() > 0){
                     agentBatchedLogger.logDebug(null, null, LogMessage.debug("Waiting for {} seconds before next command", backoff.get()));
-                    Exceptions.wrapRunnable(() -> Thread.sleep(Duration.ofSeconds(backoff.get()))).run();
+                    sleepMillisInterruptible(Duration.ofSeconds(backoff.get()).toMillis());
+                }
+                if (!commandLoopActive.get()) {
+                    return;
                 }
                 AgentCommand command = apiManager.nextCommand();
                 execute(command);
@@ -147,7 +182,7 @@ public class AgentCoordinator {
                 incrementBackoff();
                 agentBatchedLogger.logDebug(null, null, LogMessage.debug("Unable to reach api, will try again in {} seconds", apiRetry));
                 agentBatchedLogger.logDebug(null, null, LogMessage.debug("api error", ignore));
-                Exceptions.wrapRunnable(() -> Thread.sleep(Duration.ofSeconds(apiRetry))).run();;
+                sleepMillisInterruptible(Duration.ofSeconds(apiRetry).toMillis());
             } catch(BaseRuntimeException bre){
                 incrementBackoff();
                 listenNext = !bre.getExtra().containsKey("exit");
@@ -155,7 +190,7 @@ public class AgentCoordinator {
                 incrementBackoff();
                 agentBatchedLogger.logError(null, null, LogMessage.error("command-execution-error", e));
             } finally {
-                if(listenNext){
+                if(listenNext && commandLoopActive.get()){
                     vThreadExecutor.submit(this);
                 }
             }
