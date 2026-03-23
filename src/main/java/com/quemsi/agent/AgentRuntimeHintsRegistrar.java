@@ -89,7 +89,6 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(VersionDeleted.class, MemberCategory.values())
             .registerType(TestFolderAccess.class, MemberCategory.values())
             .registerType(TestFolderAccessResult.class, MemberCategory.values())
-            .registerType(UpdateSchemaConfig.class, MemberCategory.values())
             .registerType(UpdateSequences.class, MemberCategory.values())
             .registerType(UpdateSequences.SequenceMapping.class, MemberCategory.values())
             ;
@@ -111,9 +110,7 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(StorageType.class)
             .registerType(Tag.class)
             .registerType(TagType.class)
-            .registerType(UpdateSequences.class)
-            .registerType(UpdateSequences.SequenceMapping.class)
-
+            
             .registerType(AgentCommand.class)
             .registerType(DelayAgentCommand.class)
             .registerType(ExecuteFlow.class)
