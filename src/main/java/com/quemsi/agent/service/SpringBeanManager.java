@@ -11,10 +11,12 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
+import com.quemsi.agent.config.AgentProperties;
 import com.quemsi.agent.flow.TimerImpl;
 import com.quemsi.commons.util.BaseRuntimeException;
 import com.quemsi.commons.util.Exceptions;
 import com.quemsi.commons.util.FileNameUtil;
+import com.quemsi.commons.util.LogMessage;
 import com.quemsi.commons.util.StringUtils;
 import com.quemsi.model.api.ApiClient;
 import com.quemsi.model.dto.AgentModel;
@@ -34,8 +36,6 @@ import com.quemsi.model.flow.out.LStorage;
 import com.quemsi.model.flow.out.LocalDrive;
 import com.quemsi.model.flow.out.Storage;
 
-import com.quemsi.commons.util.LogMessage;
-
 @Service
 public class SpringBeanManager {
 	@Autowired
@@ -46,9 +46,11 @@ public class SpringBeanManager {
 	protected ApiClient apiClient;
 	@Autowired
 	private Scheduler scheduler;
-	@Autowired(required = false)
+	@Autowired
 	private AgentBatchedLogger agentBatchedLogger;
-
+	@Autowired
+	private AgentProperties agentProperties;
+	
 	public TimerImpl findTimer(String name){
 		return beanFactory.getBean(name, TimerImpl.class);
 	}
@@ -67,7 +69,7 @@ public class SpringBeanManager {
 			t.setName(timer.getName());  
 			t.setSchedule(timer.getSchedule());
 			t.setScheduler(scheduler);
-			registerer.register();
+			registerer.register(true);
 			if(!registerer.isNew()){
 				t.reset();
 			}else{
@@ -226,6 +228,10 @@ public class SpringBeanManager {
 				ls.setUsedSize(storage.getUsedSize());
 				ls.setCapacity(storage.getCapacity());
 				ls.setUtil(context.getBean(FileNameUtil.class));
+				ls.setLogWriter((agentId, flowExecutionId, flowExecutionStepId, message) -> {
+					agentBatchedLogger.logWithAgentId(agentId, flowExecutionId, flowExecutionStepId, message.getLevel(), message.toString());
+				});
+				ls.setAgentId(agentProperties.getAgentId());
 				registerer.register();
 			} else if (StorageType.AZUREBLOB.equals(storage.getType())){
 				BeanReqisterer<ABStorage> registerer = new BeanReqisterer<>(storage.getName(), ABStorage.class, () -> new ABStorage());
@@ -247,6 +253,7 @@ public class SpringBeanManager {
 					abStorage.setRetentionPolicy(storage.getRetentionPolicy());
 					abStorage.setUtil(context.getBean(FileNameUtil.class));
 					abStorage.createContainer(abStorage.containerName());
+					abStorage.setAgentBatchedLogger(agentBatchedLogger);
 				}catch(NoSuchBeanDefinitionException e){
 					throw Exceptions.server("not-existing-drive").withExtra("storageName", storage.getName()).withExtra("driveName", storage.getLoc()).withExtra("type", storage.getType()).get();
 				}
@@ -268,6 +275,7 @@ public class SpringBeanManager {
 					awsS3Storage.setUsedSize(storage.getUsedSize());
 					awsS3Storage.setRetentionPolicy(storage.getRetentionPolicy());
 					awsS3Storage.setUtil(context.getBean(FileNameUtil.class));
+					awsS3Storage.setAgentBatchedLogger(agentBatchedLogger);
 					ls.setUnderlyingStorage(awsS3Storage);
 				}catch(NoSuchBeanDefinitionException e){
 					throw Exceptions.server("not-existing-drive").withExtra("storageName", storage.getName()).withExtra("driveName", storage.getLoc()).withExtra("type", storage.getType()).get();

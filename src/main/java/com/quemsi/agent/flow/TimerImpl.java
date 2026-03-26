@@ -23,7 +23,7 @@ public class TimerImpl {
     @Autowired
 	@Setter
 	private Scheduler scheduler;
-    @Autowired(required = false)
+    @Autowired
     private AgentBatchedLogger agentBatchedLogger;
 	@Setter
 	@Getter

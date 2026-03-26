@@ -43,7 +43,7 @@ public class FlowManager {
 	private ApiClient apiClient;
 	@Autowired
 	private DateUtils dateUtils;
-	@Autowired(required = false)
+	@Autowired
 	private AgentBatchedLogger agentBatchedLogger;
 	
 	public Flow createNewFlow(FlowDetail flow) {

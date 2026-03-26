@@ -51,7 +51,7 @@ public class AWSS3Storage implements Storage {
     private String rootPath;
     @Setter
     private FileNameUtil util;
-    @Autowired(required = false)
+    @Setter
     private AgentBatchedLogger agentBatchedLogger;
     
     private Long getFlowExecutionId(FlowContext context) {
@@ -138,7 +138,7 @@ public class AWSS3Storage implements Storage {
         String bucketName = awsS3Drive.getBucketName();
         Long flowExecutionId = getFlowExecutionId(context);
         Long flowExecutionStepId = getFlowExecutionStepId(context);
-        
+        context.logStepInfo(context.getCurrentStep(), LogMessage.info("Storing {} files to AWS S3", dataPackages.size()));
         dataPackages.forEach(dp -> {
             if (agentBatchedLogger != null) {
                 agentBatchedLogger.logInfo(flowExecutionId, flowExecutionStepId, LogMessage.info("Storing file to AWS S3: {}", dp.getName()));

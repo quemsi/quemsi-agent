@@ -47,7 +47,8 @@ public class AzureBlobStorage implements Storage{
     private String rootPath;
     @Setter
     private FileNameUtil util;
-    @Autowired(required = false)
+    @Setter
+    @Autowired
     private AgentBatchedLogger agentBatchedLogger;
     
     private Long getFlowExecutionId(FlowContext context) {
