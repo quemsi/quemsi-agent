@@ -22,7 +22,6 @@ import com.quemsi.model.flow.out.Storage;
 
 import lombok.Builder;
 import lombok.Setter;
-import org.springframework.beans.factory.annotation.Autowired;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
