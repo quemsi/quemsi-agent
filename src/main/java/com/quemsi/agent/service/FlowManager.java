@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.quemsi.agent.flow.TimerImpl;
@@ -79,6 +80,10 @@ public class FlowManager {
 				}
 			}
 			f.setSteps(stepList);
+			JsonNode defaultTagsNode = node.get("defaultExecutionTags");
+			if (defaultTagsNode != null && defaultTagsNode.isObject()) {
+				f.setDefaultExecutionTags(objectMapper.convertValue(defaultTagsNode, new TypeReference<Map<String, String>>() {}));
+			}
 			Flow old = flows.containsKey(name)?flows.get(name):null;
 			if(old != null && old.getTimerName() != null){
 				TimerImpl oldTimer = beanManager.findTimer(old.getTimerName());
@@ -135,9 +140,13 @@ public class FlowManager {
 
 		@Override
 		public void run() {
-			Map<String, String> tags = new HashMap<>(Map.of("date", dateUtils.getDateString(LocalDateTime.now())
-				, "time", dateUtils.getTimeString(LocalDateTime.now()),
-				"timer", this.timerName));
+			Map<String, String> tags = new HashMap<>();
+			if (flow.getDefaultExecutionTags() != null) {
+				tags.putAll(flow.getDefaultExecutionTags());
+			}
+			tags.put("date", dateUtils.getDateString(LocalDateTime.now()));
+			tags.put("time", dateUtils.getTimeString(LocalDateTime.now()));
+			tags.put("timer", this.timerName);
 			FlowExecution execution = apiClient.initiate(flow.getName(), tags);
 			FlowExecution updatedExecution = flow.execute(execution.getVersion().getId(), tags, execution.getVersion().getFiles(), execution.getId());
 			if(updatedExecution != null){
