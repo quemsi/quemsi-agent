@@ -117,6 +117,7 @@ public class SpringBeanManager {
 			dsFactory.setUsername(datasource.getUsername());
 			dsFactory.setPassword(datasource.getPassword());
 		}
+		dsFactory.setReadOnly(datasource.isReadOnly());
 		registerer.register();
 	}
 	

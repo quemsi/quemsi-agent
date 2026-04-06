@@ -133,10 +133,10 @@ public class AgentCoordinator {
     }
 
     public void execute(AgentCommand command){
-        agentBatchedLogger.logInfo(null, null, LogMessage.info("recived command  : {}", command));
         if(command instanceof DelayAgentCommand delayAgent){
             sleepMillisInterruptible(delayAgent.getDelay());
         } else {
+            agentBatchedLogger.logInfo(null, null, LogMessage.info("recived command  : {}", command));
             if(command instanceof ExecuteFlow executeFlow){
                 commandExecutor.execute(executeFlow);
             } else if(command instanceof UpdateAgentModel updatedModel){
