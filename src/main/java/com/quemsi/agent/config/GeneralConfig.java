@@ -6,6 +6,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -34,6 +35,7 @@ import com.quemsi.commons.util.JsonUtils;
 import com.quemsi.model.flow.db.sql.SqlParser;
 
 @Configuration(proxyBeanMethods = true)
+@EnableConfigurationProperties(AgentWatchdogProperties.class)
 public class GeneralConfig {
 	private static final String dateFormat = "yyyy-MM-dd";
     private static final String dateTimeFormat = "yyyy-MM-dd HH:mm:ss";
@@ -58,6 +60,15 @@ public class GeneralConfig {
 	@Bean
 	public ScheduledExecutorService scheduledExecutorService(){
 		return  Executors.newSingleThreadScheduledExecutor();
+	}
+
+	@Bean(destroyMethod = "shutdown")
+	public ScheduledExecutorService watchdogScheduler() {
+		return Executors.newSingleThreadScheduledExecutor(r -> {
+			Thread t = new Thread(r, "agent-watchdog");
+			t.setDaemon(false);
+			return t;
+		});
 	}
 
 	@Bean

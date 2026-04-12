@@ -2,15 +2,22 @@ package com.quemsi.agent;
 
 import java.time.Duration;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.SpringApplication;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.quemsi.agent.api.ApiManager;
+import com.quemsi.agent.config.AgentWatchdogProperties;
 import com.quemsi.agent.service.AgentBatchedLogger;
 import com.quemsi.agent.service.AgentCommandExecutor;
 import com.quemsi.agent.service.FlowManager;
@@ -51,6 +58,20 @@ public class AgentCoordinator {
     private AgentCommandExecutor commandExecutor;
     @Autowired
     private AgentBatchedLogger agentBatchedLogger;
+    @Autowired
+    private ConfigurableApplicationContext applicationContext;
+    @Autowired
+    private AgentWatchdogProperties watchdogProperties;
+    @Autowired
+    @Qualifier("watchdogScheduler")
+    private ScheduledExecutorService watchdogScheduler;
+
+    private static final int WATCHDOG_EXIT_CODE = 2;
+
+    private volatile ScheduledFuture<?> watchdogFuture;
+
+    private final Object watchdogLock = new Object();
+
     private static final int MAX_BACKOFF_SECONDS = 60;
     private static final int MIN_BACKOFF_SECONDS = 5;
 
@@ -99,6 +120,7 @@ public class AgentCoordinator {
                 agentBatchedLogger.logInfo(null, null, LogMessage.info("initialization completed"));
                 apiCommandListener = new ApiCommandListener();
                 vThreadExecutor.submit(apiCommandListener);
+                armWatchdog();
             }catch(WebClientRequestException ex){
                 throw Exceptions.server("initialization-error").withCause(ex).get();
             }
@@ -109,7 +131,59 @@ public class AgentCoordinator {
      * Stops the {@link ApiCommandListener} loop from resubmitting; used during application shutdown.
      */
     public void stopCommandLoop() {
-        commandLoopActive.set(false);
+        synchronized (watchdogLock) {
+            cancelWatchdog();
+            commandLoopActive.set(false);
+        }
+    }
+
+    private void cancelWatchdog() {
+        ScheduledFuture<?> f = watchdogFuture;
+        if (f != null) {
+            f.cancel(false);
+            watchdogFuture = null;
+        }
+    }
+
+    private void armWatchdog() {
+        if (!watchdogProperties.isEnabled()) {
+            synchronized (watchdogLock) {
+                cancelWatchdog();
+            }
+            return;
+        }
+        Duration timeout = watchdogProperties.getTimeout();
+        if (timeout == null || timeout.isZero() || timeout.isNegative()) {
+            synchronized (watchdogLock) {
+                cancelWatchdog();
+            }
+            return;
+        }
+        synchronized (watchdogLock) {
+            if (!commandLoopActive.get()) {
+                return;
+            }
+            cancelWatchdog();
+            watchdogFuture = watchdogScheduler.schedule(this::onWatchdogTimeout, timeout.toMillis(), TimeUnit.MILLISECONDS);
+        }
+    }
+
+    private void onWatchdogTimeout() {
+        synchronized (watchdogLock) {
+            if (!commandLoopActive.get()) {
+                return;
+            }
+            agentBatchedLogger.logError(null, null, LogMessage.error(
+                    "agent idle watchdog timeout (configured {}); exiting",
+                    watchdogProperties.getTimeout()));
+            cancelWatchdog();
+            commandLoopActive.set(false);
+        }
+        try {
+            SpringApplication.exit(applicationContext, () -> WATCHDOG_EXIT_CODE);
+        } finally {
+            System.exit(WATCHDOG_EXIT_CODE);
+        }
     }
 
     /**
@@ -176,6 +250,7 @@ public class AgentCoordinator {
                     return;
                 }
                 AgentCommand command = apiManager.nextCommand();
+                armWatchdog();
                 execute(command);
                 resetBackoff();
             } catch (WebClientRequestException ignore){

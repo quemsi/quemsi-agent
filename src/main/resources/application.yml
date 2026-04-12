@@ -35,3 +35,10 @@ quemsi:
   logging:
     batch-size: 50
     flush-interval-seconds: 5
+
+# Idle watchdog: exits the JVM if no successful /api/agent/next-command response within timeout.
+# Must exceed worst-case single-command execution time; API outages do not reset the timer.
+agent:
+  watchdog:
+    enabled: true
+    timeout: 5m
