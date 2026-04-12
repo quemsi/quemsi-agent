@@ -79,6 +79,12 @@ public class AgentCoordinator {
 
     private final AtomicBoolean commandLoopActive = new AtomicBoolean(true);
 
+    /**
+     * When true, {@link ApiCommandListener} iterations stop chaining (e.g. {@link BaseRuntimeException} with "exit" extra).
+     * Reset when the command loop starts in {@link #start()}.
+     */
+    private final AtomicBoolean stopCommandListenerChain = new AtomicBoolean(false);
+
     private ApiCommandListener apiCommandListener;
     @Value("${spring.application.version}")
     private String agentVersion;
@@ -118,6 +124,7 @@ public class AgentCoordinator {
 				initialize(model);
                 initialized = true;
                 agentBatchedLogger.logInfo(null, null, LogMessage.info("initialization completed"));
+                stopCommandListenerChain.set(false);
                 apiCommandListener = new ApiCommandListener();
                 vThreadExecutor.submit(apiCommandListener);
                 armWatchdog();
@@ -240,7 +247,9 @@ public class AgentCoordinator {
             if (!commandLoopActive.get()) {
                 return;
             }
-            boolean listenNext = true;
+            if (stopCommandListenerChain.get()) {
+                return;
+            }
             try{
                 if(backoff.get() > 0){
                     agentBatchedLogger.logDebug(null, null, LogMessage.debug("Waiting for {} seconds before next command", backoff.get()));
@@ -249,10 +258,25 @@ public class AgentCoordinator {
                 if (!commandLoopActive.get()) {
                     return;
                 }
+                if (stopCommandListenerChain.get()) {
+                    return;
+                }
                 AgentCommand command = apiManager.nextCommand();
                 armWatchdog();
-                execute(command);
-                resetBackoff();
+                vThreadExecutor.submit(() -> {
+                    try {
+                        AgentCoordinator.this.execute(command);
+                        resetBackoff();
+                    } catch (BaseRuntimeException bre) {
+                        incrementBackoff();
+                        if (bre.getExtra().containsKey("exit")) {
+                            stopCommandListenerChain.set(true);
+                        }
+                    } catch (Exception e) {
+                        incrementBackoff();
+                        agentBatchedLogger.logError(null, null, LogMessage.error("command-execution-error", e));
+                    }
+                });
             } catch (WebClientRequestException ignore){
                 incrementBackoff();
                 agentBatchedLogger.logDebug(null, null, LogMessage.debug("Unable to reach api, will try again in {} seconds", apiRetry));
@@ -260,13 +284,15 @@ public class AgentCoordinator {
                 sleepMillisInterruptible(Duration.ofSeconds(apiRetry).toMillis());
             } catch(BaseRuntimeException bre){
                 incrementBackoff();
-                listenNext = !bre.getExtra().containsKey("exit");
+                if (bre.getExtra().containsKey("exit")) {
+                    stopCommandListenerChain.set(true);
+                }
             } catch(Exception e) {
                 incrementBackoff();
                 agentBatchedLogger.logError(null, null, LogMessage.error("command-execution-error", e));
             } finally {
-                if(listenNext && commandLoopActive.get()){
-                    vThreadExecutor.submit(this);
+                if(!stopCommandListenerChain.get() && commandLoopActive.get()){
+                    vThreadExecutor.submit(new ApiCommandListener());
                 }
             }
         }
