@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.quemsi.agent.api.ApiManager;
 import com.quemsi.agent.service.AgentBatchedLogger;
+import com.quemsi.commons.util.CommonOps;
 import com.quemsi.commons.util.LogMessage;
 import com.quemsi.commons.util.StringUtils;
 import com.quemsi.model.dto.agent.TestFolderAccess;
@@ -24,7 +25,7 @@ public class ExecuteTestFolderAccess {
         TestFolderAccessResult result = TestFolderAccessResult.builder().agentId(cmd.getAgentId()).correlationId(cmd.getCorrelationId())
             .timeoutMilis(cmd.getTimeoutMilis())
             .build();
-        String path = cmd.getPath();
+        String path = CommonOps.sanitizePath(cmd.getPath());
         if(!StringUtils.isEmptyOrNull(path)){
             String filePath = path + File.separator + FOLDER_ACCESS_TEST_FILE;
             FileOutputStream fos = null;
