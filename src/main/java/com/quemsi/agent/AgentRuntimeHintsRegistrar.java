@@ -47,6 +47,7 @@ import com.quemsi.model.flow.db.sql.DbColumn;
 import com.quemsi.model.flow.db.sql.DbModel;
 import com.quemsi.model.flow.db.sql.DbSequence;
 import com.quemsi.model.flow.db.sql.DbTable;
+import com.quemsi.model.flow.in.CustomSerializedColumn;
 import com.quemsi.model.flow.in.TableData;
 import com.quemsi.model.flow.in.TableDataPage;
 
@@ -77,6 +78,7 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(TableData.DataPage.class, MemberCategory.values())
             .registerType(TableDataPage.class, MemberCategory.values())
             .registerType(TableDataPage.Request.class, MemberCategory.values())
+            .registerType(CustomSerializedColumn.BinaryColumn.class, MemberCategory.values())
             /* All AgentCommand subclasses for Jackson serialization */
             .registerType(AgentCommandSync.class, MemberCategory.values())
             .registerType(TestDatasource.class, MemberCategory.values())
