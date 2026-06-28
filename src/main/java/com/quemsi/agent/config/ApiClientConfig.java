@@ -18,6 +18,7 @@ import com.quemsi.agent.api.ApiManager;
 import com.quemsi.agent.api.QuemsiApi;
 import com.quemsi.agent.api.TokenApi;
 
+import io.netty.handler.ssl.SslContext;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.resources.ConnectionProvider;
 
@@ -29,7 +30,12 @@ public class ApiClientConfig {
     private String keycloakUrl;
     @Value("${quemsi-api.log-request-detail:false}")
     private boolean logRequestDetails;
-    
+    @Value("${quemsi-api.truststore.path:}")
+    private String truststorePath;
+    @Value("${quemsi-api.truststore.password:changeit}")
+    private String truststorePassword;
+    @Value("${quemsi-api.truststore.type:JKS}")
+    private String truststoreType;
     
     @Bean
     public ApiManager apiManager(TokenApi tokenApi, QuemsiApi quemsiApi){
@@ -112,6 +118,11 @@ public class ApiClientConfig {
     public ReactorClientHttpConnector clientConnector(ConnectionProvider connectionProvider) {
         HttpClient httpClient = HttpClient.create(connectionProvider)
             .responseTimeout(Duration.ofSeconds(30));
+        SslContext sslContext = TrustStoreSupport.nettyClientSslContext(
+                truststorePath, truststorePassword, truststoreType);
+        if (sslContext != null) {
+            httpClient = httpClient.secure(sslSpec -> sslSpec.sslContext(sslContext));
+        }
         return new ReactorClientHttpConnector(httpClient);
     }
 }

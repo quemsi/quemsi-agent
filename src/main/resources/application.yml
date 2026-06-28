@@ -27,6 +27,10 @@ quemsi-api:
   client-secret: ${CLIENT_SECRET}
   log-request-detail: true
   retry: 5
+  truststore:
+    path: ${TRUSTSTORE_PATH:}
+    password: ${TRUSTSTORE_PASSWORD:changeit}
+    type: ${TRUSTSTORE_TYPE:JKS}
 logging:
   level:
     root: INFO

@@ -6,6 +6,7 @@ import org.springframework.aot.hint.RuntimeHintsRegistrar;
 import org.springframework.context.annotation.Configuration;
 
 import com.quemsi.agent.flow.TimerImpl;
+import com.quemsi.agent.config.TrustStoreSupport;
 import com.quemsi.commons.util.FileNameUtil;
 import com.quemsi.model.dto.AgentError;
 import com.quemsi.model.dto.AgentModel;
@@ -93,6 +94,9 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(TestFolderAccessResult.class, MemberCategory.values())
             .registerType(UpdateSequences.class, MemberCategory.values())
             .registerType(UpdateSequences.SequenceMapping.class, MemberCategory.values())
+            .registerType(TrustStoreSupport.class, MemberCategory.values())
+            .registerType(java.security.KeyStore.class, MemberCategory.values())
+            .registerType(javax.net.ssl.TrustManagerFactory.class, MemberCategory.values())
             ;
         hints.serialization()
             .registerType(AgentError.class)

@@ -52,6 +52,7 @@ docker run --rm \
   -e CLIENT_SECRET=your-client-secret \
   -e TRUSTSTORE_PATH=/certs/corp-truststore.jks \
   -e TRUSTSTORE_PASSWORD=changeit \
+  -e TRUSTSTORE_TYPE=JKS \
   -v /path/to/corp-truststore.jks:/certs/corp-truststore.jks:ro \
   quemsi/quemsi-agent:2.4.22
 ```
@@ -69,5 +70,6 @@ docker push quemsi/quemsi-agent:2.4.22
 | `Could not resolve placeholder 'CLIENT_ID'` | Missing credentials or stale binary | Set `CLIENT_ID` / `CLIENT_SECRET`; rerun `mvn -Pnative native:compile` |
 | `CLIENT_ID and CLIENT_SECRET must be set` | Env vars not passed to container | Use `CLIENT_ID` and `CLIENT_SECRET` in docker-compose |
 | `exec format error` | Windows `.exe` copied instead of Linux binary | Build native on Linux |
+| `No X509TrustManager implementation available` | Truststore file missing/unreadable in container | Fix volume mount; verify with `ls -la` inside container |
 | `SSLHandshakeException` on home network | Wrong/old image or bad truststore mount | Test without `TRUSTSTORE_PATH` first |
 | `/bin/sh^M: bad interpreter` | CRLF line endings in entrypoint | `sed -i 's/\r$//' docker-entrypoint.sh` before build |
