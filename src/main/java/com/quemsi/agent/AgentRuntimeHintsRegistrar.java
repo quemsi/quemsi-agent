@@ -19,6 +19,7 @@ import com.quemsi.model.dto.DataVersionSummary;
 import com.quemsi.model.dto.DatasourceType;
 import com.quemsi.model.dto.FlowDetail;
 import com.quemsi.model.dto.FlowExecutionStatus;
+import com.quemsi.model.dto.MaskColumn;
 import com.quemsi.model.dto.NamedEntityReference;
 import com.quemsi.model.dto.ObjectReference;
 import com.quemsi.model.dto.StorageType;
@@ -97,6 +98,7 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(TrustStoreSupport.class, MemberCategory.values())
             .registerType(java.security.KeyStore.class, MemberCategory.values())
             .registerType(javax.net.ssl.TrustManagerFactory.class, MemberCategory.values())
+            .registerType(MaskColumn.class, MemberCategory.values())
             ;
         hints.serialization()
             .registerType(AgentError.class)
@@ -135,6 +137,7 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(UpdateSchemaConfig.class)
             .registerType(UpdateSequences.class)
             .registerType(UpdateSequences.SequenceMapping.class)
+            .registerType(MaskColumn.class)
             ;
     }
 
