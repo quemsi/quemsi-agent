@@ -91,8 +91,7 @@ public class AgentBatchedLogger {
         if(logQueue != null){
             logQueue.offer(logRecord);
             
-            // Check if we should flush immediately
-            if (logQueue.size() >= batchSize) {
+            if (flowExecutionId != null || logQueue.size() >= batchSize) {
                 resetScheduled();
                 flushLogs();
             }
