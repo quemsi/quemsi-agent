@@ -20,9 +20,6 @@ import com.quemsi.model.dto.agent.AgentCommand;
 import jakarta.annotation.PostConstruct;
 import lombok.Data;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public class ApiManager implements ApiClient{
     private static final String GRANT_TYPE = "client_credentials";
     private static final String SCOPE = "openid";
@@ -132,5 +129,9 @@ public class ApiManager implements ApiClient{
     @Override
     public DataVersion findVersion(String flowName, Map<String, String> tags) {
         return quemsiApi.findVersion(this.authHeader(), flowName, tags);
+    }
+    
+    public QuemsiApi getQuemsiApi() {
+        return quemsiApi;
     }
 }

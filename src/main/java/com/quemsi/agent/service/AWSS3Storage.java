@@ -10,6 +10,7 @@ import com.quemsi.commons.util.BaseRuntimeException;
 import com.quemsi.commons.util.Exceptions;
 import com.quemsi.commons.util.FileNameUtil;
 import com.quemsi.commons.util.FileResource;
+import com.quemsi.commons.util.LogMessage;
 import com.quemsi.commons.util.StringUtils;
 import com.quemsi.model.dto.DataFile;
 import com.quemsi.model.flow.DataPackage;
@@ -21,7 +22,6 @@ import com.quemsi.model.flow.out.Storage;
 
 import lombok.Builder;
 import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -37,7 +37,6 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
-@Slf4j
 public class AWSS3Storage implements Storage {
     private AWSS3Drive awsS3Drive;
     private S3Client s3Client;
@@ -51,6 +50,16 @@ public class AWSS3Storage implements Storage {
     private String rootPath;
     @Setter
     private FileNameUtil util;
+    @Setter
+    private AgentBatchedLogger agentBatchedLogger;
+    
+    private Long getFlowExecutionId(FlowContext context) {
+        return context != null && context.getExecution() != null ? context.getExecution().getId() : null;
+    }
+    
+    private Long getFlowExecutionStepId(FlowContext context) {
+        return context != null && context.getCurrentStep() != null ? context.getCurrentStep().getId() : null;
+    }
 
     @Builder
     public AWSS3Storage(AWSS3Drive awsS3Drive) {
@@ -73,7 +82,9 @@ public class AWSS3Storage implements Storage {
             try {
                 s3Client.headBucket(builder -> builder.bucket(awsS3Drive.getBucketName()));
             } catch (Exception e) {
-                log.warn("Failed to connect to S3 bucket: {}", e.getMessage());
+                if (agentBatchedLogger != null) {
+                    agentBatchedLogger.logWarn(null, null, LogMessage.warn("Failed to connect to S3 bucket: {}", e.getMessage()));
+                }
             }
         }
         return s3Client;
@@ -102,11 +113,17 @@ public class AWSS3Storage implements Storage {
                 .bucket(bucketName)
                 .build();
             getS3Client().createBucket(createBucketRequest);
-            log.info("Created S3 bucket: {}", bucketName);
+            if (agentBatchedLogger != null) {
+                agentBatchedLogger.logInfo(null, null, LogMessage.info("Created S3 bucket: {}", bucketName));
+            }
         } catch (BucketAlreadyExistsException | BucketAlreadyOwnedByYouException e) {
-            log.debug("S3 bucket '{}' already exists.", bucketName);
+            if (agentBatchedLogger != null) {
+                agentBatchedLogger.logDebug(null, null, LogMessage.debug("S3 bucket '{}' already exists.", bucketName));
+            }
         } catch (S3Exception e) {
-            log.warn("Failed to create S3 bucket '{}': {}", bucketName, e.getMessage());
+            if (agentBatchedLogger != null) {
+                agentBatchedLogger.logWarn(null, null, LogMessage.warn("Failed to create S3 bucket '{}': {}", bucketName, e.getMessage()));
+            }
             throw Exceptions.server("unable-to-create-s3-bucket").withExtra("bucketName", bucketName).withCause(e).get();
         }
     }
@@ -118,16 +135,22 @@ public class AWSS3Storage implements Storage {
         }
         
         String bucketName = awsS3Drive.getBucketName();
-        
+        Long flowExecutionId = getFlowExecutionId(context);
+        Long flowExecutionStepId = getFlowExecutionStepId(context);
+        context.logStepInfo(context.getCurrentStep(), LogMessage.info("Storing {} files to AWS S3", dataPackages.size()));
         dataPackages.forEach(dp -> {
-            log.info("Storing file to AWS S3: {}", dp.getName());
+            if (agentBatchedLogger != null) {
+                agentBatchedLogger.logInfo(flowExecutionId, flowExecutionStepId, LogMessage.info("Storing file to AWS S3: {}", dp.getName()));
+            }
             
             /* Generate versioned filename using FileNameUtil */
             String fileFolder = StringUtils.trim(StringUtils.ensureSeperator(awsS3Drive.getStorageRoot(), rootPath), "/", null);
             String versionedFileName = util.versionedFileName(dp.getName(), version);
             String s3Key = fileFolder + "/" + dataName + "/" + versionedFileName;
             
-            log.info("Destination S3 key: {}", s3Key);
+            if (agentBatchedLogger != null) {
+                agentBatchedLogger.logInfo(flowExecutionId, flowExecutionStepId, LogMessage.info("Destination S3 key: {}", s3Key));
+            }
             
             try {
                 PutObjectRequest putObjectRequest = PutObjectRequest.builder()
@@ -139,9 +162,13 @@ public class AWSS3Storage implements Storage {
                 RequestBody requestBody = RequestBody.fromInputStream(dp.getInputStream(), dp.getLength());
                 getS3Client().putObject(putObjectRequest, requestBody);
                 
-                log.info("Successfully uploaded file {} to AWS S3 at key: {}", dp.getName(), s3Key);
+                if (agentBatchedLogger != null) {
+                    agentBatchedLogger.logInfo(flowExecutionId, flowExecutionStepId, LogMessage.info("Successfully uploaded file {} to AWS S3 at key: {}", dp.getName(), s3Key));
+                }
             } catch (Exception e) {
-                log.error("Failed to upload file {} to AWS S3", dp.getName(), e);
+                if (agentBatchedLogger != null) {
+                    agentBatchedLogger.logError(flowExecutionId, flowExecutionStepId, LogMessage.error("Failed to upload file {} to AWS S3", dp.getName(), e));
+                }
                 throw Exceptions.server("error-storing-file-to-s3")
                     .withExtra("fileName", dp.getName())
                     .withExtra("s3Key", s3Key)
@@ -155,6 +182,8 @@ public class AWSS3Storage implements Storage {
     @Override
     public List<DataPackage> getFiles(FlowContext context, List<DataFile> files) throws IOException {
         String bucketName = awsS3Drive.getBucketName();
+        Long flowExecutionId = getFlowExecutionId(context);
+        Long flowExecutionStepId = getFlowExecutionStepId(context);
         
         return files.stream().<DataPackage>map(f -> {
             try {
@@ -163,7 +192,9 @@ public class AWSS3Storage implements Storage {
                 String versionedFileName = util.versionedFileName(f.getName(), f.getVersion());
                 String s3Key = StringUtils.buildPath("/", fileFolder ,f.getDir(), versionedFileName);
                 
-                log.info("Retrieving file from AWS S3 at key: {}", s3Key);
+                if (agentBatchedLogger != null) {
+                    agentBatchedLogger.logInfo(flowExecutionId, flowExecutionStepId, LogMessage.info("Retrieving file from AWS S3 at key: {}", s3Key));
+                }
                 
                 /* Check if object exists */
                 try {
@@ -173,7 +204,9 @@ public class AWSS3Storage implements Storage {
                         .build();
                     getS3Client().headObject(headObjectRequest);
                 } catch (NoSuchKeyException e) {
-                    log.warn("File not found in AWS S3 at key: {}", s3Key);
+                    if (agentBatchedLogger != null) {
+                        agentBatchedLogger.logWarn(flowExecutionId, flowExecutionStepId, LogMessage.warn("File not found in AWS S3 at key: {}", s3Key));
+                    }
                     throw Exceptions.notFound("file-not-found").withExtra("bucketName", bucketName).withExtra("versionedFileName", versionedFileName).get();
                 }
                 
@@ -216,7 +249,9 @@ public class AWSS3Storage implements Storage {
         String bucketName = awsS3Drive.getBucketName();
         
         String s3Key = StringUtils.trim(StringUtils.ensureSeperator(awsS3Drive.getStorageRoot(), rootPath) + "/" + dir + "/" + fileName, "/", null);
-        log.debug("Deleting file from AWS S3 at key: {}", s3Key);
+        if (agentBatchedLogger != null) {
+            agentBatchedLogger.logDebug(null, null, LogMessage.debug("Deleting file from AWS S3 at key: {}", s3Key));
+        }
         
         try {
             DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
@@ -225,9 +260,13 @@ public class AWSS3Storage implements Storage {
                 .build();
             
             getS3Client().deleteObject(deleteObjectRequest);
-            log.info("Successfully deleted file from AWS S3 at key: {}", s3Key);
+            if (agentBatchedLogger != null) {
+                agentBatchedLogger.logInfo(null, null, LogMessage.info("Successfully deleted file from AWS S3 at key: {}", s3Key));
+            }
         } catch (Exception e) {
-            log.error("Failed to delete file from AWS S3 at key: {}", s3Key, e);
+            if (agentBatchedLogger != null) {
+                agentBatchedLogger.logError(null, null, LogMessage.error("Failed to delete file from AWS S3 at key: {}", s3Key, e));
+            }
             throw Exceptions.server("error-deleting-file-from-s3")
                 .withExtra("dir", dir)
                 .withExtra("fileName", fileName)

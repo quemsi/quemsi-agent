@@ -25,8 +25,8 @@ quemsi-api:
   server-url: http://127.0.0.1:9081
   keycloak-url: http://127.0.0.1
   realm: quemsi
-  client-id: ${CLIENT-ID}
-  client-secret: ${CLIENT-SECRET}
+  client-id: ${CLIENT_ID}
+  client-secret: ${CLIENT_SECRET}
   log-request-detail: true
   retry: 5
 logging:

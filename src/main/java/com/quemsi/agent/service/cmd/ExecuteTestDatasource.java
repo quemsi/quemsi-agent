@@ -5,17 +5,18 @@ import java.sql.SQLException;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.quemsi.agent.api.ApiManager;
+import com.quemsi.agent.service.AgentBatchedLogger;
+import com.quemsi.commons.util.LogMessage;
 import com.quemsi.commons.util.StringUtils;
 import com.quemsi.model.dto.agent.TestDatasource;
 import com.quemsi.model.dto.agent.onapi.TestDatasourceResult;
 import com.quemsi.model.flow.db.DataSourceFactory;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public class ExecuteTestDatasource {
     @Autowired
 	private ApiManager apiManager;
+    @Autowired
+    private AgentBatchedLogger agentBatchedLogger;
     
     public void execute(TestDatasource cmd){
         TestDatasourceResult result = TestDatasourceResult.builder().agentId(cmd.getAgentId()).correlationId(cmd.getCorrelationId())
@@ -48,7 +49,7 @@ public class ExecuteTestDatasource {
                 
                 factory.setUrl(cmd.getDatasource().getUrl());
                 factory.setDbName(cmd.getDatasource().getDbName());
-                factory.setSchema(cmd.getDatasource().getSchema());
+                factory.setSchemas(cmd.getDatasource().getSchemas());
                 factory.setUsername(username);
                 factory.setPassword(password);
                 
@@ -61,7 +62,7 @@ public class ExecuteTestDatasource {
                 }
             }
         } catch(SQLException sex){
-            log.error("datasource-test-failed", sex);
+            agentBatchedLogger.logError(null, null, LogMessage.error("datasource-test-failed", sex));
             result.setSuccess(false);
             result.setErrorCode(sex.getErrorCode());        
             result.setMessage("connection-test-failed");

@@ -7,6 +7,9 @@ import com.quemsi.model.flow.out.AWSS3Drive;
  * 
  * This class demonstrates how to use the AWSS3Storage implementation
  * to store files in AWS S3 storage services.
+ * 
+ * Note: This is an example class and not a Spring bean, so AgentBatchedLogger
+ * is not available. System.out.println is used for demonstration purposes.
  */
 public class AWSS3StorageExample {
     

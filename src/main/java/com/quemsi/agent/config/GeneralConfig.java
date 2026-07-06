@@ -3,8 +3,10 @@ package com.quemsi.agent.config;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -23,6 +25,7 @@ import com.quemsi.agent.service.cmd.ExecuteRetentionExecute;
 import com.quemsi.agent.service.cmd.ExecuteTestAWSS3Drive;
 import com.quemsi.agent.service.cmd.ExecuteTestAzureBlobDrive;
 import com.quemsi.agent.service.cmd.ExecuteTestDatasource;
+import com.quemsi.agent.service.cmd.ExecuteTestFolderAccess;
 import com.quemsi.agent.service.cmd.ExecuteVersionDeleteRequest;
 import com.quemsi.commons.util.ApacheDurationDeserializer;
 import com.quemsi.commons.util.ApacheDurationSerializer;
@@ -31,7 +34,8 @@ import com.quemsi.commons.util.FileNameUtil;
 import com.quemsi.commons.util.JsonUtils;
 import com.quemsi.model.flow.db.sql.SqlParser;
 
-@Configuration(proxyBeanMethods = false)
+@Configuration(proxyBeanMethods = true)
+@EnableConfigurationProperties(AgentWatchdogProperties.class)
 public class GeneralConfig {
 	private static final String dateFormat = "yyyy-MM-dd";
     private static final String dateTimeFormat = "yyyy-MM-dd HH:mm:ss";
@@ -52,6 +56,20 @@ public class GeneralConfig {
             .featuresToDisable(MapperFeature.DEFAULT_VIEW_INCLUSION);       
         };
     }
+
+	@Bean
+	public ScheduledExecutorService scheduledExecutorService(){
+		return  Executors.newSingleThreadScheduledExecutor();
+	}
+
+	@Bean(destroyMethod = "shutdown")
+	public ScheduledExecutorService watchdogScheduler() {
+		return Executors.newSingleThreadScheduledExecutor(r -> {
+			Thread t = new Thread(r, "agent-watchdog");
+			t.setDaemon(false);
+			return t;
+		});
+	}
 
 	@Bean
 	public AgentCoordinator agentController(){
@@ -76,6 +94,11 @@ public class GeneralConfig {
 	@Bean
 	public ExecuteTestDatasource executeTestDatasource(){
 		return new ExecuteTestDatasource();
+	}
+
+	@Bean
+	public ExecuteTestFolderAccess executeTestFolderAccess(){
+		return new ExecuteTestFolderAccess();
 	}
 
 	@Bean

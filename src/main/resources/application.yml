@@ -23,11 +23,26 @@ quemsi-api:
   server-url: https://quemsi.com
   keycloak-url: https://quemsi.com
   realm: quemsi
-  client-id: ${CLIENT-ID}
-  client-secret: ${CLIENT-SECRET}
+  client-id: ${CLIENT_ID}
+  client-secret: ${CLIENT_SECRET}
   log-request-detail: true
   retry: 5
+  truststore:
+    path: ${TRUSTSTORE_PATH:}
+    password: ${TRUSTSTORE_PASSWORD:changeit}
+    type: ${TRUSTSTORE_TYPE:JKS}
 logging:
   level:
     root: INFO
     com.givlon.indexer.service: INFO
+quemsi:
+  logging:
+    batch-size: 50
+    flush-interval-seconds: 5
+
+# Idle watchdog: exits the JVM if no successful /api/agent/next-command response within timeout.
+# Must exceed worst-case single-command execution time; API outages do not reset the timer.
+agent:
+  watchdog:
+    enabled: true
+    timeout: 5m

@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.service.annotation.GetExchange;
 import org.springframework.web.service.annotation.PostExchange;
 
+import java.util.List;
+
+import com.quemsi.model.dto.AgentLogRecord;
 import com.quemsi.model.dto.AgentModel;
 import com.quemsi.model.dto.DataVersion;
 import com.quemsi.model.dto.FlowExecution;
@@ -41,4 +44,7 @@ public interface QuemsiApi {
     
     @GetExchange("/api/agent/find-version/{flowName}")
     DataVersion findVersion(@RequestHeader(HttpHeaders.AUTHORIZATION) String token, @PathVariable String flowName, @RequestParam Map<String, String> tags);
+    
+    @PostExchange("/api/agent/logs")
+    void sendLogs(@RequestHeader(HttpHeaders.AUTHORIZATION) String token, @RequestBody List<AgentLogRecord> logs);
 }

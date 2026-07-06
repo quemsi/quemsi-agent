@@ -6,6 +6,7 @@ import org.springframework.aot.hint.RuntimeHintsRegistrar;
 import org.springframework.context.annotation.Configuration;
 
 import com.quemsi.agent.flow.TimerImpl;
+import com.quemsi.agent.config.TrustStoreSupport;
 import com.quemsi.commons.util.FileNameUtil;
 import com.quemsi.model.dto.AgentError;
 import com.quemsi.model.dto.AgentModel;
@@ -18,31 +19,37 @@ import com.quemsi.model.dto.DataVersionSummary;
 import com.quemsi.model.dto.DatasourceType;
 import com.quemsi.model.dto.FlowDetail;
 import com.quemsi.model.dto.FlowExecutionStatus;
+import com.quemsi.model.dto.MaskColumn;
 import com.quemsi.model.dto.NamedEntityReference;
 import com.quemsi.model.dto.ObjectReference;
 import com.quemsi.model.dto.StorageType;
 import com.quemsi.model.dto.Tag;
 import com.quemsi.model.dto.TagType;
+import com.quemsi.model.dto.UpdateSchemaConfig;
+import com.quemsi.model.dto.UpdateSequences;
 import com.quemsi.model.dto.agent.AgentCommand;
+import com.quemsi.model.dto.agent.AgentCommandSync;
 import com.quemsi.model.dto.agent.DelayAgentCommand;
 import com.quemsi.model.dto.agent.ExecuteFlow;
 import com.quemsi.model.dto.agent.RetentionExecute;
-import com.quemsi.model.dto.agent.UpdateAgentModel;
-import com.quemsi.model.dto.agent.onapi.NotifyError;
-import com.quemsi.model.dto.agent.onapi.RetentionCompleted;
-import com.quemsi.model.dto.agent.TestDatasource;
-import com.quemsi.model.dto.agent.AgentCommandSync;
 import com.quemsi.model.dto.agent.TestAWSS3Drive;
 import com.quemsi.model.dto.agent.TestAzureBlobDrive;
+import com.quemsi.model.dto.agent.TestDatasource;
+import com.quemsi.model.dto.agent.TestFolderAccess;
+import com.quemsi.model.dto.agent.UpdateAgentModel;
 import com.quemsi.model.dto.agent.VersionDeleteRequest;
+import com.quemsi.model.dto.agent.onapi.NotifyError;
+import com.quemsi.model.dto.agent.onapi.RetentionCompleted;
 import com.quemsi.model.dto.agent.onapi.TestAWSS3DriveResult;
 import com.quemsi.model.dto.agent.onapi.TestAzureBlobDriveResult;
 import com.quemsi.model.dto.agent.onapi.TestDatasourceResult;
+import com.quemsi.model.dto.agent.onapi.TestFolderAccessResult;
 import com.quemsi.model.dto.agent.onapi.VersionDeleted;
-import com.quemsi.model.flow.db.sql.DbModel;
-import com.quemsi.model.flow.db.sql.DbTable;
 import com.quemsi.model.flow.db.sql.DbColumn;
+import com.quemsi.model.flow.db.sql.DbModel;
 import com.quemsi.model.flow.db.sql.DbSequence;
+import com.quemsi.model.flow.db.sql.DbTable;
+import com.quemsi.model.flow.in.CustomSerializedColumn;
 import com.quemsi.model.flow.in.TableData;
 import com.quemsi.model.flow.in.TableDataPage;
 
@@ -63,6 +70,8 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(DbModel.TableReference.class, MemberCategory.values())
             .registerType(DbModel.ReferenceInfo.class, MemberCategory.values())
             .registerType(DbModel.IndexInfo.class, MemberCategory.values())
+            .registerType(DbModel.ContraintInfo.class, MemberCategory.values())
+            .registerType(DbModel.CheckConstraint.class, MemberCategory.values())
             .registerType(DbTable.class, MemberCategory.values())
             .registerType(DbColumn.class, MemberCategory.values())
             .registerType(DbSequence.class, MemberCategory.values())
@@ -71,6 +80,7 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(TableData.DataPage.class, MemberCategory.values())
             .registerType(TableDataPage.class, MemberCategory.values())
             .registerType(TableDataPage.Request.class, MemberCategory.values())
+            .registerType(CustomSerializedColumn.BinaryColumn.class, MemberCategory.values())
             /* All AgentCommand subclasses for Jackson serialization */
             .registerType(AgentCommandSync.class, MemberCategory.values())
             .registerType(TestDatasource.class, MemberCategory.values())
@@ -81,6 +91,14 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(TestAzureBlobDriveResult.class, MemberCategory.values())
             .registerType(TestDatasourceResult.class, MemberCategory.values())
             .registerType(VersionDeleted.class, MemberCategory.values())
+            .registerType(TestFolderAccess.class, MemberCategory.values())
+            .registerType(TestFolderAccessResult.class, MemberCategory.values())
+            .registerType(UpdateSequences.class, MemberCategory.values())
+            .registerType(UpdateSequences.SequenceMapping.class, MemberCategory.values())
+            .registerType(TrustStoreSupport.class, MemberCategory.values())
+            .registerType(java.security.KeyStore.class, MemberCategory.values())
+            .registerType(javax.net.ssl.TrustManagerFactory.class, MemberCategory.values())
+            .registerType(MaskColumn.class, MemberCategory.values())
             ;
         hints.serialization()
             .registerType(AgentError.class)
@@ -100,7 +118,7 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(StorageType.class)
             .registerType(Tag.class)
             .registerType(TagType.class)
-
+            
             .registerType(AgentCommand.class)
             .registerType(DelayAgentCommand.class)
             .registerType(ExecuteFlow.class)
@@ -111,8 +129,15 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(TestDatasourceResult.class)
             .registerType(TestAWSS3DriveResult.class)
             .registerType(TestAzureBlobDriveResult.class)
+            .registerType(TestFolderAccess.class)
+            .registerType(TestFolderAccessResult.class)
             .registerType(NotifyError.class)
             .registerType(RetentionCompleted.class)
+            .registerType(VersionDeleted.class)
+            .registerType(UpdateSchemaConfig.class)
+            .registerType(UpdateSequences.class)
+            .registerType(UpdateSequences.SequenceMapping.class)
+            .registerType(MaskColumn.class)
             ;
     }
 

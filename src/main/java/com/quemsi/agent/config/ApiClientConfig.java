@@ -18,11 +18,10 @@ import com.quemsi.agent.api.ApiManager;
 import com.quemsi.agent.api.QuemsiApi;
 import com.quemsi.agent.api.TokenApi;
 
-import lombok.extern.slf4j.Slf4j;
+import io.netty.handler.ssl.SslContext;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.resources.ConnectionProvider;
 
-@Slf4j
 @Configuration(proxyBeanMethods = false)
 public class ApiClientConfig {
     @Value("${quemsi-api.server-url}")
@@ -31,6 +30,12 @@ public class ApiClientConfig {
     private String keycloakUrl;
     @Value("${quemsi-api.log-request-detail:false}")
     private boolean logRequestDetails;
+    @Value("${quemsi-api.truststore.path:}")
+    private String truststorePath;
+    @Value("${quemsi-api.truststore.password:changeit}")
+    private String truststorePassword;
+    @Value("${quemsi-api.truststore.type:JKS}")
+    private String truststoreType;
     
     @Bean
     public ApiManager apiManager(TokenApi tokenApi, QuemsiApi quemsiApi){
@@ -44,9 +49,7 @@ public class ApiClientConfig {
 
     @Bean
     public HttpServiceProxyFactory apiServiceProxyFactory(WebClientAdapter apiExchangeAdapter) {
-        log.info("HttpServiceProxyFactory is being initialized");
         HttpServiceProxyFactory factory = HttpServiceProxyFactory.builderFor(apiExchangeAdapter).build();
-        log.info("apiServiceProxyFactory is initialized: {}", factory);
         return factory;
     }
 
@@ -59,7 +62,6 @@ public class ApiClientConfig {
 
     @Bean
     public WebClient apiWebClient(ReactorClientHttpConnector clientConnector, ObjectMapper objectMapper) {
-        log.info("Api webClient is being initialized baseUrl : {}", serverUrl);
         WebClient webClient = WebClient
                 .builder()
                 .clientConnector(clientConnector)
@@ -69,7 +71,6 @@ public class ApiClientConfig {
                 .baseUrl(serverUrl)
                 .build();
         
-        log.info("apiWebClient is initialized: {}", webClient);
         return webClient;
     }
 
@@ -80,9 +81,7 @@ public class ApiClientConfig {
     
     @Bean
     public HttpServiceProxyFactory keycloakServiceProxyFactory(WebClientAdapter keycloakExchangeAdapter) {
-        log.info("HttpServiceProxyFactory is being initialized");
         HttpServiceProxyFactory factory = HttpServiceProxyFactory.builderFor(keycloakExchangeAdapter).build();
-        log.info("apiServiceProxyFactory is initialized: {}", factory);
         return factory;
     }
 
@@ -95,30 +94,35 @@ public class ApiClientConfig {
 
     @Bean
     public WebClient keycloakWebClient(ReactorClientHttpConnector clientConnector) {
-        log.info("Api webClient is being initialized");
         WebClient webClient = WebClient
                 .builder()
                 .clientConnector(clientConnector)
                 .codecs(configurer -> configurer.defaultCodecs().enableLoggingRequestDetails(logRequestDetails))
                 .baseUrl(keycloakUrl)
                 .build();
-        
-        log.info("apiWebClient is initialized: {}", webClient);
         return webClient;
     }
 
-    @Bean
-    public ReactorClientHttpConnector clientConnector(){
-        ConnectionProvider provider = ConnectionProvider.builder("fixed")
+    @Bean(destroyMethod = "dispose")
+    public ConnectionProvider connectionProvider() {
+        return ConnectionProvider.builder("fixed")
             .maxConnections(50)
             .maxIdleTime(Duration.ofSeconds(20))
             .maxLifeTime(Duration.ofSeconds(60))
             .pendingAcquireTimeout(Duration.ofSeconds(60))
             .evictInBackground(Duration.ofSeconds(120))
             .build();
-        HttpClient httpClient = HttpClient.create(provider)
-            .responseTimeout(Duration.ofSeconds(30)); 
-        ReactorClientHttpConnector connector = new ReactorClientHttpConnector(httpClient);
-        return connector;
+    }
+
+    @Bean
+    public ReactorClientHttpConnector clientConnector(ConnectionProvider connectionProvider) {
+        HttpClient httpClient = HttpClient.create(connectionProvider)
+            .responseTimeout(Duration.ofSeconds(30));
+        SslContext sslContext = TrustStoreSupport.nettyClientSslContext(
+                truststorePath, truststorePassword, truststoreType);
+        if (sslContext != null) {
+            httpClient = httpClient.secure(sslSpec -> sslSpec.sslContext(sslContext));
+        }
+        return new ReactorClientHttpConnector(httpClient);
     }
 }
