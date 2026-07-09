@@ -45,6 +45,10 @@ import com.quemsi.model.dto.agent.onapi.TestAzureBlobDriveResult;
 import com.quemsi.model.dto.agent.onapi.TestDatasourceResult;
 import com.quemsi.model.dto.agent.onapi.TestFolderAccessResult;
 import com.quemsi.model.dto.agent.onapi.VersionDeleted;
+import com.quemsi.model.flow.db.mongodb.DDLServiceMongo;
+import com.quemsi.model.flow.db.mongodb.DMLServiceMongo;
+import com.quemsi.model.flow.db.mongodb.DatasourceFactoryMongo;
+import com.quemsi.model.flow.db.mongodb.MongoTypeMapper;
 import com.quemsi.model.flow.db.sql.DbColumn;
 import com.quemsi.model.flow.db.sql.DbModel;
 import com.quemsi.model.flow.db.sql.DbSequence;
@@ -75,6 +79,10 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(DbTable.class, MemberCategory.values())
             .registerType(DbColumn.class, MemberCategory.values())
             .registerType(DbSequence.class, MemberCategory.values())
+            .registerType(DatasourceFactoryMongo.class, MemberCategory.values())
+            .registerType(DDLServiceMongo.class, MemberCategory.values())
+            .registerType(DMLServiceMongo.class, MemberCategory.values())
+            .registerType(MongoTypeMapper.class, MemberCategory.values())
             /* TableData and related classes for Jackson serialization */
             .registerType(TableData.class, MemberCategory.values())
             .registerType(TableData.DataPage.class, MemberCategory.values())

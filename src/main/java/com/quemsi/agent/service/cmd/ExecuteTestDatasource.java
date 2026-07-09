@@ -4,6 +4,8 @@ import java.sql.SQLException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.mongodb.MongoException;
+import com.mongodb.MongoSecurityException;
 import com.quemsi.agent.api.ApiManager;
 import com.quemsi.agent.service.AgentBatchedLogger;
 import com.quemsi.commons.util.LogMessage;
@@ -67,7 +69,20 @@ public class ExecuteTestDatasource {
             result.setErrorCode(sex.getErrorCode());        
             result.setMessage("connection-test-failed");
             result.setErrorMessage(sex.getMessage());
-        } catch(Exception ex){
+        } catch(MongoSecurityException ex){
+            agentBatchedLogger.logError(null, null, LogMessage.error("datasource-test-failed", ex));
+            result.setSuccess(false);
+            result.setErrorCode(ex.getCode());        
+            result.setMessage("authentication-failed-mongodb");
+            result.setErrorMessage(ex.getMessage());
+        } catch(MongoException ex){
+            agentBatchedLogger.logError(null, null, LogMessage.error("datasource-test-failed", ex));
+            result.setSuccess(false);
+            result.setErrorCode(ex.getCode());        
+            result.setMessage("connection-test-failed-mongodb");
+            result.setErrorMessage(ex.getMessage());
+        }
+        catch(Exception ex){
             result.setSuccess(false);   
             result.setMessage("connection-test-failed-no-code");
             result.setErrorMessage(ex.getMessage());

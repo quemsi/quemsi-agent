@@ -25,6 +25,7 @@ import com.quemsi.model.dto.StorageType;
 import com.quemsi.model.dto.agent.onapi.NotifyError;
 import com.quemsi.model.flow.Timer;
 import com.quemsi.model.flow.db.DataSourceFactory;
+import com.quemsi.model.flow.db.mongodb.DatasourceFactoryMongo;
 import com.quemsi.model.flow.db.mysql.DataSourceFactoryMySql;
 import com.quemsi.model.flow.db.postgres.DatasourceFactoryPostgres;
 import com.quemsi.model.flow.db.sqlserver.DatasourceFactorySqlserver;
@@ -87,6 +88,8 @@ public class SpringBeanManager {
 			registerer = new BeanReqisterer<>(datasource.getName(), DatasourceFactoryPostgres.class, ()-> new DatasourceFactoryPostgres());
 		} else if(DatasourceType.SQLSERVER.equals(datasource.getType())){
 			registerer = new BeanReqisterer<>(datasource.getName(), DatasourceFactorySqlserver.class, ()-> new DatasourceFactorySqlserver());
+		} else if(DatasourceType.MONGODB.equals(datasource.getType())){
+			registerer = new BeanReqisterer<>(datasource.getName(), DatasourceFactoryMongo.class, ()-> new DatasourceFactoryMongo());
 		} else {
 			throw Exceptions.server("not-implemented-datasource-type").withExtra("type", datasource.getType()).withExtra("name", datasource.getName()).get();
 		}

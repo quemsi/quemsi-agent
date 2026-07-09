@@ -9,6 +9,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
     org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration.class,
     org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration.class,
     org.springframework.boot.autoconfigure.quartz.QuartzAutoConfiguration.class,
+    org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration.class,
+    org.springframework.boot.autoconfigure.mongo.MongoReactiveAutoConfiguration.class,
     org.springframework.boot.autoconfigure.http.codec.CodecsAutoConfiguration.class,
     org.springframework.boot.autoconfigure.web.reactive.HttpHandlerAutoConfiguration.class,
     org.springframework.boot.autoconfigure.web.reactive.ReactiveMultipartAutoConfiguration.class,
