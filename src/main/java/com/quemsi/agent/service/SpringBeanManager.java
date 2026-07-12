@@ -27,6 +27,7 @@ import com.quemsi.model.flow.Timer;
 import com.quemsi.model.flow.db.DataSourceFactory;
 import com.quemsi.model.flow.db.mongodb.DatasourceFactoryMongo;
 import com.quemsi.model.flow.db.mysql.DataSourceFactoryMySql;
+import com.quemsi.model.flow.db.oracle.DatasourceFactoryOracle;
 import com.quemsi.model.flow.db.postgres.DatasourceFactoryPostgres;
 import com.quemsi.model.flow.db.sqlserver.DatasourceFactorySqlserver;
 import com.quemsi.model.flow.out.ABStorage;
@@ -90,6 +91,8 @@ public class SpringBeanManager {
 			registerer = new BeanReqisterer<>(datasource.getName(), DatasourceFactorySqlserver.class, ()-> new DatasourceFactorySqlserver());
 		} else if(DatasourceType.MONGODB.equals(datasource.getType())){
 			registerer = new BeanReqisterer<>(datasource.getName(), DatasourceFactoryMongo.class, ()-> new DatasourceFactoryMongo());
+		} else if(DatasourceType.ORACLE.equals(datasource.getType())){
+			registerer = new BeanReqisterer<>(datasource.getName(), DatasourceFactoryOracle.class, ()-> new DatasourceFactoryOracle());
 		} else {
 			throw Exceptions.server("not-implemented-datasource-type").withExtra("type", datasource.getType()).withExtra("name", datasource.getName()).get();
 		}
@@ -119,6 +122,11 @@ public class SpringBeanManager {
 		}else{
 			dsFactory.setUsername(datasource.getUsername());
 			dsFactory.setPassword(datasource.getPassword());
+		}
+		if(DatasourceType.ORACLE.equals(datasource.getType())
+				&& (dsFactory.getSchemas() == null || dsFactory.getSchemas().isEmpty())
+				&& !StringUtils.isEmptyOrNull(dsFactory.getUsername())){
+			dsFactory.setSchemas(java.util.Set.of(dsFactory.getUsername().trim().toUpperCase()));
 		}
 		dsFactory.setReadOnly(datasource.isReadOnly());
 		registerer.register();

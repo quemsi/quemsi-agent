@@ -49,6 +49,9 @@ import com.quemsi.model.flow.db.mongodb.DDLServiceMongo;
 import com.quemsi.model.flow.db.mongodb.DMLServiceMongo;
 import com.quemsi.model.flow.db.mongodb.DatasourceFactoryMongo;
 import com.quemsi.model.flow.db.mongodb.MongoTypeMapper;
+import com.quemsi.model.flow.db.oracle.DDLServiceOracle;
+import com.quemsi.model.flow.db.oracle.DMLServiceOracle;
+import com.quemsi.model.flow.db.oracle.DatasourceFactoryOracle;
 import com.quemsi.model.flow.db.sql.DbColumn;
 import com.quemsi.model.flow.db.sql.DbModel;
 import com.quemsi.model.flow.db.sql.DbSequence;
@@ -83,6 +86,9 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(DDLServiceMongo.class, MemberCategory.values())
             .registerType(DMLServiceMongo.class, MemberCategory.values())
             .registerType(MongoTypeMapper.class, MemberCategory.values())
+            .registerType(DatasourceFactoryOracle.class, MemberCategory.values())
+            .registerType(DDLServiceOracle.class, MemberCategory.values())
+            .registerType(DMLServiceOracle.class, MemberCategory.values())
             /* TableData and related classes for Jackson serialization */
             .registerType(TableData.class, MemberCategory.values())
             .registerType(TableData.DataPage.class, MemberCategory.values())
