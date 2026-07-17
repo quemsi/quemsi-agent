@@ -57,6 +57,7 @@ import com.quemsi.model.flow.db.sql.DbModel;
 import com.quemsi.model.flow.db.sql.DbSequence;
 import com.quemsi.model.flow.db.sql.DbTable;
 import com.quemsi.model.flow.db.sql.DbView;
+import com.quemsi.model.flow.db.sql.DbFunction;
 import com.quemsi.model.flow.in.CustomSerializedColumn;
 import com.quemsi.model.flow.in.TableData;
 import com.quemsi.model.flow.in.TableDataPage;
@@ -84,6 +85,7 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(DbColumn.class, MemberCategory.values())
             .registerType(DbSequence.class, MemberCategory.values())
             .registerType(DbView.class, MemberCategory.values())
+            .registerType(DbFunction.class, MemberCategory.values())
             .registerType(DatasourceFactoryMongo.class, MemberCategory.values())
             .registerType(DDLServiceMongo.class, MemberCategory.values())
             .registerType(DMLServiceMongo.class, MemberCategory.values())
