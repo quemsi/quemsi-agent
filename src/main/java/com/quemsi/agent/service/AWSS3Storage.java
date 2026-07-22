@@ -1,24 +1,24 @@
 package com.quemsi.agent.service;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
 import com.quemsi.commons.util.BaseRuntimeException;
 import com.quemsi.commons.util.Exceptions;
 import com.quemsi.commons.util.FileNameUtil;
-import com.quemsi.commons.util.FileResource;
 import com.quemsi.commons.util.LogMessage;
 import com.quemsi.commons.util.StringUtils;
 import com.quemsi.model.dto.DataFile;
 import com.quemsi.model.flow.DataPackage;
-import com.quemsi.model.flow.DataPackageFileResource;
+import com.quemsi.model.flow.DataPackageFile;
 import com.quemsi.model.flow.Flow;
 import com.quemsi.model.flow.FlowContext;
 import com.quemsi.model.flow.out.AWSS3Drive;
 import com.quemsi.model.flow.out.Storage;
+import com.quemsi.model.util.QuemsiTemp;
 
 import lombok.Builder;
 import lombok.Setter;
@@ -210,32 +210,21 @@ public class AWSS3Storage implements Storage {
                     throw Exceptions.notFound("file-not-found").withExtra("bucketName", bucketName).withExtra("versionedFileName", versionedFileName).get();
                 }
                 
-                /* Get object */
+                /* Stream object to a temp file (not heap) */
                 GetObjectRequest getObjectRequest = GetObjectRequest.builder()
                     .bucket(bucketName)
                     .key(s3Key)
                     .build();
-                
-                InputStream s3InputStream = getS3Client().getObject(getObjectRequest);
-                ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-                org.apache.commons.io.IOUtils.copy(s3InputStream, outStream);
-                
-                /* Determine content type */
+
                 String contentType = f.getContentType();
                 if (contentType == null || contentType.isEmpty()) {
                     contentType = util.getFileType(versionedFileName);
                 }
-                
-                /* Create a DataPackage from the S3 object */
-                FileResource resource = FileResource.builder()
-                    .name(versionedFileName)
-                    .contentType(contentType)
-                    .empty(outStream.size() > 0)
-                    .originalFilename(versionedFileName)
-                    .size(outStream.size())
-                    .data(outStream.toByteArray())
-                    .build();
-                return new DataPackageFileResource(f.getName(), resource);
+
+                try (InputStream s3InputStream = getS3Client().getObject(getObjectRequest)) {
+                    Path temp = QuemsiTemp.spoolToTempFile(s3InputStream, "quemsi-s3-", ".bin");
+                    return new DataPackageFile(f.getName(), temp.toFile(), temp.toFile().length(), contentType, true);
+                }
             } catch (BaseRuntimeException bre) {
                 throw bre;
             } catch (Exception e) {

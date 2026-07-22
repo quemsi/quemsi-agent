@@ -1,8 +1,8 @@
 package com.quemsi.agent.service;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
@@ -13,16 +13,16 @@ import com.azure.storage.common.StorageSharedKeyCredential;
 import com.quemsi.commons.util.BaseRuntimeException;
 import com.quemsi.commons.util.Exceptions;
 import com.quemsi.commons.util.FileNameUtil;
-import com.quemsi.commons.util.FileResource;
 import com.quemsi.commons.util.LogMessage;
 import com.quemsi.commons.util.StringUtils;
 import com.quemsi.model.dto.DataFile;
 import com.quemsi.model.flow.DataPackage;
-import com.quemsi.model.flow.DataPackageFileResource;
+import com.quemsi.model.flow.DataPackageFile;
 import com.quemsi.model.flow.Flow;
 import com.quemsi.model.flow.FlowContext;
 import com.quemsi.model.flow.out.AzureBlobDrive;
 import com.quemsi.model.flow.out.Storage;
+import com.quemsi.model.util.QuemsiTemp;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -199,11 +199,8 @@ public class AzureBlobStorage implements Storage{
                     }
                 }
                 InputStream blobInputStream = blobClient.openInputStream();
-                ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-                org.apache.commons.io.IOUtils.copy(blobInputStream, outStream);
-                /* Create a DataPackage from the blob */
-                FileResource resource = FileResource.builder().name(versionedFileName).contentType(contentType).empty(outStream.size() > 0).originalFilename(versionedFileName).size(outStream.size()).data(outStream.toByteArray()).build();
-                return new DataPackageFileResource(f.getName(), resource);
+                Path temp = QuemsiTemp.spoolToTempFile(blobInputStream, "quemsi-azure-", ".bin");
+                return new DataPackageFile(f.getName(), temp.toFile(), temp.toFile().length(), contentType, true);
             } catch(BaseRuntimeException bre){
                 throw bre;
             } catch (Exception e) {
