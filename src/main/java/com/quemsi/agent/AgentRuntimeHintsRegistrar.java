@@ -20,6 +20,7 @@ import com.quemsi.model.dto.DatasourceType;
 import com.quemsi.model.dto.FlowDetail;
 import com.quemsi.model.dto.FlowExecutionStatus;
 import com.quemsi.model.dto.MaskColumn;
+import com.quemsi.model.dto.MaskType;
 import com.quemsi.model.dto.NamedEntityReference;
 import com.quemsi.model.dto.ObjectReference;
 import com.quemsi.model.dto.StorageType;
@@ -53,13 +54,20 @@ import com.quemsi.model.flow.db.oracle.DDLServiceOracle;
 import com.quemsi.model.flow.db.oracle.DMLServiceOracle;
 import com.quemsi.model.flow.db.oracle.DatasourceFactoryOracle;
 import com.quemsi.model.flow.db.sql.DbColumn;
+import com.quemsi.model.flow.db.sql.DbDomainType;
+import com.quemsi.model.flow.db.sql.DbEnumType;
+import com.quemsi.model.flow.db.sql.DbFullTextCatalog;
+import com.quemsi.model.flow.db.sql.DbFullTextIndex;
+import com.quemsi.model.flow.db.sql.DbFunction;
 import com.quemsi.model.flow.db.sql.DbModel;
 import com.quemsi.model.flow.db.sql.DbSequence;
 import com.quemsi.model.flow.db.sql.DbTable;
+import com.quemsi.model.flow.db.sql.DbTrigger;
 import com.quemsi.model.flow.db.sql.DbView;
-import com.quemsi.model.flow.db.sql.DbFunction;
+import com.quemsi.model.flow.db.sql.DbXmlSchemaCollection;
 import com.quemsi.model.flow.in.CustomSerializedColumn;
 import com.quemsi.model.flow.in.TableData;
+import com.quemsi.model.flow.in.TableDataMeta;
 import com.quemsi.model.flow.in.TableDataPage;
 
 @Configuration
@@ -86,6 +94,13 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(DbSequence.class, MemberCategory.values())
             .registerType(DbView.class, MemberCategory.values())
             .registerType(DbFunction.class, MemberCategory.values())
+            .registerType(DbEnumType.class, MemberCategory.values())
+            .registerType(DbDomainType.class, MemberCategory.values())
+            .registerType(DbTrigger.class, MemberCategory.values())
+            .registerType(DbFullTextCatalog.class, MemberCategory.values())
+            .registerType(DbFullTextIndex.class, MemberCategory.values())
+            .registerType(DbFullTextIndex.Column.class, MemberCategory.values())
+            .registerType(DbXmlSchemaCollection.class, MemberCategory.values())
             .registerType(DatasourceFactoryMongo.class, MemberCategory.values())
             .registerType(DDLServiceMongo.class, MemberCategory.values())
             .registerType(DMLServiceMongo.class, MemberCategory.values())
@@ -96,32 +111,50 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             /* TableData and related classes for Jackson serialization */
             .registerType(TableData.class, MemberCategory.values())
             .registerType(TableData.DataPage.class, MemberCategory.values())
+            .registerType(TableDataMeta.class, MemberCategory.values())
             .registerType(TableDataPage.class, MemberCategory.values())
             .registerType(TableDataPage.Request.class, MemberCategory.values())
             .registerType(CustomSerializedColumn.BinaryColumn.class, MemberCategory.values())
             /* All AgentCommand subclasses for Jackson serialization */
+            .registerType(AgentCommand.class, MemberCategory.values())
             .registerType(AgentCommandSync.class, MemberCategory.values())
+            .registerType(ExecuteFlow.class, MemberCategory.values())
+            .registerType(DelayAgentCommand.class, MemberCategory.values())
+            .registerType(UpdateAgentModel.class, MemberCategory.values())
+            .registerType(RetentionExecute.class, MemberCategory.values())
+            .registerType(RetentionExecute.FileInfo.class, MemberCategory.values())
             .registerType(TestDatasource.class, MemberCategory.values())
             .registerType(TestAWSS3Drive.class, MemberCategory.values())
             .registerType(TestAzureBlobDrive.class, MemberCategory.values())
             .registerType(VersionDeleteRequest.class, MemberCategory.values())
+            .registerType(NotifyError.class, MemberCategory.values())
+            .registerType(RetentionCompleted.class, MemberCategory.values())
             .registerType(TestAWSS3DriveResult.class, MemberCategory.values())
             .registerType(TestAzureBlobDriveResult.class, MemberCategory.values())
             .registerType(TestDatasourceResult.class, MemberCategory.values())
             .registerType(VersionDeleted.class, MemberCategory.values())
             .registerType(TestFolderAccess.class, MemberCategory.values())
             .registerType(TestFolderAccessResult.class, MemberCategory.values())
+            /* Flow step config types for Jackson convertValue */
+            .registerType(UpdateSchemaConfig.class, MemberCategory.values())
             .registerType(UpdateSequences.class, MemberCategory.values())
             .registerType(UpdateSequences.SequenceMapping.class, MemberCategory.values())
+            .registerType(MaskColumn.class, MemberCategory.values())
+            .registerType(MaskColumn.MaskColumnConfig.class, MemberCategory.values())
+            .registerType(MaskType.class, MemberCategory.values())
             .registerType(TrustStoreSupport.class, MemberCategory.values())
             .registerType(java.security.KeyStore.class, MemberCategory.values())
             .registerType(javax.net.ssl.TrustManagerFactory.class, MemberCategory.values())
-            .registerType(MaskColumn.class, MemberCategory.values())
             ;
         hints.serialization()
             .registerType(AgentError.class)
             .registerType(AgentModel.class)
-                .registerType(AgentModel.Datasource.class).registerType(AgentModel.LocalDrive.class).registerType(AgentModel.Storage.class).registerType(AgentModel.Timer.class).registerType(AgentModel.AzureBlobDrive.class)
+            .registerType(AgentModel.Datasource.class)
+            .registerType(AgentModel.LocalDrive.class)
+            .registerType(AgentModel.Storage.class)
+            .registerType(AgentModel.Timer.class)
+            .registerType(AgentModel.AzureBlobDrive.class)
+            .registerType(AgentModel.AWSS3Drive.class)
             .registerType(DataFile.class)
             .registerType(DataFlows.class).registerType(DataFlows.FlowSummary.class)
             .registerType(DataGroup.class)
@@ -136,12 +169,15 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(StorageType.class)
             .registerType(Tag.class)
             .registerType(TagType.class)
-            
+
             .registerType(AgentCommand.class)
+            .registerType(AgentCommandSync.class)
             .registerType(DelayAgentCommand.class)
             .registerType(ExecuteFlow.class)
             .registerType(RetentionExecute.class).registerType(RetentionExecute.FileInfo.class)
             .registerType(UpdateAgentModel.class)
+            .registerType(VersionDeleteRequest.class)
+            .registerType(TestDatasource.class)
             .registerType(TestAWSS3Drive.class)
             .registerType(TestAzureBlobDrive.class)
             .registerType(TestDatasourceResult.class)
@@ -156,6 +192,8 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(UpdateSequences.class)
             .registerType(UpdateSequences.SequenceMapping.class)
             .registerType(MaskColumn.class)
+            .registerType(MaskColumn.MaskColumnConfig.class)
+            .registerType(MaskType.class)
             ;
     }
 
