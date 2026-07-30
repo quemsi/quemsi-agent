@@ -49,11 +49,12 @@ public class ExecuteTestRedis {
 			}
 		} catch (BaseRuntimeException ex) {
 			agentBatchedLogger.logError(null, null, LogMessage.error("redis-connection-test-failed", ex));
+			String messageId = ex.getMessageId() != null ? ex.getMessageId() : "redis-connection-test-failed";
 			TestRedisResult result = builder
 					.success(false)
 					.errorCode(ex.getStatus() != null ? ex.getStatus().value() : 500)
-					.message(ex.getMessageId() != null ? ex.getMessageId() : "redis-connection-test-failed")
-					.errorMessage(ex.getMessage())
+					.message(messageId)
+					.errorMessage(describe(messageId, ex))
 					.build();
 			apiManager.send(result);
 		} catch (Exception ex) {
@@ -65,6 +66,22 @@ public class ExecuteTestRedis {
 					.errorMessage(ex.getMessage() != null ? ex.getMessage() : "redis-connection-test-failed")
 					.build();
 			apiManager.send(result);
+		}
+	}
+
+	private String describe(String messageId, BaseRuntimeException ex) {
+		switch (messageId) {
+			case "redis-target-is-replica":
+				return "This Redis instance is a replica. Clearing a replica cannot synchronize the cache, "
+						+ "point the connection at the master or use Sentinel mode.";
+			case "redis-sentinels-unreachable":
+				return "None of the configured sentinels could be reached.";
+			case "redis-discovered-master-unreachable":
+				return "Sentinels answered, but the master address they reported is not reachable from this agent.";
+			case "redis-auth-failed":
+				return "Redis rejected the supplied credentials.";
+			default:
+				return ex.getMessage();
 		}
 	}
 }
