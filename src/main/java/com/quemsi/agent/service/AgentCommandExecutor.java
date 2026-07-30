@@ -8,6 +8,7 @@ import com.quemsi.agent.service.cmd.ExecuteTestAWSS3Drive;
 import com.quemsi.agent.service.cmd.ExecuteTestAzureBlobDrive;
 import com.quemsi.agent.service.cmd.ExecuteTestDatasource;
 import com.quemsi.agent.service.cmd.ExecuteTestFolderAccess;
+import com.quemsi.agent.service.cmd.ExecuteTestRedis;
 import com.quemsi.agent.service.cmd.ExecuteVersionDeleteRequest;
 import com.quemsi.model.dto.agent.ExecuteFlow;
 import com.quemsi.model.dto.agent.RetentionExecute;
@@ -15,6 +16,7 @@ import com.quemsi.model.dto.agent.TestAWSS3Drive;
 import com.quemsi.model.dto.agent.TestAzureBlobDrive;
 import com.quemsi.model.dto.agent.TestDatasource;
 import com.quemsi.model.dto.agent.TestFolderAccess;
+import com.quemsi.model.dto.agent.TestRedis;
 import com.quemsi.model.dto.agent.VersionDeleteRequest;
 
 public class AgentCommandExecutor {
@@ -32,6 +34,8 @@ public class AgentCommandExecutor {
     private ExecuteTestAzureBlobDrive executeTestAzureBlobDrive;
     @Autowired
     private ExecuteTestAWSS3Drive executeTestAWSS3Drive;
+    @Autowired
+    private ExecuteTestRedis executeTestRedis;
 
     public void execute(ExecuteFlow cmd){
         executeExecuteFlow.execute(cmd);
@@ -53,5 +57,8 @@ public class AgentCommandExecutor {
     }
     public void execute(TestAWSS3Drive cmd){
         executeTestAWSS3Drive.execute(cmd);
+    }
+    public void execute(TestRedis cmd){
+        executeTestRedis.execute(cmd);
     }
 }

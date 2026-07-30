@@ -26,6 +26,7 @@ import com.quemsi.agent.service.cmd.ExecuteTestAWSS3Drive;
 import com.quemsi.agent.service.cmd.ExecuteTestAzureBlobDrive;
 import com.quemsi.agent.service.cmd.ExecuteTestDatasource;
 import com.quemsi.agent.service.cmd.ExecuteTestFolderAccess;
+import com.quemsi.agent.service.cmd.ExecuteTestRedis;
 import com.quemsi.agent.service.cmd.ExecuteVersionDeleteRequest;
 import com.quemsi.commons.util.ApacheDurationDeserializer;
 import com.quemsi.commons.util.ApacheDurationSerializer;
@@ -114,6 +115,11 @@ public class GeneralConfig {
 	@Bean
 	public ExecuteTestAWSS3Drive executeTestAWSS3Drive(){
 		return new ExecuteTestAWSS3Drive();
+	}
+
+	@Bean
+	public ExecuteTestRedis executeTestRedis(){
+		return new ExecuteTestRedis();
 	}
 
 	@Bean

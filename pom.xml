@@ -82,6 +82,10 @@
 			<artifactId>mongodb-driver-sync</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>redis.clients</groupId>
+			<artifactId>jedis</artifactId>
+		</dependency>
+		<dependency>
 				<groupId>com.azure</groupId>
 				<artifactId>azure-storage-blob</artifactId>
 		</dependency>

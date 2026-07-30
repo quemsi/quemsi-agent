@@ -27,6 +27,9 @@ import com.quemsi.model.dto.StorageType;
 import com.quemsi.model.dto.Tag;
 import com.quemsi.model.dto.TagType;
 import com.quemsi.model.dto.UpdateSchemaConfig;
+import com.quemsi.model.dto.ClearRedisConfig;
+import com.quemsi.model.dto.RedisClearMode;
+import com.quemsi.model.dto.RedisConnectionMode;
 import com.quemsi.model.dto.UpdateSequences;
 import com.quemsi.model.dto.agent.AgentCommand;
 import com.quemsi.model.dto.agent.AgentCommandSync;
@@ -37,6 +40,7 @@ import com.quemsi.model.dto.agent.TestAWSS3Drive;
 import com.quemsi.model.dto.agent.TestAzureBlobDrive;
 import com.quemsi.model.dto.agent.TestDatasource;
 import com.quemsi.model.dto.agent.TestFolderAccess;
+import com.quemsi.model.dto.agent.TestRedis;
 import com.quemsi.model.dto.agent.UpdateAgentModel;
 import com.quemsi.model.dto.agent.VersionDeleteRequest;
 import com.quemsi.model.dto.agent.onapi.NotifyError;
@@ -45,6 +49,7 @@ import com.quemsi.model.dto.agent.onapi.TestAWSS3DriveResult;
 import com.quemsi.model.dto.agent.onapi.TestAzureBlobDriveResult;
 import com.quemsi.model.dto.agent.onapi.TestDatasourceResult;
 import com.quemsi.model.dto.agent.onapi.TestFolderAccessResult;
+import com.quemsi.model.dto.agent.onapi.TestRedisResult;
 import com.quemsi.model.dto.agent.onapi.VersionDeleted;
 import com.quemsi.model.flow.db.mongodb.DDLServiceMongo;
 import com.quemsi.model.flow.db.mongodb.DMLServiceMongo;
@@ -126,17 +131,22 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(TestDatasource.class, MemberCategory.values())
             .registerType(TestAWSS3Drive.class, MemberCategory.values())
             .registerType(TestAzureBlobDrive.class, MemberCategory.values())
+            .registerType(TestRedis.class, MemberCategory.values())
             .registerType(VersionDeleteRequest.class, MemberCategory.values())
             .registerType(NotifyError.class, MemberCategory.values())
             .registerType(RetentionCompleted.class, MemberCategory.values())
             .registerType(TestAWSS3DriveResult.class, MemberCategory.values())
             .registerType(TestAzureBlobDriveResult.class, MemberCategory.values())
             .registerType(TestDatasourceResult.class, MemberCategory.values())
+            .registerType(TestRedisResult.class, MemberCategory.values())
             .registerType(VersionDeleted.class, MemberCategory.values())
             .registerType(TestFolderAccess.class, MemberCategory.values())
             .registerType(TestFolderAccessResult.class, MemberCategory.values())
             /* Flow step config types for Jackson convertValue */
             .registerType(UpdateSchemaConfig.class, MemberCategory.values())
+            .registerType(ClearRedisConfig.class, MemberCategory.values())
+            .registerType(RedisConnectionMode.class, MemberCategory.values())
+            .registerType(RedisClearMode.class, MemberCategory.values())
             .registerType(UpdateSequences.class, MemberCategory.values())
             .registerType(UpdateSequences.SequenceMapping.class, MemberCategory.values())
             .registerType(MaskColumn.class, MemberCategory.values())
@@ -180,15 +190,20 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(TestDatasource.class)
             .registerType(TestAWSS3Drive.class)
             .registerType(TestAzureBlobDrive.class)
+            .registerType(TestRedis.class)
             .registerType(TestDatasourceResult.class)
             .registerType(TestAWSS3DriveResult.class)
             .registerType(TestAzureBlobDriveResult.class)
+            .registerType(TestRedisResult.class)
             .registerType(TestFolderAccess.class)
             .registerType(TestFolderAccessResult.class)
             .registerType(NotifyError.class)
             .registerType(RetentionCompleted.class)
             .registerType(VersionDeleted.class)
             .registerType(UpdateSchemaConfig.class)
+            .registerType(ClearRedisConfig.class)
+            .registerType(RedisConnectionMode.class)
+            .registerType(RedisClearMode.class)
             .registerType(UpdateSequences.class)
             .registerType(UpdateSequences.SequenceMapping.class)
             .registerType(MaskColumn.class)
