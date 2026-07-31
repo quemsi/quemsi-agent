@@ -120,7 +120,9 @@ public class AgentCoordinator {
         while(!this.initialized){
             try{
                 agentBatchedLogger.logInfo(null, null, LogMessage.info("quemsi-agent:{}", agentVersion));
-                AgentModel model = apiManager.allModel(agentVersion);
+                String runtime = AgentRuntimeDetector.detect();
+                agentBatchedLogger.logInfo(null, null, LogMessage.info("agent-runtime:{}", runtime));
+                AgentModel model = apiManager.allModel(agentVersion, runtime);
                 agentBatchedLogger.logDebug(null, null, LogMessage.debug("model : {}", DelayedFormatter.toDelayedString(Exceptions.wrapSupplier(() -> objectMapper.writeValueAsString(model)))));
 				initialize(model);
                 initialized = true;

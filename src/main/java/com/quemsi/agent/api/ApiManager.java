@@ -92,8 +92,8 @@ public class ApiManager implements ApiClient{
 
 
     @Override
-    public AgentModel allModel(String agentVersion) {
-        return quemsiApi.allModel(this.authHeader(), agentVersion);
+    public AgentModel allModel(String agentVersion, String runtime) {
+        return quemsiApi.allModel(this.authHeader(), agentVersion, runtime);
     }
 
     @Override

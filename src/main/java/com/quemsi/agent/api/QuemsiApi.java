@@ -22,7 +22,8 @@ import com.quemsi.model.dto.agent.AgentCommand;
 public interface QuemsiApi {
     @GetExchange("/api/agent/all-model")
     AgentModel allModel(@RequestHeader(HttpHeaders.AUTHORIZATION) String token,
-        @RequestParam(required = false) String agentVersion);
+        @RequestParam(required = false) String agentVersion,
+        @RequestParam(required = false) String runtime);
     
     @GetExchange("/api/agent/next-command")
     AgentCommand nextCommand(@RequestHeader(HttpHeaders.AUTHORIZATION) String token);
