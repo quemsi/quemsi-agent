@@ -64,15 +64,15 @@ public class AgentBatchedLogger {
             return;
         }
         log(flowExecutionId, flowExecutionStepId, message.getLevel(), message.toString(),
-            message.getMessageId(), message.getCause(), message.getStackTrace());
+            message.getMessageId(), message.getCause(), message.getStackTrace(), message.getDetail());
     }
 
     public void log(Long flowExecutionId, Long flowExecutionStepId, String level, String message) {
-        log(flowExecutionId, flowExecutionStepId, level, message, null, null, null);
+        log(flowExecutionId, flowExecutionStepId, level, message, null, null, null, null);
     }
 
     public void log(Long flowExecutionId, Long flowExecutionStepId, String level, String message,
-                    String messageId, String cause, String stackTrace) {
+                    String messageId, String cause, String stackTrace, String detail) {
         Long agentId = agentProperties != null ? agentProperties.getAgentId() : null;
         AgentLogRecord logRecord = AgentLogRecord.builder()
             .agentId(agentId)
@@ -83,6 +83,7 @@ public class AgentBatchedLogger {
             .messageId(messageId)
             .cause(cause)
             .stackTrace(stackTrace)
+            .detail(detail)
             .timestamp(LocalDateTime.now())
             .build();
         
@@ -95,20 +96,34 @@ public class AgentBatchedLogger {
         }
         switch (level) {
             case "INFO":
-                log.info(logMessage);
+                if (detail != null && !detail.isBlank()) {
+                    log.info("{}\n{}", logMessage, detail);
+                } else {
+                    log.info(logMessage);
+                }
                 break;
             case "WARN":
-                log.warn(logMessage);
+                if (detail != null && !detail.isBlank()) {
+                    log.warn("{}\n{}", logMessage, detail);
+                } else {
+                    log.warn(logMessage);
+                }
                 break;
             case "ERROR":
                 if (stackTrace != null && !stackTrace.isBlank()) {
                     log.error("{}\n{}", logMessage, stackTrace);
+                } else if (detail != null && !detail.isBlank()) {
+                    log.error("{}\n{}", logMessage, detail);
                 } else {
                     log.error(logMessage);
                 }
                 break;
             case "DEBUG":
-                log.debug(logMessage);
+                if (detail != null && !detail.isBlank()) {
+                    log.debug("{}\n{}", logMessage, detail);
+                } else {
+                    log.debug(logMessage);
+                }
                 break;
             default:
                 log.info(logMessage);

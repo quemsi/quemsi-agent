@@ -17,6 +17,7 @@ import com.quemsi.commons.util.BaseRuntimeException;
 import com.quemsi.commons.util.Exceptions;
 import com.quemsi.commons.util.FileNameUtil;
 import com.quemsi.commons.util.LogMessage;
+import com.quemsi.commons.util.SecretMask;
 import com.quemsi.commons.util.StringUtils;
 import com.quemsi.model.api.ApiClient;
 import com.quemsi.model.dto.AgentModel;
@@ -108,8 +109,10 @@ public class SpringBeanManager {
 		if(datasource.isUseEnvVar()){
 			Environment environment = context.getEnvironment();
 			if (agentBatchedLogger != null) {
-				agentBatchedLogger.logDebug(null, null, LogMessage.debug("{} var value : {}", "MYSQLUSER", environment.getProperty("MYSQLUSER")));
-				agentBatchedLogger.logDebug(null, null, LogMessage.debug("{} var value : {}", "MYSQLPASS", environment.getProperty("MYSQLPASS")));
+				agentBatchedLogger.logDebug(null, null, LogMessage.debug("datasource env {}",
+					SecretMask.envStatus(datasource.getUsername(), environment.containsProperty(datasource.getUsername()))));
+				agentBatchedLogger.logDebug(null, null, LogMessage.debug("datasource env {}",
+					SecretMask.envStatus(datasource.getPassword(), environment.containsProperty(datasource.getPassword()))));
 			}
 			dsFactory.setUsername(environment.getProperty(datasource.getUsername()));
 			dsFactory.setPassword(environment.getProperty(datasource.getPassword()));
@@ -159,7 +162,8 @@ public class SpringBeanManager {
 		if(azureBlobDrive.isUseEnvVar()){
 			Environment environment = context.getEnvironment();
 			if (agentBatchedLogger != null) {
-				agentBatchedLogger.logDebug(null, null, LogMessage.debug("{} var value : {}", azureBlobDrive.getAccountKey(), environment.getProperty(azureBlobDrive.getAccountKey())));
+				agentBatchedLogger.logDebug(null, null, LogMessage.debug("azure blob env {}",
+					SecretMask.envStatus(azureBlobDrive.getAccountKey(), environment.containsProperty(azureBlobDrive.getAccountKey()))));
 			}
 			drive.setAccountKey(environment.getProperty(azureBlobDrive.getAccountKey()));
 			if(StringUtils.isEmptyOrNull(drive.getAccountKey())){
@@ -192,8 +196,10 @@ public class SpringBeanManager {
 		if(awsS3Drive.isUseEnvVar()){
 			Environment environment = context.getEnvironment();
 			if (agentBatchedLogger != null) {
-				agentBatchedLogger.logDebug(null, null, LogMessage.debug("{} var value : {}", awsS3Drive.getAccessKey(), environment.getProperty(awsS3Drive.getAccessKey())));
-				agentBatchedLogger.logDebug(null, null, LogMessage.debug("{} var value : {}", awsS3Drive.getSecretKey(), environment.getProperty(awsS3Drive.getSecretKey())));
+				agentBatchedLogger.logDebug(null, null, LogMessage.debug("aws s3 env {}",
+					SecretMask.envStatus(awsS3Drive.getAccessKey(), environment.containsProperty(awsS3Drive.getAccessKey()))));
+				agentBatchedLogger.logDebug(null, null, LogMessage.debug("aws s3 env {}",
+					SecretMask.envStatus(awsS3Drive.getSecretKey(), environment.containsProperty(awsS3Drive.getSecretKey()))));
 			}
 			drive.setAccessKey(environment.getProperty(awsS3Drive.getAccessKey()));
 			drive.setSecretKey(environment.getProperty(awsS3Drive.getSecretKey()));

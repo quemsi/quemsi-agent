@@ -26,6 +26,7 @@ import com.quemsi.commons.util.BaseRuntimeException;
 import com.quemsi.commons.util.DelayedFormatter;
 import com.quemsi.commons.util.Exceptions;
 import com.quemsi.commons.util.LogMessage;
+import com.quemsi.commons.util.SecretMask;
 import com.quemsi.model.dto.AgentModel;
 import com.quemsi.model.dto.agent.AgentCommand;
 import com.quemsi.model.dto.agent.DelayAgentCommand;
@@ -38,6 +39,7 @@ import com.quemsi.model.dto.agent.TestFolderAccess;
 import com.quemsi.model.dto.agent.TestRedis;
 import com.quemsi.model.dto.agent.UpdateAgentModel;
 import com.quemsi.model.dto.agent.VersionDeleteRequest;
+import com.quemsi.model.util.CredentialLogSanitizer;
 
 public class AgentCoordinator {
 
@@ -123,7 +125,10 @@ public class AgentCoordinator {
                 String runtime = AgentRuntimeDetector.detect();
                 agentBatchedLogger.logInfo(null, null, LogMessage.info("agent-runtime:{}", runtime));
                 AgentModel model = apiManager.allModel(agentVersion, runtime);
-                agentBatchedLogger.logDebug(null, null, LogMessage.debug("model : {}", DelayedFormatter.toDelayedString(Exceptions.wrapSupplier(() -> objectMapper.writeValueAsString(model)))));
+                agentBatchedLogger.logDebug(null, null, LogMessage.debug("model received")
+                    .withDetail(DelayedFormatter.toDelayedString(
+                        Exceptions.wrapSupplier(() -> objectMapper.writeValueAsString(
+                            CredentialLogSanitizer.copyMasked(model))))));
 				initialize(model);
                 initialized = true;
                 agentBatchedLogger.logInfo(null, null, LogMessage.info("initialization completed"));
@@ -220,11 +225,15 @@ public class AgentCoordinator {
         if(command instanceof DelayAgentCommand delayAgent){
             sleepMillisInterruptible(delayAgent.getDelay());
         } else {
-            agentBatchedLogger.logInfo(null, null, LogMessage.info("recived command  : {}", command));
+            agentBatchedLogger.logInfo(null, null, LogMessage.info("received command: {}", command.getName())
+                .withDetail(safeCommandDetail(command)));
             if(command instanceof ExecuteFlow executeFlow){
                 commandExecutor.execute(executeFlow);
             } else if(command instanceof UpdateAgentModel updatedModel){
-                agentBatchedLogger.logInfo(null, null, LogMessage.info("uupdating model {}", updatedModel));
+                agentBatchedLogger.logInfo(null, null, LogMessage.info("updating model")
+                    .withDetail(DelayedFormatter.toDelayedString(
+                        Exceptions.wrapSupplier(() -> objectMapper.writeValueAsString(
+                            CredentialLogSanitizer.copyMasked(updatedModel.getUpdatedModel()))))));
                 initialize(updatedModel.getUpdatedModel());
             } else if(command instanceof RetentionExecute retentionExecute){
                 commandExecutor.execute(retentionExecute);
@@ -312,5 +321,25 @@ public class AgentCoordinator {
                 backoff.set(Math.min(current * 2, MAX_BACKOFF_SECONDS));
             }
         }
+    }
+
+    /** Command detail for logs — credentials masked (env names kept when useEnvVar). */
+    private static Object safeCommandDetail(AgentCommand command) {
+        if (command instanceof UpdateAgentModel update) {
+            return CredentialLogSanitizer.copyMasked(update);
+        }
+        if (command instanceof TestDatasource testDs) {
+            return CredentialLogSanitizer.copyMasked(testDs);
+        }
+        if (command instanceof TestAWSS3Drive testAws) {
+            return CredentialLogSanitizer.copyMasked(testAws);
+        }
+        if (command instanceof TestAzureBlobDrive testAzure) {
+            return CredentialLogSanitizer.copyMasked(testAzure);
+        }
+        if (command instanceof TestRedis testRedis) {
+            return CredentialLogSanitizer.copyMasked(testRedis);
+        }
+        return command;
     }
 }

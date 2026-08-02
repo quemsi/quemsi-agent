@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.quemsi.agent.api.ApiManager;
 import com.quemsi.agent.service.AgentBatchedLogger;
 import com.quemsi.commons.util.LogMessage;
+import com.quemsi.commons.util.SecretMask;
 import com.quemsi.commons.util.StringUtils;
 import com.quemsi.model.dto.agent.TestAWSS3Drive;
 import com.quemsi.model.dto.agent.onapi.TestAWSS3DriveResult;
@@ -30,7 +31,12 @@ public class ExecuteTestAWSS3Drive {
         String region = testAWSS3Drive.getRegion();
         String bucketName = testAWSS3Drive.getBucketName();
 
-        agentBatchedLogger.logInfo(null, null, LogMessage.info("Executing test AWS S3 drive with access key: {}, secret key: {}, region: {}, bucket name: {}", accessKey, secretKey, region, bucketName));
+        agentBatchedLogger.logInfo(null, null, LogMessage.info(
+            "Executing test AWS S3 drive region={} bucket={} accessKey={} secretKey={}",
+            region,
+            bucketName,
+            SecretMask.forLog(accessKey, testAWSS3Drive.isUseEnvVar()),
+            SecretMask.forLog(secretKey, testAWSS3Drive.isUseEnvVar())));
 
         TestAWSS3DriveResult.TestAWSS3DriveResultBuilder builder = TestAWSS3DriveResult.builder()
             .correlationId(testAWSS3Drive.getCorrelationId());

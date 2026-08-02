@@ -10,6 +10,7 @@ import com.quemsi.commons.util.BaseRuntimeException;
 import com.quemsi.commons.util.Exceptions;
 import com.quemsi.commons.util.FileNameUtil;
 import com.quemsi.commons.util.LogMessage;
+import com.quemsi.commons.util.SecretMask;
 import com.quemsi.commons.util.StringUtils;
 import com.quemsi.model.dto.DataFile;
 import com.quemsi.model.flow.DataPackage;
@@ -279,7 +280,7 @@ public class AWSS3Storage implements Storage {
     public void fillDetails(Map<String, Object> props) {
         props.put("name", getName());
         props.put("type", Storage.class.getSimpleName());
-        props.put("accessKey", awsS3Drive.getAccessKey());
+        props.put("accessKey", SecretMask.mask(awsS3Drive.getAccessKey()));
         props.put("region", awsS3Drive.getRegion());
         props.put("bucketName", awsS3Drive.getBucketName());
         props.put("storageRoot", awsS3Drive.getStorageRoot());
