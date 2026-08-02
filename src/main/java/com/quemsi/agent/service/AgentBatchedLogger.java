@@ -59,7 +59,20 @@ public class AgentBatchedLogger {
         flushLogs(); // Flush remaining logs on shutdown
     }
     
+    public void log(Long flowExecutionId, Long flowExecutionStepId, LogMessage message) {
+        if (message == null) {
+            return;
+        }
+        log(flowExecutionId, flowExecutionStepId, message.getLevel(), message.toString(),
+            message.getMessageId(), message.getCause(), message.getStackTrace());
+    }
+
     public void log(Long flowExecutionId, Long flowExecutionStepId, String level, String message) {
+        log(flowExecutionId, flowExecutionStepId, level, message, null, null, null);
+    }
+
+    public void log(Long flowExecutionId, Long flowExecutionStepId, String level, String message,
+                    String messageId, String cause, String stackTrace) {
         Long agentId = agentProperties != null ? agentProperties.getAgentId() : null;
         AgentLogRecord logRecord = AgentLogRecord.builder()
             .agentId(agentId)
@@ -67,11 +80,19 @@ public class AgentBatchedLogger {
             .flowExecutionStepId(flowExecutionStepId)
             .level(level)
             .message(message)
+            .messageId(messageId)
+            .cause(cause)
+            .stackTrace(stackTrace)
             .timestamp(LocalDateTime.now())
             .build();
         
         // Log to SLF4J for local debugging
         String logMessage = message;
+        if (messageId != null || cause != null) {
+            logMessage = message
+                + (messageId != null ? " [" + messageId + "]" : "")
+                + (cause != null ? " cause=" + cause : "");
+        }
         switch (level) {
             case "INFO":
                 log.info(logMessage);
@@ -80,7 +101,11 @@ public class AgentBatchedLogger {
                 log.warn(logMessage);
                 break;
             case "ERROR":
-                log.error(logMessage);
+                if (stackTrace != null && !stackTrace.isBlank()) {
+                    log.error("{}\n{}", logMessage, stackTrace);
+                } else {
+                    log.error(logMessage);
+                }
                 break;
             case "DEBUG":
                 log.debug(logMessage);
@@ -116,24 +141,24 @@ public class AgentBatchedLogger {
     }
     
     public void logInfo(Long flowExecutionId, Long flowExecutionStepId, LogMessage message) {
-        log(flowExecutionId, flowExecutionStepId, message.getLevel(), message.toString());
+        log(flowExecutionId, flowExecutionStepId, message);
     }
     
     public void logWarn(Long flowExecutionId, Long flowExecutionStepId, LogMessage message) {
-        log(flowExecutionId, flowExecutionStepId, message.getLevel(), message.toString());
+        log(flowExecutionId, flowExecutionStepId, message);
     }
     
     public void logError(Long flowExecutionId, Long flowExecutionStepId, LogMessage message) {
-        log(flowExecutionId, flowExecutionStepId, message.getLevel(), message.toString());
+        log(flowExecutionId, flowExecutionStepId, message);
     }
     
     public void logDebug(Long flowExecutionId, Long flowExecutionStepId, LogMessage message) {
-        log(flowExecutionId, flowExecutionStepId, message.getLevel(), message.toString());
+        log(flowExecutionId, flowExecutionStepId, message);
     }
     
     // Method to match FlowContext.LogWriter interface (agentId is ignored, obtained from AgentProperties)
-    public void logWithAgentId(Long agentId, Long flowExecutionId, Long flowExecutionStepId, String level, String message) {
-        log(flowExecutionId, flowExecutionStepId, level, message);
+    public void logWithAgentId(Long agentId, Long flowExecutionId, Long flowExecutionStepId, LogMessage message) {
+        log(flowExecutionId, flowExecutionStepId, message);
     }
     
     private synchronized void flushLogs() {
@@ -158,4 +183,3 @@ public class AgentBatchedLogger {
         }
     }
 }
-

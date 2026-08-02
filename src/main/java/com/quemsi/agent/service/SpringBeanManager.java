@@ -241,7 +241,7 @@ public class SpringBeanManager {
 				ls.setCapacity(storage.getCapacity());
 				ls.setUtil(context.getBean(FileNameUtil.class));
 				ls.setLogWriter((agentId, flowExecutionId, flowExecutionStepId, message) -> {
-					agentBatchedLogger.logWithAgentId(agentId, flowExecutionId, flowExecutionStepId, message.getLevel(), message.toString());
+					agentBatchedLogger.logWithAgentId(agentId, flowExecutionId, flowExecutionStepId, message);
 				});
 				ls.setAgentId(agentProperties.getAgentId());
 				registerer.register();
