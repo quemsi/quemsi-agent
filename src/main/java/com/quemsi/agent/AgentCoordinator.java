@@ -26,11 +26,11 @@ import com.quemsi.commons.util.BaseRuntimeException;
 import com.quemsi.commons.util.DelayedFormatter;
 import com.quemsi.commons.util.Exceptions;
 import com.quemsi.commons.util.LogMessage;
-import com.quemsi.commons.util.SecretMask;
 import com.quemsi.model.dto.AgentModel;
 import com.quemsi.model.dto.agent.AgentCommand;
 import com.quemsi.model.dto.agent.DelayAgentCommand;
 import com.quemsi.model.dto.agent.ExecuteFlow;
+import com.quemsi.model.dto.agent.PreviewSubset;
 import com.quemsi.model.dto.agent.RetentionExecute;
 import com.quemsi.model.dto.agent.TestAWSS3Drive;
 import com.quemsi.model.dto.agent.TestAzureBlobDrive;
@@ -241,6 +241,8 @@ public class AgentCoordinator {
                 commandExecutor.execute(versionDeleteRequest);
             } else if(command instanceof TestDatasource testDatasource){
                 commandExecutor.execute(testDatasource);
+            } else if(command instanceof PreviewSubset previewSubset){
+                commandExecutor.execute(previewSubset);
             } else if(command instanceof TestFolderAccess testFolderAccess){
                 commandExecutor.execute(testFolderAccess);
             } else if(command instanceof TestAzureBlobDrive testAzureBlobDrive){
@@ -330,6 +332,9 @@ public class AgentCoordinator {
         }
         if (command instanceof TestDatasource testDs) {
             return CredentialLogSanitizer.copyMasked(testDs);
+        }
+        if (command instanceof PreviewSubset previewSubset) {
+            return CredentialLogSanitizer.copyMasked(previewSubset);
         }
         if (command instanceof TestAWSS3Drive testAws) {
             return CredentialLogSanitizer.copyMasked(testAws);

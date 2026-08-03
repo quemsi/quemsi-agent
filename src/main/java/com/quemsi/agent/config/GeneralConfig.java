@@ -27,6 +27,7 @@ import com.quemsi.agent.service.cmd.ExecuteTestAzureBlobDrive;
 import com.quemsi.agent.service.cmd.ExecuteTestDatasource;
 import com.quemsi.agent.service.cmd.ExecuteTestFolderAccess;
 import com.quemsi.agent.service.cmd.ExecuteTestRedis;
+import com.quemsi.agent.service.cmd.ExecutePreviewSubset;
 import com.quemsi.agent.service.cmd.ExecuteVersionDeleteRequest;
 import com.quemsi.commons.util.ApacheDurationDeserializer;
 import com.quemsi.commons.util.ApacheDurationSerializer;
@@ -95,6 +96,11 @@ public class GeneralConfig {
 	@Bean
 	public ExecuteTestDatasource executeTestDatasource(){
 		return new ExecuteTestDatasource();
+	}
+
+	@Bean
+	public ExecutePreviewSubset executePreviewSubset(){
+		return new ExecutePreviewSubset();
 	}
 
 	@Bean
