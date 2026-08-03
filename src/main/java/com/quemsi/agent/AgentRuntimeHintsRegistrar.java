@@ -36,6 +36,7 @@ import com.quemsi.model.dto.agent.AgentCommandSync;
 import com.quemsi.model.dto.agent.DelayAgentCommand;
 import com.quemsi.model.dto.agent.ExecuteFlow;
 import com.quemsi.model.dto.agent.RetentionExecute;
+import com.quemsi.model.dto.agent.PreviewSubset;
 import com.quemsi.model.dto.agent.TestAWSS3Drive;
 import com.quemsi.model.dto.agent.TestAzureBlobDrive;
 import com.quemsi.model.dto.agent.TestDatasource;
@@ -44,6 +45,7 @@ import com.quemsi.model.dto.agent.TestRedis;
 import com.quemsi.model.dto.agent.UpdateAgentModel;
 import com.quemsi.model.dto.agent.VersionDeleteRequest;
 import com.quemsi.model.dto.agent.onapi.NotifyError;
+import com.quemsi.model.dto.agent.onapi.PreviewSubsetResult;
 import com.quemsi.model.dto.agent.onapi.RetentionCompleted;
 import com.quemsi.model.dto.agent.onapi.TestAWSS3DriveResult;
 import com.quemsi.model.dto.agent.onapi.TestAzureBlobDriveResult;
@@ -51,6 +53,7 @@ import com.quemsi.model.dto.agent.onapi.TestDatasourceResult;
 import com.quemsi.model.dto.agent.onapi.TestFolderAccessResult;
 import com.quemsi.model.dto.agent.onapi.TestRedisResult;
 import com.quemsi.model.dto.agent.onapi.VersionDeleted;
+import com.quemsi.model.flow.subset.SubsetPlan;
 import com.quemsi.model.flow.db.mongodb.DDLServiceMongo;
 import com.quemsi.model.flow.db.mongodb.DMLServiceMongo;
 import com.quemsi.model.flow.db.mongodb.DatasourceFactoryMongo;
@@ -129,6 +132,7 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(RetentionExecute.class, MemberCategory.values())
             .registerType(RetentionExecute.FileInfo.class, MemberCategory.values())
             .registerType(TestDatasource.class, MemberCategory.values())
+            .registerType(PreviewSubset.class, MemberCategory.values())
             .registerType(TestAWSS3Drive.class, MemberCategory.values())
             .registerType(TestAzureBlobDrive.class, MemberCategory.values())
             .registerType(TestRedis.class, MemberCategory.values())
@@ -138,6 +142,8 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(TestAWSS3DriveResult.class, MemberCategory.values())
             .registerType(TestAzureBlobDriveResult.class, MemberCategory.values())
             .registerType(TestDatasourceResult.class, MemberCategory.values())
+            .registerType(PreviewSubsetResult.class, MemberCategory.values())
+            .registerType(SubsetPlan.SubsetTableSummary.class, MemberCategory.values())
             .registerType(TestRedisResult.class, MemberCategory.values())
             .registerType(VersionDeleted.class, MemberCategory.values())
             .registerType(TestFolderAccess.class, MemberCategory.values())
@@ -188,10 +194,13 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(UpdateAgentModel.class)
             .registerType(VersionDeleteRequest.class)
             .registerType(TestDatasource.class)
+            .registerType(PreviewSubset.class)
             .registerType(TestAWSS3Drive.class)
             .registerType(TestAzureBlobDrive.class)
             .registerType(TestRedis.class)
             .registerType(TestDatasourceResult.class)
+            .registerType(PreviewSubsetResult.class)
+            .registerType(SubsetPlan.SubsetTableSummary.class)
             .registerType(TestAWSS3DriveResult.class)
             .registerType(TestAzureBlobDriveResult.class)
             .registerType(TestRedisResult.class)

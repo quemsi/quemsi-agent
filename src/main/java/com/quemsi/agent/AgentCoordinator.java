@@ -327,24 +327,28 @@ public class AgentCoordinator {
 
     /** Command detail for logs — credentials masked (env names kept when useEnvVar). */
     private static Object safeCommandDetail(AgentCommand command) {
-        if (command instanceof UpdateAgentModel update) {
-            return CredentialLogSanitizer.copyMasked(update);
+        try {
+            if (command instanceof UpdateAgentModel update) {
+                return CredentialLogSanitizer.copyMasked(update);
+            }
+            if (command instanceof TestDatasource testDs) {
+                return CredentialLogSanitizer.copyMasked(testDs);
+            }
+            if (command instanceof PreviewSubset previewSubset) {
+                return CredentialLogSanitizer.copyMasked(previewSubset);
+            }
+            if (command instanceof TestAWSS3Drive testAws) {
+                return CredentialLogSanitizer.copyMasked(testAws);
+            }
+            if (command instanceof TestAzureBlobDrive testAzure) {
+                return CredentialLogSanitizer.copyMasked(testAzure);
+            }
+            if (command instanceof TestRedis testRedis) {
+                return CredentialLogSanitizer.copyMasked(testRedis);
+            }
+            return command;
+        } catch (Exception e) {
+            return command.getName() + " (detail unavailable: " + e.getMessage() + ")";
         }
-        if (command instanceof TestDatasource testDs) {
-            return CredentialLogSanitizer.copyMasked(testDs);
-        }
-        if (command instanceof PreviewSubset previewSubset) {
-            return CredentialLogSanitizer.copyMasked(previewSubset);
-        }
-        if (command instanceof TestAWSS3Drive testAws) {
-            return CredentialLogSanitizer.copyMasked(testAws);
-        }
-        if (command instanceof TestAzureBlobDrive testAzure) {
-            return CredentialLogSanitizer.copyMasked(testAzure);
-        }
-        if (command instanceof TestRedis testRedis) {
-            return CredentialLogSanitizer.copyMasked(testRedis);
-        }
-        return command;
     }
 }
