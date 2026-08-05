@@ -53,7 +53,10 @@ import com.quemsi.model.dto.agent.onapi.TestDatasourceResult;
 import com.quemsi.model.dto.agent.onapi.TestFolderAccessResult;
 import com.quemsi.model.dto.agent.onapi.TestRedisResult;
 import com.quemsi.model.dto.agent.onapi.VersionDeleted;
+import com.quemsi.model.flow.subset.SubsetConfig;
+import com.quemsi.model.flow.subset.SubsetDriver;
 import com.quemsi.model.flow.subset.SubsetPlan;
+import com.quemsi.model.flow.subset.SubsetSnapshot;
 import com.quemsi.model.flow.db.mongodb.DDLServiceMongo;
 import com.quemsi.model.flow.db.mongodb.DMLServiceMongo;
 import com.quemsi.model.flow.db.mongodb.DatasourceFactoryMongo;
@@ -178,6 +181,10 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(DataVersion.class)
             .registerType(DataVersionSummary.class)
             .registerType(DatasourceType.class)
+            .registerType(SubsetSnapshot.class)
+            .registerType(SubsetConfig.class)
+            .registerType(SubsetDriver.class)
+            .registerType(SubsetPlan.SubsetTableSummary.class)
             .registerType(FlowDetail.class)
             .registerType(FlowExecutionStatus.class)
             .registerType(NamedEntityReference.class)
