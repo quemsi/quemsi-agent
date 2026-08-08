@@ -1,5 +1,8 @@
 package com.quemsi.agent;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ImportRuntimeHints;
@@ -22,6 +25,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class AgentApplication {
 
 	public static void main(String[] args) {
+		/* Native image may leave -Dkey=value in argv instead of applying them like HotSpot.
+		 * QuemsiTemp and other code use System.getProperty, so apply them explicitly. */
+		args = applyDashDSystemProperties(args);
+		promoteTempDirFromEnv();
 		for (String arg : args) {
 			if (arg.equalsIgnoreCase("--version") || arg.equalsIgnoreCase("version") || arg.equalsIgnoreCase("-v")) {
 				/* Read version directly from application.yml */
@@ -71,6 +78,44 @@ public class AgentApplication {
 			}
 		}
 		SpringApplication.run(AgentApplication.class, args);
+	}
+
+	/**
+	 * Apply {@code -Dkey=value} argv entries as system properties and remove them from args.
+	 * Idempotent if the runtime already applied them.
+	 */
+	static String[] applyDashDSystemProperties(String[] args) {
+		if (args == null || args.length == 0) {
+			return args;
+		}
+		List<String> remaining = new ArrayList<>(args.length);
+		for (String arg : args) {
+			if (arg != null && arg.startsWith("-D") && arg.length() > 2) {
+				int eq = arg.indexOf('=');
+				if (eq > 2) {
+					String key = arg.substring(2, eq);
+					String value = arg.substring(eq + 1);
+					if (!key.isBlank()) {
+						System.setProperty(key, value);
+						continue;
+					}
+				}
+			}
+			remaining.add(arg);
+		}
+		return remaining.toArray(String[]::new);
+	}
+
+	/** Ensure {@code QUEMSI_TEMP_DIR} is visible via system property for QuemsiTemp. */
+	static void promoteTempDirFromEnv() {
+		String existing = System.getProperty("quemsi.temp-dir");
+		if (existing != null && !existing.isBlank()) {
+			return;
+		}
+		String fromEnv = System.getenv("QUEMSI_TEMP_DIR");
+		if (fromEnv != null && !fromEnv.isBlank()) {
+			System.setProperty("quemsi.temp-dir", fromEnv);
+		}
 	}
 
 }
