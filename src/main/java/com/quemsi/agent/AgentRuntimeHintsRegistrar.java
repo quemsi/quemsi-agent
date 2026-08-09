@@ -7,7 +7,9 @@ import org.springframework.context.annotation.Configuration;
 
 import com.quemsi.agent.flow.TimerImpl;
 import com.quemsi.agent.config.TrustStoreSupport;
+import com.quemsi.agent.control.ControlBuilderController;
 import com.quemsi.agent.control.ControlDownloadController;
+import com.quemsi.agent.control.BuilderSessionRegistry;
 import com.quemsi.commons.util.FileNameUtil;
 import com.quemsi.model.dto.AgentError;
 import com.quemsi.model.dto.AgentModel;
@@ -20,6 +22,13 @@ import com.quemsi.model.dto.DataVersionSummary;
 import com.quemsi.model.dto.DatasourceType;
 import com.quemsi.model.dto.DownloadGrantPayload;
 import com.quemsi.model.dto.FlowDetail;
+import com.quemsi.model.dto.builder.BuilderMode;
+import com.quemsi.model.dto.builder.BuilderSessionCreateRequest;
+import com.quemsi.model.dto.builder.BuilderSessionCreateResponse;
+import com.quemsi.model.dto.builder.BuilderSessionOpenPayload;
+import com.quemsi.model.dto.builder.BuilderSessionResult;
+import com.quemsi.model.dto.builder.BuilderSessionStatus;
+import com.quemsi.model.dto.builder.BuilderSessionSubmitRequest;
 import com.quemsi.model.dto.FlowExecutionStatus;
 import com.quemsi.model.dto.MaskColumn;
 import com.quemsi.model.dto.MaskType;
@@ -164,7 +173,16 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(MaskColumn.MaskColumnConfig.class, MemberCategory.values())
             .registerType(MaskType.class, MemberCategory.values())
             .registerType(DownloadGrantPayload.class, MemberCategory.values())
+            .registerType(BuilderMode.class, MemberCategory.values())
+            .registerType(BuilderSessionStatus.class, MemberCategory.values())
+            .registerType(BuilderSessionCreateRequest.class, MemberCategory.values())
+            .registerType(BuilderSessionCreateResponse.class, MemberCategory.values())
+            .registerType(BuilderSessionOpenPayload.class, MemberCategory.values())
+            .registerType(BuilderSessionResult.class, MemberCategory.values())
+            .registerType(BuilderSessionSubmitRequest.class, MemberCategory.values())
             .registerType(ControlDownloadController.class, MemberCategory.values())
+            .registerType(ControlBuilderController.class, MemberCategory.values())
+            .registerType(BuilderSessionRegistry.class, MemberCategory.values())
             .registerType(TrustStoreSupport.class, MemberCategory.values())
             .registerType(java.security.KeyStore.class, MemberCategory.values())
             .registerType(javax.net.ssl.TrustManagerFactory.class, MemberCategory.values())
@@ -230,6 +248,13 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(MaskColumn.MaskColumnConfig.class)
             .registerType(MaskType.class)
             .registerType(DownloadGrantPayload.class)
+            .registerType(BuilderMode.class)
+            .registerType(BuilderSessionStatus.class)
+            .registerType(BuilderSessionCreateRequest.class)
+            .registerType(BuilderSessionCreateResponse.class)
+            .registerType(BuilderSessionOpenPayload.class)
+            .registerType(BuilderSessionResult.class)
+            .registerType(BuilderSessionSubmitRequest.class)
             ;
     }
 

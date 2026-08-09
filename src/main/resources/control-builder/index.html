@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ClearTables — Quemsi Agent</title>
+  <link rel="stylesheet" href="/control/builder/static/builder.css" />
+</head>
+<body>
+  <main class="wrap">
+    <header class="header">
+      <h1>Clear tables</h1>
+      <p class="meta">Datasource: <strong id="datasource"></strong></p>
+    </header>
+
+    <section class="toolbar">
+      <label class="all-toggle">
+        <input type="checkbox" id="clearAll" />
+        Clear all tables
+      </label>
+      <input type="search" id="filter" placeholder="Filter tables…" />
+      <button type="button" id="selectVisible" class="btn secondary">Select visible</button>
+      <button type="button" id="clearSelection" class="btn secondary">Clear selection</button>
+    </section>
+
+    <p id="status" class="status">Loading tables…</p>
+    <div id="list" class="list" hidden></div>
+
+    <footer class="actions">
+      <button type="button" id="cancel" class="btn secondary">Cancel</button>
+      <button type="button" id="apply" class="btn primary">Apply</button>
+    </footer>
+  </main>
+
+  <script>
+    window.__BUILDER__ = {
+      sessionId: "{{SESSION_ID}}",
+      token: "{{BROWSER_TOKEN}}",
+      mode: "{{MODE}}",
+      datasource: "{{DATASOURCE}}",
+      draft: JSON.parse('{{DRAFT_JSON}}')
+    };
+  </script>
+  <script src="/control/builder/static/builder.js"></script>
+</body>
+</html>

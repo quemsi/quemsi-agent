@@ -49,7 +49,7 @@ quemsi-agent/
     ├── api/           # HTTP clients to API + Keycloak
     ├── aspect/        # GlobalErrorHandling (AOP → NotifyError)
     ├── config/        # Spring beans, WebClient, properties
-    ├── control/       # Browser-facing control endpoints (download grants)
+    ├── control/       # Browser-facing control (download + schema builder)
     ├── flow/          # TimerImpl (Quartz cron)
     └── service/       # FlowManager, bean registry, storage, cmds
 ```
@@ -120,16 +120,18 @@ Optional TLS: `quemsi-api.truststore.*` / `TRUSTSTORE_*` for corporate CAs.
 
 ## Control plane (browser → agent)
 
-Interactive user actions that must touch private storage go through a **ticketed control HTTP surface** on the agent (not the long-poll command queue).
+Interactive user actions that must touch private storage or live schema go through a **ticketed control HTTP surface** on the agent (not the long-poll command queue).
 
 | Concept | Detail |
 |---------|--------|
 | **controlBaseUrl** | One URL per agent (UI setup, stored on `agent.control_base_url`), e.g. `http://127.0.0.1:9082` |
 | **Download grant** | User `POST /api/datas/files/{fileId}/download-grant` → opaque one-time ticket + `downloadUrl` |
 | **Agent download** | Browser opens `GET {controlBaseUrl}/control/download?ticket=…` |
-| **Redeem** | Agent calls `POST /api/agent/download-grants/{token}/redeem` with its JWT, then streams via `Storage.getFiles` |
+| **Redeem download** | Agent calls `POST /api/agent/download-grants/{token}/redeem` with its JWT, then streams via `Storage.getFiles` |
+| **Builder session** | User `POST /api/builder-sessions` → agent opens `GET /control/builder?ticket=…`, browses schema, submits config |
+| **Builder modes** | First mode: `CLEAR_TABLES` (table multi-select). Extensible for DropTables / MaskColumns / etc. |
 
-Security: ticket is the capability (short TTL, single use, bound to `agentId`). No quemsi.com cookie on the agent. Do not expose raw path/filename APIs.
+### Download
 
 ```
 UI  →  API (create grant)  →  UI opens agent URL
@@ -137,6 +139,19 @@ Agent  →  API (redeem)  →  stream file bytes to browser
 ```
 
 Progress uses the browser’s native download UI (`Content-Disposition` + `Content-Length`).
+
+### Schema builder (ClearTables)
+
+```
+Flow editor  →  API create builder session  →  popup agent builder
+Agent redeem open ticket  →  list tables via DataSourceFactory.getDbModel
+Apply  →  API stores result_config  →  popup closes / postMessage
+Flow editor fetches GET /api/builder-sessions/{id}/result  →  merge into step
+```
+
+- Session TTL ~30 minutes; result pickup ~10 minutes after complete.
+- Only **configuration** returns to quemsi.com (e.g. `{ all, tables }`) — not row data.
+- Agent UI is static HTML/JS under `classpath:/control-builder/`.
 
 **Follow-up:** browser-side availability check against `controlBaseUrl` (distinct from long-poll ONLINE).
 
@@ -273,11 +288,12 @@ For interactive actions that must stay in the customer environment (download, la
 
 1. `AgentCoordinator` — lifecycle + command dispatch
 2. `QuemsiApi` / `AgentApiController` — protocol
-3. `control/ControlDownloadController` — ticketed browser control plane
-4. `AgentModel` + `AgentCommand` — shared contract
-5. `FlowManager` + `StepFactory` — pipeline engine
-6. `SpringBeanManager` — dynamic resource registration
-7. One `service/cmd/Execute*` — handler pattern
+3. `control/ControlDownloadController` — ticketed file download
+4. `control/ControlBuilderController` — schema builder sessions (ClearTables)
+5. `AgentModel` + `AgentCommand` — shared contract
+6. `FlowManager` + `StepFactory` — pipeline engine
+7. `SpringBeanManager` — dynamic resource registration
+8. One `service/cmd/Execute*` — handler pattern
 
 ---
 

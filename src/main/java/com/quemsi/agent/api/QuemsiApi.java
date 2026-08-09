@@ -19,6 +19,8 @@ import com.quemsi.model.dto.DownloadGrantPayload;
 import com.quemsi.model.dto.FlowExecution;
 import com.quemsi.model.dto.FlowExecution.FlowExecutionStep;
 import com.quemsi.model.dto.agent.AgentCommand;
+import com.quemsi.model.dto.builder.BuilderSessionOpenPayload;
+import com.quemsi.model.dto.builder.BuilderSessionSubmitRequest;
 
 public interface QuemsiApi {
     @GetExchange("/api/agent/all-model")
@@ -53,4 +55,13 @@ public interface QuemsiApi {
     @PostExchange("/api/agent/download-grants/{token}/redeem")
     DownloadGrantPayload redeemDownloadGrant(@RequestHeader(HttpHeaders.AUTHORIZATION) String auth,
             @PathVariable("token") String token);
+
+    @PostExchange("/api/agent/builder-sessions/open/{ticket}")
+    BuilderSessionOpenPayload openBuilderSession(@RequestHeader(HttpHeaders.AUTHORIZATION) String auth,
+            @PathVariable("ticket") String ticket);
+
+    @PostExchange("/api/agent/builder-sessions/{id}/result")
+    void submitBuilderSessionResult(@RequestHeader(HttpHeaders.AUTHORIZATION) String auth,
+            @PathVariable("id") String id,
+            @RequestBody BuilderSessionSubmitRequest request);
 }

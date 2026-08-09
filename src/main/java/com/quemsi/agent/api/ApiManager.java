@@ -17,6 +17,8 @@ import com.quemsi.model.dto.DownloadGrantPayload;
 import com.quemsi.model.dto.FlowExecution;
 import com.quemsi.model.dto.FlowExecution.FlowExecutionStep;
 import com.quemsi.model.dto.agent.AgentCommand;
+import com.quemsi.model.dto.builder.BuilderSessionOpenPayload;
+import com.quemsi.model.dto.builder.BuilderSessionSubmitRequest;
 
 import jakarta.annotation.PostConstruct;
 import lombok.Data;
@@ -134,6 +136,14 @@ public class ApiManager implements ApiClient{
 
     public DownloadGrantPayload redeemDownloadGrant(String ticket) {
         return quemsiApi.redeemDownloadGrant(this.authHeader(), ticket);
+    }
+
+    public BuilderSessionOpenPayload openBuilderSession(String ticket) {
+        return quemsiApi.openBuilderSession(this.authHeader(), ticket);
+    }
+
+    public void submitBuilderSessionResult(String sessionId, BuilderSessionSubmitRequest request) {
+        quemsiApi.submitBuilderSessionResult(this.authHeader(), sessionId, request);
     }
     
     public QuemsiApi getQuemsiApi() {
