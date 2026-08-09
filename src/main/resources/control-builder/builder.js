@@ -142,20 +142,30 @@
 
   els.cancel.addEventListener("click", async () => {
     try {
-      const res = await fetch("/control/builder/api/cancel", {
+      await fetch("/control/builder/api/cancel", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId: cfg.sessionId, token: cfg.token }),
       });
-      const data = await res.json().catch(() => ({}));
-      if (data.redirectUrl) {
-        window.location.href = data.redirectUrl;
-        return;
-      }
-      window.close();
-    } catch (e) {
-      window.close();
+    } catch (ignore) {
+      /* still close / leave */
     }
+    if (window.opener && !window.opener.closed) {
+      try {
+        window.opener.postMessage(
+          { type: "quemsi-builder-cancelled", sessionId: cfg.sessionId },
+          "*"
+        );
+      } catch (ignore) {}
+      window.close();
+      return;
+    }
+    const returnUrl = (window.__BUILDER__ && window.__BUILDER__.returnUrl) || null;
+    if (returnUrl) {
+      window.location.href = returnUrl;
+      return;
+    }
+    window.close();
   });
 
   loadTables();
