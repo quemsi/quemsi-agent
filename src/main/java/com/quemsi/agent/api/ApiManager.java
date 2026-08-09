@@ -13,6 +13,7 @@ import com.quemsi.commons.util.Exceptions;
 import com.quemsi.model.api.ApiClient;
 import com.quemsi.model.dto.AgentModel;
 import com.quemsi.model.dto.DataVersion;
+import com.quemsi.model.dto.DownloadGrantPayload;
 import com.quemsi.model.dto.FlowExecution;
 import com.quemsi.model.dto.FlowExecution.FlowExecutionStep;
 import com.quemsi.model.dto.agent.AgentCommand;
@@ -129,6 +130,10 @@ public class ApiManager implements ApiClient{
     @Override
     public DataVersion findVersion(String flowName, Map<String, String> tags) {
         return quemsiApi.findVersion(this.authHeader(), flowName, tags);
+    }
+
+    public DownloadGrantPayload redeemDownloadGrant(String ticket) {
+        return quemsiApi.redeemDownloadGrant(this.authHeader(), ticket);
     }
     
     public QuemsiApi getQuemsiApi() {

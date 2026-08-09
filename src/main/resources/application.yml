@@ -2,8 +2,8 @@ server:
   port: 9082
   tomcat:
     threads:
-      max: 2
-      min-spare: 1
+      max: 16
+      min-spare: 2
 spring:
   application:
     name: quemsi-agent

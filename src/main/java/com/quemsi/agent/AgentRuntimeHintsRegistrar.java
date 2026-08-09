@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 
 import com.quemsi.agent.flow.TimerImpl;
 import com.quemsi.agent.config.TrustStoreSupport;
+import com.quemsi.agent.control.ControlDownloadController;
 import com.quemsi.commons.util.FileNameUtil;
 import com.quemsi.model.dto.AgentError;
 import com.quemsi.model.dto.AgentModel;
@@ -17,6 +18,7 @@ import com.quemsi.model.dto.DataType;
 import com.quemsi.model.dto.DataVersion;
 import com.quemsi.model.dto.DataVersionSummary;
 import com.quemsi.model.dto.DatasourceType;
+import com.quemsi.model.dto.DownloadGrantPayload;
 import com.quemsi.model.dto.FlowDetail;
 import com.quemsi.model.dto.FlowExecutionStatus;
 import com.quemsi.model.dto.MaskColumn;
@@ -161,6 +163,8 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(MaskColumn.class, MemberCategory.values())
             .registerType(MaskColumn.MaskColumnConfig.class, MemberCategory.values())
             .registerType(MaskType.class, MemberCategory.values())
+            .registerType(DownloadGrantPayload.class, MemberCategory.values())
+            .registerType(ControlDownloadController.class, MemberCategory.values())
             .registerType(TrustStoreSupport.class, MemberCategory.values())
             .registerType(java.security.KeyStore.class, MemberCategory.values())
             .registerType(javax.net.ssl.TrustManagerFactory.class, MemberCategory.values())
@@ -225,6 +229,7 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(MaskColumn.class)
             .registerType(MaskColumn.MaskColumnConfig.class)
             .registerType(MaskType.class)
+            .registerType(DownloadGrantPayload.class)
             ;
     }
 

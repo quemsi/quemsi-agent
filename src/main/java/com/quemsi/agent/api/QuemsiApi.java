@@ -15,6 +15,7 @@ import java.util.List;
 import com.quemsi.model.dto.AgentLogRecord;
 import com.quemsi.model.dto.AgentModel;
 import com.quemsi.model.dto.DataVersion;
+import com.quemsi.model.dto.DownloadGrantPayload;
 import com.quemsi.model.dto.FlowExecution;
 import com.quemsi.model.dto.FlowExecution.FlowExecutionStep;
 import com.quemsi.model.dto.agent.AgentCommand;
@@ -48,4 +49,8 @@ public interface QuemsiApi {
     
     @PostExchange("/api/agent/logs")
     void sendLogs(@RequestHeader(HttpHeaders.AUTHORIZATION) String token, @RequestBody List<AgentLogRecord> logs);
+
+    @PostExchange("/api/agent/download-grants/{token}/redeem")
+    DownloadGrantPayload redeemDownloadGrant(@RequestHeader(HttpHeaders.AUTHORIZATION) String auth,
+            @PathVariable("token") String token);
 }
