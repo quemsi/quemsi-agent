@@ -14,23 +14,49 @@
       <p id="allHint" class="meta hint" hidden></p>
     </header>
 
-    <section class="toolbar">
-      <label class="all-toggle">
-        <input type="checkbox" id="clearAll" />
-        <span id="allLabel">All tables</span>
-      </label>
-      <input type="search" id="filter" placeholder="Filter tables…" />
-      <button type="button" id="clearSelection" class="btn secondary">Clear selection</button>
+    <!-- ClearTables / DropTables -->
+    <section id="tablesMode" hidden>
+      <div class="toolbar">
+        <label class="all-toggle">
+          <input type="checkbox" id="clearAll" />
+          <span id="allLabel">All tables</span>
+        </label>
+        <input type="search" id="filter" placeholder="Filter tables…" />
+        <button type="button" id="clearSelection" class="btn secondary">Clear selection</button>
+      </div>
+      <p id="status" class="status">Loading tables…</p>
+      <div id="list" class="list" hidden>
+        <label class="row list-header">
+          <input type="checkbox" id="selectAll" />
+          <span>Select all</span>
+        </label>
+        <div id="listBody" class="list-body"></div>
+      </div>
     </section>
 
-    <p id="status" class="status">Loading tables…</p>
-    <div id="list" class="list" hidden>
-      <label class="row list-header">
-        <input type="checkbox" id="selectAll" />
-        <span>Select all</span>
-      </label>
-      <div id="listBody" class="list-body"></div>
-    </div>
+    <!-- MaskColumns -->
+    <section id="maskMode" hidden>
+      <p id="maskStatus" class="status">Loading tables…</p>
+      <div class="mask-layout">
+        <div class="mask-pane">
+          <input type="search" id="maskTableFilter" placeholder="Filter tables…" />
+          <div id="maskTableList" class="list mask-table-list"></div>
+        </div>
+        <div class="mask-pane">
+          <div class="mask-columns-header">
+            <strong id="maskTableTitle">Select a table</strong>
+            <label class="all-toggle" id="maskSelectAllWrap" hidden>
+              <input type="checkbox" id="maskSelectAllCols" />
+              <span>Select all columns</span>
+            </label>
+          </div>
+          <input type="search" id="maskColumnFilter" placeholder="Filter columns…" disabled />
+          <div id="maskColumnList" class="list mask-column-list"></div>
+        </div>
+      </div>
+      <p id="maskSelectionSummary" class="status">0 columns selected</p>
+      <button type="button" id="maskClearSelection" class="btn secondary">Clear selection</button>
+    </section>
 
     <footer class="actions">
       <button type="button" id="cancel" class="btn secondary">Cancel</button>

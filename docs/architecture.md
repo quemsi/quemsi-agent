@@ -129,7 +129,7 @@ Interactive user actions that must touch private storage or live schema go throu
 | **Agent download** | Browser opens `GET {controlBaseUrl}/control/download?ticket=…` |
 | **Redeem download** | Agent calls `POST /api/agent/download-grants/{token}/redeem` with its JWT, then streams via `Storage.getFiles` |
 | **Builder session** | User `POST /api/builder-sessions` → agent opens `GET /control/builder?ticket=…`, browses schema, submits config |
-| **Builder modes** | `CLEAR_TABLES`, `DROP_TABLES` (table multi-select + all). Extensible for MaskColumns / etc. |
+| **Builder modes** | `CLEAR_TABLES`, `DROP_TABLES`, `MASK_COLUMNS`. Extensible for UpdateSequences / etc. |
 
 ### Download
 
@@ -140,19 +140,22 @@ Agent  →  API (redeem)  →  stream file bytes to browser
 
 Progress uses the browser’s native download UI (`Content-Disposition` + `Content-Length`).
 
-### Schema builder (ClearTables / DropTables)
+### Schema builder (ClearTables / DropTables / MaskColumns)
 
 ```
 Flow editor  →  API create builder session  →  popup agent builder
-Agent redeem open ticket  →  list tables via DataSourceFactory.getDbModel
+Agent redeem open ticket  →  list tables (and columns for MASK_COLUMNS) via DataSourceFactory.getDbModel
 Apply  →  API stores result_config  →  popup closes / postMessage
 Flow editor fetches GET /api/builder-sessions/{id}/result  →  merge into step
 ```
 
 - Session TTL ~30 minutes; result pickup ~10 minutes after complete.
-- Only **configuration** returns to quemsi.com (e.g. `{ all, tables }`) — not row data.
+- Only **configuration** returns to quemsi.com — not row data.
+  - Clear/Drop: `{ all, tables }`
+  - Mask: `{ columns: [{ schema, table, column }] }` (mask type/char stay in the flow editor)
 - `DROP_TABLES` with `all: true` means drop tables plus views/sequences/triggers/functions/etc. at runtime; selective mode drops listed tables only.
-- Agent UI is static HTML/JS under `classpath:/control-builder/` (mode-aware labels).
+- `MASK_COLUMNS` uses a **schema source** datasource only for browsing; runtime still masks from the backup `db-model.json`.
+- Agent UI is static HTML/JS under `classpath:/control-builder/` (mode-aware).
 
 **Follow-up:** browser-side availability check against `controlBaseUrl` (distinct from long-poll ONLINE).
 
@@ -290,7 +293,7 @@ For interactive actions that must stay in the customer environment (download, la
 1. `AgentCoordinator` — lifecycle + command dispatch
 2. `QuemsiApi` / `AgentApiController` — protocol
 3. `control/ControlDownloadController` — ticketed file download
-4. `control/ControlBuilderController` — schema builder sessions (ClearTables / DropTables)
+4. `control/ControlBuilderController` — schema builder sessions (ClearTables / DropTables / MaskColumns)
 5. `AgentModel` + `AgentCommand` — shared contract
 6. `FlowManager` + `StepFactory` — pipeline engine
 7. `SpringBeanManager` — dynamic resource registration

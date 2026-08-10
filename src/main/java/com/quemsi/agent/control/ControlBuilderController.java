@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +36,9 @@ import com.quemsi.model.dto.builder.BuilderMode;
 import com.quemsi.model.dto.builder.BuilderSessionOpenPayload;
 import com.quemsi.model.dto.builder.BuilderSessionSubmitRequest;
 import com.quemsi.model.flow.db.DataSourceFactory;
+import com.quemsi.model.flow.db.sql.DbColumn;
 import com.quemsi.model.flow.db.sql.DbModel;
+import com.quemsi.model.flow.db.sql.DbTable;
 
 @RestController
 @RequestMapping("/control/builder")
@@ -86,18 +89,55 @@ public class ControlBuilderController {
     public Map<String, Object> tables(@RequestParam("sessionId") String sessionId,
             @RequestParam("token") String token) {
         ActiveSession session = sessionRegistry.require(sessionId, token);
-        if (session.mode() != BuilderMode.CLEAR_TABLES && session.mode() != BuilderMode.DROP_TABLES) {
+        if (session.mode() != BuilderMode.CLEAR_TABLES
+                && session.mode() != BuilderMode.DROP_TABLES
+                && session.mode() != BuilderMode.MASK_COLUMNS) {
             throw Exceptions.badRequest("builder-mode-unsupported").withExtra("mode", session.mode()).get();
         }
-        if (session.cachedTables() != null) {
-            return Map.of("tables", session.cachedTables());
+        ensureModel(session);
+        ActiveSession refreshed = sessionRegistry.require(sessionId, token);
+        List<String> list = refreshed.cachedTables() != null ? refreshed.cachedTables() : List.of();
+        return Map.of("tables", list);
+    }
+
+    @GetMapping("/api/columns")
+    public Map<String, Object> columns(@RequestParam("sessionId") String sessionId,
+            @RequestParam("token") String token,
+            @RequestParam("table") String table) {
+        ActiveSession session = sessionRegistry.require(sessionId, token);
+        if (session.mode() != BuilderMode.MASK_COLUMNS) {
+            throw Exceptions.badRequest("builder-mode-unsupported").withExtra("mode", session.mode()).get();
+        }
+        if (StringUtils.isEmptyOrNull(table)) {
+            throw Exceptions.badRequest("builder-table-required").get();
+        }
+        DbModel model = ensureModel(session);
+        DbTable dbTable = model.findTable(table)
+                .orElseThrow(Exceptions.notFound("builder-table-not-found").withExtra("table", table).supplier());
+        List<String> columns = new ArrayList<>();
+        for (DbColumn col : dbTable.orderedColumns()) {
+            if (col != null && col.getName() != null) {
+                columns.add(col.getName());
+            }
+        }
+        return Map.of(
+                "table", dbTable.qualifiedName(),
+                "schema", dbTable.getSchema() != null ? dbTable.getSchema() : "",
+                "name", dbTable.getName() != null ? dbTable.getName() : "",
+                "columns", columns);
+    }
+
+    private DbModel ensureModel(ActiveSession session) {
+        if (session.cachedModel() != null) {
+            return session.cachedModel();
         }
         DataSourceFactory ds = resolveDatasource(session.datasourceName());
         DbModel model = ds.getDbModel();
         LinkedList<String> tables = model.orderedTableNames();
         List<String> list = tables != null ? List.copyOf(tables) : List.of();
-        sessionRegistry.updateCache(sessionId, list, model);
-        return Map.of("tables", list);
+        sessionRegistry.updateCache(session.sessionId(), list, model);
+        ActiveSession refreshed = sessionRegistry.require(session.sessionId(), session.browserToken());
+        return refreshed.cachedModel() != null ? refreshed.cachedModel() : model;
     }
 
     @PostMapping("/api/apply")

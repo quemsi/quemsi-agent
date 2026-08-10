@@ -16,7 +16,7 @@ body {
   color: var(--text);
 }
 .wrap {
-  max-width: 720px;
+  max-width: 960px;
   margin: 2rem auto;
   padding: 1.5rem;
   background: var(--card);
@@ -123,5 +123,49 @@ body {
   opacity: 0.45;
   pointer-events: none;
 }
+.mask-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+@media (max-width: 720px) {
+  .mask-layout { grid-template-columns: 1fr; }
+}
+.mask-pane input[type="search"] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+.mask-table-list,
+.mask-column-list {
+  max-height: 360px;
+  margin-top: 0;
+}
+.mask-columns-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+  min-height: 1.5rem;
+}
+.row.table-item.active {
+  background: #e7f3ee;
+  font-weight: 600;
+}
+.row.table-item .badge {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+#maskClearSelection {
+  margin-top: 0.75rem;
+}
+
 
 
