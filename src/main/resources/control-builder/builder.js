@@ -10,9 +10,10 @@
     datasource: document.getElementById("datasource"),
     status: document.getElementById("status"),
     list: document.getElementById("list"),
+    listBody: document.getElementById("listBody"),
     filter: document.getElementById("filter"),
     clearAll: document.getElementById("clearAll"),
-    selectVisible: document.getElementById("selectVisible"),
+    selectAll: document.getElementById("selectAll"),
     clearSelection: document.getElementById("clearSelection"),
     apply: document.getElementById("apply"),
     cancel: document.getElementById("cancel"),
@@ -49,17 +50,42 @@
     els.status.classList.toggle("error", !!isError);
   }
 
+  function visibleNames() {
+    const q = (els.filter.value || "").trim().toLowerCase();
+    return tables.filter((name) => !q || name.toLowerCase().includes(q));
+  }
+
+  function syncSelectAllCheckbox() {
+    if (!els.selectAll) return;
+    const visible = visibleNames();
+    if (!visible.length) {
+      els.selectAll.checked = false;
+      els.selectAll.indeterminate = false;
+      return;
+    }
+    const selectedVisible = visible.filter((name) => selected.has(name)).length;
+    els.selectAll.checked = selectedVisible === visible.length;
+    els.selectAll.indeterminate = selectedVisible > 0 && selectedVisible < visible.length;
+  }
+
   function syncAllMode() {
     const all = els.clearAll.checked;
     els.list.classList.toggle("disabled", all);
-    els.selectVisible.disabled = all;
     els.clearSelection.disabled = all;
     els.filter.disabled = all;
+    if (els.selectAll) {
+      els.selectAll.disabled = all;
+    }
+  }
+
+  function updateStatusCount() {
+    const n = selected.size;
+    setStatus(tables.length + " table(s) · " + n + " selected");
   }
 
   function render() {
     const q = (els.filter.value || "").trim().toLowerCase();
-    els.list.innerHTML = "";
+    els.listBody.innerHTML = "";
     tables.forEach((name) => {
       const row = document.createElement("label");
       row.className = "row";
@@ -73,15 +99,19 @@
       cb.addEventListener("change", () => {
         if (cb.checked) selected.add(name);
         else selected.delete(name);
+        syncSelectAllCheckbox();
+        updateStatusCount();
       });
       const span = document.createElement("span");
       span.textContent = name;
       row.appendChild(cb);
       row.appendChild(span);
-      els.list.appendChild(row);
+      els.listBody.appendChild(row);
     });
     els.list.hidden = false;
+    syncSelectAllCheckbox();
     syncAllMode();
+    updateStatusCount();
   }
 
   async function loadTables() {
@@ -98,7 +128,6 @@
       }
       const data = await res.json();
       tables = Array.isArray(data.tables) ? data.tables : [];
-      setStatus(tables.length + " table(s)");
       render();
     } catch (e) {
       setStatus(e.message || String(e), true);
@@ -107,11 +136,14 @@
 
   els.filter.addEventListener("input", render);
   els.clearAll.addEventListener("change", syncAllMode);
-  els.selectVisible.addEventListener("click", () => {
-    document.querySelectorAll(".row:not(.hidden) input[type=checkbox]").forEach((cb) => {
-      cb.checked = true;
-      selected.add(cb.value);
-    });
+  els.selectAll.addEventListener("change", () => {
+    const visible = visibleNames();
+    if (els.selectAll.checked) {
+      visible.forEach((name) => selected.add(name));
+    } else {
+      visible.forEach((name) => selected.delete(name));
+    }
+    render();
   });
   els.clearSelection.addEventListener("click", () => {
     selected.clear();

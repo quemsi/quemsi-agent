@@ -20,12 +20,17 @@
         <span id="allLabel">All tables</span>
       </label>
       <input type="search" id="filter" placeholder="Filter tables…" />
-      <button type="button" id="selectVisible" class="btn secondary">Select visible</button>
       <button type="button" id="clearSelection" class="btn secondary">Clear selection</button>
     </section>
 
     <p id="status" class="status">Loading tables…</p>
-    <div id="list" class="list" hidden></div>
+    <div id="list" class="list" hidden>
+      <label class="row list-header">
+        <input type="checkbox" id="selectAll" />
+        <span>Select all</span>
+      </label>
+      <div id="listBody" class="list-body"></div>
+    </div>
 
     <footer class="actions">
       <button type="button" id="cancel" class="btn secondary">Cancel</button>
