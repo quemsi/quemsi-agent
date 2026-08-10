@@ -129,8 +129,15 @@ body {
   gap: 1rem;
   margin-top: 0.75rem;
 }
-@media (max-width: 720px) {
-  .mask-layout { grid-template-columns: 1fr; }
+.seq-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+@media (max-width: 900px) {
+  .mask-layout,
+  .seq-layout { grid-template-columns: 1fr; }
 }
 .mask-pane input[type="search"] {
   width: 100%;

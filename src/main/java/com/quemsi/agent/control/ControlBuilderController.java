@@ -38,6 +38,7 @@ import com.quemsi.model.dto.builder.BuilderSessionSubmitRequest;
 import com.quemsi.model.flow.db.DataSourceFactory;
 import com.quemsi.model.flow.db.sql.DbColumn;
 import com.quemsi.model.flow.db.sql.DbModel;
+import com.quemsi.model.flow.db.sql.DbSequence;
 import com.quemsi.model.flow.db.sql.DbTable;
 
 @RestController
@@ -91,7 +92,8 @@ public class ControlBuilderController {
         ActiveSession session = sessionRegistry.require(sessionId, token);
         if (session.mode() != BuilderMode.CLEAR_TABLES
                 && session.mode() != BuilderMode.DROP_TABLES
-                && session.mode() != BuilderMode.MASK_COLUMNS) {
+                && session.mode() != BuilderMode.MASK_COLUMNS
+                && session.mode() != BuilderMode.UPDATE_SEQUENCES) {
             throw Exceptions.badRequest("builder-mode-unsupported").withExtra("mode", session.mode()).get();
         }
         ensureModel(session);
@@ -105,7 +107,8 @@ public class ControlBuilderController {
             @RequestParam("token") String token,
             @RequestParam("table") String table) {
         ActiveSession session = sessionRegistry.require(sessionId, token);
-        if (session.mode() != BuilderMode.MASK_COLUMNS) {
+        if (session.mode() != BuilderMode.MASK_COLUMNS
+                && session.mode() != BuilderMode.UPDATE_SEQUENCES) {
             throw Exceptions.badRequest("builder-mode-unsupported").withExtra("mode", session.mode()).get();
         }
         if (StringUtils.isEmptyOrNull(table)) {
@@ -125,6 +128,29 @@ public class ControlBuilderController {
                 "schema", dbTable.getSchema() != null ? dbTable.getSchema() : "",
                 "name", dbTable.getName() != null ? dbTable.getName() : "",
                 "columns", columns);
+    }
+
+    @GetMapping("/api/sequences")
+    public Map<String, Object> sequences(@RequestParam("sessionId") String sessionId,
+            @RequestParam("token") String token) {
+        ActiveSession session = sessionRegistry.require(sessionId, token);
+        if (session.mode() != BuilderMode.UPDATE_SEQUENCES) {
+            throw Exceptions.badRequest("builder-mode-unsupported").withExtra("mode", session.mode()).get();
+        }
+        DbModel model = ensureModel(session);
+        List<Map<String, String>> sequences = new ArrayList<>();
+        if (model.getSequences() != null) {
+            for (DbSequence seq : model.getSequences()) {
+                if (seq == null || seq.getName() == null) {
+                    continue;
+                }
+                sequences.add(Map.of(
+                        "qualified", seq.qualifiedName(),
+                        "schema", seq.getSchema() != null ? seq.getSchema() : "",
+                        "name", seq.getName()));
+            }
+        }
+        return Map.of("sequences", sequences);
     }
 
     private DbModel ensureModel(ActiveSession session) {

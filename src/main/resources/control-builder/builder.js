@@ -3,6 +3,7 @@
   const mode = cfg.mode || "CLEAR_TABLES";
   const isDrop = mode === "DROP_TABLES";
   const isMask = mode === "MASK_COLUMNS";
+  const isSeq = mode === "UP" + "DATE_SEQUENCES";
 
   const els = {
     title: document.getElementById("title"),
@@ -11,6 +12,7 @@
     datasource: document.getElementById("datasource"),
     tablesMode: document.getElementById("tablesMode"),
     maskMode: document.getElementById("maskMode"),
+    seqMode: document.getElementById("seqMode"),
     status: document.getElementById("status"),
     list: document.getElementById("list"),
     listBody: document.getElementById("listBody"),
@@ -30,6 +32,16 @@
     maskColumnList: document.getElementById("maskColumnList"),
     maskSelectionSummary: document.getElementById("maskSelectionSummary"),
     maskClearSelection: document.getElementById("maskClearSelection"),
+    seqStatus: document.getElementById("seqStatus"),
+    seqFilter: document.getElementById("seqFilter"),
+    seqList: document.getElementById("seqList"),
+    seqTableFilter: document.getElementById("seqTableFilter"),
+    seqTableList: document.getElementById("seqTableList"),
+    seqColumnTitle: document.getElementById("seqColumnTitle"),
+    seqColumnFilter: document.getElementById("seqColumnFilter"),
+    seqColumnList: document.getElementById("seqColumnList"),
+    seqSelectionSummary: document.getElementById("seqSelectionSummary"),
+    seqClearSelection: document.getElementById("seqClearSelection"),
   };
 
   els.datasource.textContent = cfg.datasource || "—";
@@ -87,7 +99,11 @@
       }
       window.close();
     } catch (e) {
-      setStatus(isMask ? els.maskStatus : els.status, e.message || String(e), true);
+      setStatus(
+        isMask ? els.maskStatus : isSeq ? els.seqStatus : els.status,
+        e.message || String(e),
+        true
+      );
       els.apply.disabled = false;
     }
   }
@@ -462,8 +478,255 @@
     })();
   }
 
+  /* ---------- UpdateSequences ---------- */
+  function initSeqMode() {
+    document.title = "UpdateSequences — Quemsi Agent";
+    els.title.textContent = "Update sequences";
+    els.allHint.hidden = false;
+    els.allHint.textContent =
+      "Map each sequence to the table column that should drive its next value. Template-based updates stay in the flow editor.";
+    els.seqMode.hidden = false;
+
+    let sequences = [];
+    let tables = [];
+    const selected = new Map();
+    let activeSeq = null;
+    let activeTable = null;
+    let activeTableMeta = { schema: "", name: "", columns: [] };
+    const columnCache = new Map();
+
+    if (Array.isArray(draft.customMappings)) {
+      draft.customMappings.forEach((m) => {
+        if (!m || !m.sequence || !m.table || !m.column) return;
+        const schema = m.schema != null ? String(m.schema) : "";
+        const sequence = String(m.sequence);
+        const table = String(m.table);
+        const column = String(m.column);
+        selected.set(mapKey(sequence, schema, table, column), {
+          sequence,
+          schema,
+          table,
+          column,
+        });
+      });
+    }
+
+    function mapKey(sequence, schema, table, column) {
+      return [sequence, schema || "", table, column].join("\0");
+    }
+
+    function splitQualified(qualified) {
+      const i = qualified.indexOf(".");
+      if (i < 0) return { schema: "", name: qualified };
+      return { schema: qualified.slice(0, i), name: qualified.slice(i + 1) };
+    }
+
+    function countForSeq(seq) {
+      let n = 0;
+      selected.forEach((v) => {
+        if (v.sequence === seq.name && String(v.schema || "") === String(seq.schema || "")) n += 1;
+      });
+      return n;
+    }
+
+    function updateSummary() {
+      els.seqSelectionSummary.textContent = selected.size + " mapping(s)";
+    }
+
+    function renderSequences() {
+      const q = (els.seqFilter.value || "").trim().toLowerCase();
+      els.seqList.innerHTML = "";
+      sequences.forEach((seq) => {
+        const label = seq.qualified || seq.name;
+        if (q && !label.toLowerCase().includes(q)) return;
+        const row = document.createElement("div");
+        const active =
+          activeSeq &&
+          activeSeq.name === seq.name &&
+          String(activeSeq.schema || "") === String(seq.schema || "");
+        row.className = "row table-item" + (active ? " active" : "");
+        row.tabIndex = 0;
+        const span = document.createElement("span");
+        span.textContent = label;
+        const badge = document.createElement("span");
+        badge.className = "badge";
+        const n = countForSeq(seq);
+        badge.textContent = n ? n + " mapped" : "";
+        row.appendChild(span);
+        row.appendChild(badge);
+        row.addEventListener("click", () => {
+          activeSeq = seq;
+          renderSequences();
+          renderColumns();
+        });
+        els.seqList.appendChild(row);
+      });
+      updateSummary();
+    }
+
+    function renderTables() {
+      const q = (els.seqTableFilter.value || "").trim().toLowerCase();
+      els.seqTableList.innerHTML = "";
+      tables.forEach((qualified) => {
+        if (q && !qualified.toLowerCase().includes(q)) return;
+        const row = document.createElement("div");
+        row.className = "row table-item" + (activeTable === qualified ? " active" : "");
+        row.tabIndex = 0;
+        const span = document.createElement("span");
+        span.textContent = qualified;
+        row.appendChild(span);
+        row.addEventListener("click", () => selectTable(qualified));
+        els.seqTableList.appendChild(row);
+      });
+    }
+
+    function renderColumns() {
+      els.seqColumnList.innerHTML = "";
+      if (!activeTable) {
+        els.seqColumnTitle.textContent = "Column";
+        els.seqColumnFilter.disabled = true;
+        return;
+      }
+      if (!activeSeq) {
+        els.seqColumnTitle.textContent = "Select a sequence first";
+        els.seqColumnFilter.disabled = true;
+        return;
+      }
+      els.seqColumnTitle.textContent = activeTable + " → " + (activeSeq.qualified || activeSeq.name);
+      els.seqColumnFilter.disabled = false;
+      const q = (els.seqColumnFilter.value || "").trim().toLowerCase();
+      const tableSchema = activeTableMeta.schema || "";
+      const tableName = activeTableMeta.name || splitQualified(activeTable).name;
+      const schema =
+        activeSeq.schema != null && String(activeSeq.schema) !== ""
+          ? String(activeSeq.schema)
+          : tableSchema;
+      (activeTableMeta.columns || []).forEach((col) => {
+        if (q && !col.toLowerCase().includes(q)) return;
+        const row = document.createElement("label");
+        row.className = "row";
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        const key = mapKey(activeSeq.name, schema, tableName, col);
+        cb.checked = selected.has(key);
+        cb.addEventListener("change", () => {
+          if (cb.checked) {
+            selected.set(key, {
+              sequence: activeSeq.name,
+              schema: schema,
+              table: tableName,
+              column: col,
+            });
+          } else {
+            selected.delete(key);
+          }
+          renderSequences();
+          updateSummary();
+        });
+        const span = document.createElement("span");
+        span.textContent = col;
+        row.appendChild(cb);
+        row.appendChild(span);
+        els.seqColumnList.appendChild(row);
+      });
+      updateSummary();
+    }
+
+    async function selectTable(qualified) {
+      activeTable = qualified;
+      renderTables();
+      try {
+        if (columnCache.has(qualified)) {
+          activeTableMeta = columnCache.get(qualified);
+          renderColumns();
+          return;
+        }
+        setStatus(els.seqStatus, "Loading columns for " + qualified + "…");
+        const res = await fetch(
+          "/control/builder/api/columns?" + authQuery() + "&table=" + encodeURIComponent(qualified)
+        );
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body.messageId || "Failed to load columns (" + res.status + ")");
+        }
+        const data = await res.json();
+        activeTableMeta = {
+          schema: data.schema != null ? String(data.schema) : splitQualified(qualified).schema,
+          name: data.name != null ? String(data.name) : splitQualified(qualified).name,
+          columns: Array.isArray(data.columns) ? data.columns : [],
+        };
+        columnCache.set(qualified, activeTableMeta);
+        setStatus(
+          els.seqStatus,
+          sequences.length + " sequence(s) · " + tables.length + " table(s)"
+        );
+        renderColumns();
+      } catch (e) {
+        setStatus(els.seqStatus, e.message || String(e), true);
+      }
+    }
+
+    els.seqFilter.addEventListener("input", renderSequences);
+    els.seqTableFilter.addEventListener("input", renderTables);
+    els.seqColumnFilter.addEventListener("input", renderColumns);
+    els.seqClearSelection.addEventListener("click", () => {
+      selected.clear();
+      renderSequences();
+      renderColumns();
+      updateSummary();
+    });
+    els.apply.addEventListener("click", () => {
+      postApply({ customMappings: Array.from(selected.values()) });
+    });
+
+    (async function load() {
+      try {
+        const [seqRes, tableRes] = await Promise.all([
+          fetch("/control/builder/api/sequences?" + authQuery()),
+          fetch("/control/builder/api/tables?" + authQuery()),
+        ]);
+        if (!seqRes.ok) {
+          const body = await seqRes.json().catch(() => ({}));
+          throw new Error(body.messageId || "Failed to load sequences (" + seqRes.status + ")");
+        }
+        if (!tableRes.ok) {
+          const body = await tableRes.json().catch(() => ({}));
+          throw new Error(body.messageId || "Failed to load tables (" + tableRes.status + ")");
+        }
+        const seqData = await seqRes.json();
+        const tableData = await tableRes.json();
+        sequences = Array.isArray(seqData.sequences) ? seqData.sequences : [];
+        tables = Array.isArray(tableData.tables) ? tableData.tables : [];
+        setStatus(
+          els.seqStatus,
+          sequences.length + " sequence(s) · " + tables.length + " table(s)"
+        );
+        if (!sequences.length) {
+          setStatus(
+            els.seqStatus,
+            "No sequences found (MySQL/MongoDB do not use sequences).",
+            true
+          );
+        }
+        renderSequences();
+        renderTables();
+        if (sequences.length) {
+          activeSeq = sequences[0];
+          renderSequences();
+        }
+        if (tables.length) {
+          await selectTable(tables[0]);
+        }
+      } catch (e) {
+        setStatus(els.seqStatus, e.message || String(e), true);
+      }
+    })();
+  }
+
   if (isMask) {
     initMaskMode();
+  } else if (isSeq) {
+    initSeqMode();
   } else {
     initTablesMode();
   }
