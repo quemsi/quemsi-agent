@@ -3,20 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ClearTables — Quemsi Agent</title>
+  <title>Schema builder — Quemsi Agent</title>
   <link rel="stylesheet" href="/control/builder/static/builder.css" />
 </head>
 <body>
   <main class="wrap">
     <header class="header">
-      <h1>Clear tables</h1>
+      <h1 id="title">Configure tables</h1>
       <p class="meta">Datasource: <strong id="datasource"></strong></p>
+      <p id="allHint" class="meta hint" hidden></p>
     </header>
 
     <section class="toolbar">
       <label class="all-toggle">
         <input type="checkbox" id="clearAll" />
-        Clear all tables
+        <span id="allLabel">All tables</span>
       </label>
       <input type="search" id="filter" placeholder="Filter tables…" />
       <button type="button" id="selectVisible" class="btn secondary">Select visible</button>

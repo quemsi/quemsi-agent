@@ -32,6 +32,11 @@ body {
   color: var(--muted);
   font-size: 0.9rem;
 }
+.meta.hint {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
 .toolbar {
   display: flex;
   flex-wrap: wrap;

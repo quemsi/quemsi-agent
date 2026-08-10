@@ -86,7 +86,7 @@ public class ControlBuilderController {
     public Map<String, Object> tables(@RequestParam("sessionId") String sessionId,
             @RequestParam("token") String token) {
         ActiveSession session = sessionRegistry.require(sessionId, token);
-        if (session.mode() != BuilderMode.CLEAR_TABLES) {
+        if (session.mode() != BuilderMode.CLEAR_TABLES && session.mode() != BuilderMode.DROP_TABLES) {
             throw Exceptions.badRequest("builder-mode-unsupported").withExtra("mode", session.mode()).get();
         }
         if (session.cachedTables() != null) {

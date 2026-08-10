@@ -1,6 +1,12 @@
 (function () {
   const cfg = window.__BUILDER__ || {};
+  const mode = cfg.mode || "CLEAR_TABLES";
+  const isDrop = mode === "DROP_TABLES";
+
   const els = {
+    title: document.getElementById("title"),
+    allLabel: document.getElementById("allLabel"),
+    allHint: document.getElementById("allHint"),
     datasource: document.getElementById("datasource"),
     status: document.getElementById("status"),
     list: document.getElementById("list"),
@@ -11,6 +17,19 @@
     apply: document.getElementById("apply"),
     cancel: document.getElementById("cancel"),
   };
+
+  document.title = (isDrop ? "DropTables" : "ClearTables") + " — Quemsi Agent";
+  if (els.title) {
+    els.title.textContent = isDrop ? "Drop tables" : "Clear tables";
+  }
+  if (els.allLabel) {
+    els.allLabel.textContent = isDrop ? "Drop all (tables, views, sequences, …)" : "Clear all tables";
+  }
+  if (els.allHint && isDrop) {
+    els.allHint.hidden = false;
+    els.allHint.textContent =
+      "When “Drop all” is on, the step also removes views, sequences, triggers, functions, and related schema objects at runtime.";
+  }
 
   els.datasource.textContent = cfg.datasource || "—";
 
@@ -122,7 +141,12 @@
       if (window.opener && !window.opener.closed) {
         try {
           window.opener.postMessage(
-            { type: "quemsi-builder-done", sessionId: cfg.sessionId },
+            {
+              type: "quemsi-builder-done",
+              sessionId: cfg.sessionId,
+              mode: mode,
+              resultConfig: config,
+            },
             "*"
           );
         } catch (ignore) {}
