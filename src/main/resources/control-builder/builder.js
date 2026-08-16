@@ -194,7 +194,12 @@
 
     function visibleNames() {
       const q = (els.filter.value || "").trim().toLowerCase();
-      return tables.filter((name) => !q || name.toLowerCase().includes(q));
+      return tables
+        .filter((name) => !q || name.toLowerCase().includes(q))
+        .slice()
+        .sort((a, b) =>
+          String(a).localeCompare(String(b), undefined, { sensitivity: "base", numeric: true })
+        );
     }
 
     function syncSelectAllCheckbox() {
@@ -224,7 +229,10 @@
     function render() {
       const q = (els.filter.value || "").trim().toLowerCase();
       els.listBody.innerHTML = "";
-      tables.forEach((name) => {
+      const sorted = tables.slice().sort((a, b) =>
+        String(a).localeCompare(String(b), undefined, { sensitivity: "base", numeric: true })
+      );
+      sorted.forEach((name) => {
         const row = document.createElement("label");
         row.className = "row";
         if (q && !name.toLowerCase().includes(q)) {
