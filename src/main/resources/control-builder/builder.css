@@ -174,9 +174,10 @@ body {
   margin-top: 0;
 }
 
-/* Full-height builder shell (Subset + MaskColumns) */
+/* Full-height builder shell (Subset + MaskColumns + Clear/Drop) */
 .wrap.subset-wide,
-.wrap.mask-wide {
+.wrap.mask-wide,
+.wrap.tables-wide {
   max-width: 1340px;
   width: calc(100% - 2rem);
   margin: 1rem auto;
@@ -189,21 +190,52 @@ body {
 }
 html:has(.wrap.subset-wide),
 html:has(.wrap.mask-wide),
+html:has(.wrap.tables-wide),
 body:has(.wrap.subset-wide),
-body:has(.wrap.mask-wide) {
+body:has(.wrap.mask-wide),
+body:has(.wrap.tables-wide) {
   height: 100%;
   overflow: hidden;
 }
 .wrap.subset-wide > .header,
 .wrap.mask-wide > .header,
+.wrap.tables-wide > .header,
 .wrap.subset-wide > #subsetStatus,
 .wrap.mask-wide > #maskStatus {
   flex: 0 0 auto;
 }
 .wrap.subset-wide > .actions,
-.wrap.mask-wide > .actions {
+.wrap.mask-wide > .actions,
+.wrap.tables-wide > .actions {
   flex: 0 0 auto;
   margin-top: 0.75rem;
+}
+
+#tablesMode:not([hidden]) {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+#tablesMode > .toolbar,
+#tablesMode > .status {
+  flex: 0 0 auto;
+}
+.wrap.tables-wide #list.tables-list {
+  flex: 1 1 auto;
+  max-height: none;
+  min-height: 0;
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+}
+.wrap.tables-wide #list.tables-list .list-header {
+  flex: 0 0 auto;
+}
+.wrap.tables-wide #list.tables-list .list-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
 }
 
 #maskMode:not([hidden]) {

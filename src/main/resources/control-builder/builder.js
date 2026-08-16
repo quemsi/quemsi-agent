@@ -180,6 +180,7 @@
         "When “Drop all” is on, the step also removes views, sequences, triggers, functions, and related schema objects at runtime.";
     }
     els.tablesMode.hidden = false;
+    document.querySelector(".wrap")?.classList.add("tables-wide");
 
     let tables = [];
     const selected = new Set();
