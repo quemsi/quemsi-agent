@@ -144,7 +144,7 @@ Progress uses the browser’s native download UI (`Content-Disposition` + `Conte
 
 ```
 Flow editor  →  API create builder session  →  popup agent builder
-Agent redeem open ticket  →  list tables/columns/sequences via DataSourceFactory.getDbModel
+Agent redeem open ticket  →  list tables/columns/sequences from DbModel
 Apply  →  API stores result_config  →  popup closes / postMessage
 Flow editor fetches GET /api/builder-sessions/{id}/result  →  merge into step
 ```
@@ -155,7 +155,7 @@ Flow editor fetches GET /api/builder-sessions/{id}/result  →  merge into step
   - Mask: `{ columns: [{ schema, table, column }] }` (mask type/char stay in the flow editor)
   - Sequences: `{ customMappings: [{ sequence, schema, table, column }] }` (template/column stay in the flow editor)
 - `DROP_TABLES` with `all: true` means drop tables plus views/sequences/triggers/functions/etc. at runtime; selective mode drops listed tables only.
-- `MASK_COLUMNS` uses a **schema source** datasource only for browsing; runtime still masks from the backup `db-model.json`.
+- `MASK_COLUMNS` schema browser infers source from the flow’s **From** step: `StoredData` → resolve that version’s archive and load `db-model.json`; `RdbmsBackup` → live From datasource browse. Runtime always masks using archive `db-model.json`.
 - Agent UI is static HTML/JS under `classpath:/control-builder/` (mode-aware).
 
 **Follow-up:** browser-side availability check against `controlBaseUrl` (distinct from long-poll ONLINE).

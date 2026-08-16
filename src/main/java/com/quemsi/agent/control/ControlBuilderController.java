@@ -29,17 +29,31 @@ import org.springframework.web.util.UriComponentsBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.quemsi.agent.api.ApiManager;
 import com.quemsi.agent.control.BuilderSessionRegistry.ActiveSession;
+import com.quemsi.agent.service.SpringBeanManager;
 import com.quemsi.commons.util.BaseRuntimeException;
 import com.quemsi.commons.util.Exceptions;
 import com.quemsi.commons.util.StringUtils;
+import com.quemsi.model.dto.DataFile;
 import com.quemsi.model.dto.builder.BuilderMode;
+import com.quemsi.model.dto.builder.BuilderSchemaSource;
 import com.quemsi.model.dto.builder.BuilderSessionOpenPayload;
 import com.quemsi.model.dto.builder.BuilderSessionSubmitRequest;
+import com.quemsi.model.flow.DataPackage;
+import com.quemsi.model.flow.DataPackageFile;
+import com.quemsi.model.flow.Flow;
+import com.quemsi.model.flow.FlowContext;
 import com.quemsi.model.flow.db.DataSourceFactory;
 import com.quemsi.model.flow.db.sql.DbColumn;
 import com.quemsi.model.flow.db.sql.DbModel;
 import com.quemsi.model.flow.db.sql.DbSequence;
 import com.quemsi.model.flow.db.sql.DbTable;
+import com.quemsi.model.flow.file.ZipBackupArchive;
+import com.quemsi.model.flow.out.Storage;
+import com.quemsi.model.util.CommonConstants;
+import com.quemsi.model.util.QuemsiTemp;
+
+import java.io.File;
+import java.nio.file.Path;
 
 @RestController
 @RequestMapping("/control/builder")
@@ -53,6 +67,8 @@ public class ControlBuilderController {
     private ObjectMapper objectMapper;
     @Autowired
     private org.springframework.context.ApplicationContext applicationContext;
+    @Autowired
+    private SpringBeanManager beanManager;
 
     @GetMapping
     public ResponseEntity<String> open(@RequestParam("ticket") String ticket) throws IOException {
@@ -72,11 +88,18 @@ public class ControlBuilderController {
         Instant expiresAt = Instant.now().plus(30, ChronoUnit.MINUTES);
         ActiveSession session = sessionRegistry.putFromOpen(payload, expiresAt);
 
+        String schemaLabel = session.datasourceName() != null ? session.datasourceName() : "";
+        if (session.schemaSource() == BuilderSchemaSource.DATA_VERSION) {
+            String file = session.fileName() != null ? session.fileName() : "archive";
+            String storage = session.storageName() != null ? session.storageName() : "";
+            schemaLabel = storage.isBlank() ? file : storage + " / " + file;
+        }
+
         String html = loadTemplate("control-builder/index.html");
         html = html.replace("{{SESSION_ID}}", escapeHtml(session.sessionId()))
                 .replace("{{BROWSER_TOKEN}}", escapeHtml(session.browserToken()))
                 .replace("{{MODE}}", escapeHtml(session.mode() != null ? session.mode().name() : ""))
-                .replace("{{DATASOURCE}}", escapeHtml(session.datasourceName() != null ? session.datasourceName() : ""))
+                .replace("{{DATASOURCE}}", escapeHtml(schemaLabel))
                 .replace("{{DRAFT_JSON}}", escapeJsString(objectMapper.writeValueAsString(
                         session.draftConfig() != null ? session.draftConfig() : Map.of())));
 
@@ -157,6 +180,9 @@ public class ControlBuilderController {
         if (session.cachedModel() != null) {
             return session.cachedModel();
         }
+        if (session.schemaSource() == BuilderSchemaSource.DATA_VERSION) {
+            return ensureModelFromArchive(session);
+        }
         DataSourceFactory ds = resolveDatasource(session.datasourceName());
         DbModel model = ds.getDbModel();
         LinkedList<String> tables = model.orderedTableNames();
@@ -164,6 +190,94 @@ public class ControlBuilderController {
         sessionRegistry.updateCache(session.sessionId(), list, model);
         ActiveSession refreshed = sessionRegistry.require(session.sessionId(), session.browserToken());
         return refreshed.cachedModel() != null ? refreshed.cachedModel() : model;
+    }
+
+    private DbModel ensureModelFromArchive(ActiveSession session) {
+        if (StringUtils.isEmptyOrNull(session.storageName()) || StringUtils.isEmptyOrNull(session.fileName())) {
+            throw Exceptions.badRequest("builder-archive-refs-required").get();
+        }
+        Storage storage;
+        try {
+            storage = beanManager.findStorage(session.storageName());
+        } catch (NoSuchBeanDefinitionException e) {
+            throw Exceptions.notFound("storage-not-registered")
+                    .withExtra("storageName", session.storageName())
+                    .withCause(e)
+                    .get();
+        }
+        Flow flow = new Flow();
+        flow.setId(-1L);
+        flow.setName("control-builder");
+        if (!storage.isReady()) {
+            storage.init(flow);
+        }
+        DataFile dataFile = new DataFile();
+        dataFile.setDir(session.dir());
+        dataFile.setName(session.fileName());
+        dataFile.setVersion(session.versionId());
+        dataFile.setContentType(session.contentType());
+        dataFile.setSize(session.size());
+
+        FlowContext context = new FlowContext(flow, null);
+        List<DataPackage> packages;
+        try {
+            packages = storage.getFiles(context, List.of(dataFile));
+        } catch (IOException e) {
+            throw Exceptions.server("builder-unable-to-load-archive").withCause(e).get();
+        }
+        if (packages == null || packages.isEmpty()) {
+            throw Exceptions.notFound("file-not-found")
+                    .withExtra("fileName", session.fileName())
+                    .withExtra("dir", session.dir())
+                    .get();
+        }
+        DataPackage zipPackage = packages.get(0);
+        File zipFile = resolveZipFile(zipPackage);
+        boolean deleteOnClose = zipPackage instanceof DataPackageFile dpf && dpf.isDeleteOnClear();
+        if (zipPackage instanceof DataPackageFile dpf && dpf.getFile() != null && dpf.getFile().equals(zipFile)) {
+            dpf.setDeleteOnClear(false);
+        }
+        try {
+            ZipBackupArchive archive = new ZipBackupArchive(zipFile, deleteOnClose);
+            if (!archive.exists(CommonConstants.DB_MODEL_FILE_NAME)) {
+                archive.close();
+                zipPackage.clear();
+                throw Exceptions.notFound("unable-to-find-db-model")
+                        .withExtra("entry", CommonConstants.DB_MODEL_FILE_NAME)
+                        .get();
+            }
+            DbModel model;
+            try (InputStream in = archive.open(CommonConstants.DB_MODEL_FILE_NAME)) {
+                model = objectMapper.readValue(in, DbModel.class);
+            }
+            if (model != null) {
+                model.build();
+            }
+            LinkedList<String> tables = model != null ? model.orderedTableNames() : null;
+            List<String> list = tables != null ? List.copyOf(tables) : List.of();
+            sessionRegistry.updateArchiveCache(session.sessionId(), archive, zipPackage, list, model);
+            ActiveSession refreshed = sessionRegistry.require(session.sessionId(), session.browserToken());
+            return refreshed.cachedModel() != null ? refreshed.cachedModel() : model;
+        } catch (BaseRuntimeException e) {
+            zipPackage.clear();
+            throw e;
+        } catch (Exception e) {
+            zipPackage.clear();
+            throw Exceptions.server("builder-unable-to-parse-db-model").withCause(e).get();
+        }
+    }
+
+    private static File resolveZipFile(DataPackage zipPackage) {
+        File asFile = zipPackage.asFile();
+        if (asFile != null && asFile.isFile()) {
+            return asFile;
+        }
+        try (InputStream in = zipPackage.getInputStream()) {
+            Path temp = QuemsiTemp.spoolToTempFile(in, "quemsi-builder-", ".zip");
+            return temp.toFile();
+        } catch (Exception e) {
+            throw Exceptions.server("unable-to-materialize-zip").withCause(e).get();
+        }
     }
 
     @PostMapping("/api/apply")
@@ -221,6 +335,9 @@ public class ControlBuilderController {
     }
 
     private DataSourceFactory resolveDatasource(String name) {
+        if (StringUtils.isEmptyOrNull(name)) {
+            throw Exceptions.badRequest("builder-datasource-required").get();
+        }
         try {
             return applicationContext.getBean(name, DataSourceFactory.class);
         } catch (NoSuchBeanDefinitionException e) {

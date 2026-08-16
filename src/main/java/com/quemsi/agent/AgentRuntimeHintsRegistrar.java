@@ -23,6 +23,7 @@ import com.quemsi.model.dto.DatasourceType;
 import com.quemsi.model.dto.DownloadGrantPayload;
 import com.quemsi.model.dto.FlowDetail;
 import com.quemsi.model.dto.builder.BuilderMode;
+import com.quemsi.model.dto.builder.BuilderSchemaSource;
 import com.quemsi.model.dto.builder.BuilderSessionCreateRequest;
 import com.quemsi.model.dto.builder.BuilderSessionCreateResponse;
 import com.quemsi.model.dto.builder.BuilderSessionOpenPayload;
@@ -174,6 +175,7 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(MaskType.class, MemberCategory.values())
             .registerType(DownloadGrantPayload.class, MemberCategory.values())
             .registerType(BuilderMode.class, MemberCategory.values())
+            .registerType(BuilderSchemaSource.class, MemberCategory.values())
             .registerType(BuilderSessionStatus.class, MemberCategory.values())
             .registerType(BuilderSessionCreateRequest.class, MemberCategory.values())
             .registerType(BuilderSessionCreateResponse.class, MemberCategory.values())
@@ -249,6 +251,7 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(MaskType.class)
             .registerType(DownloadGrantPayload.class)
             .registerType(BuilderMode.class)
+            .registerType(BuilderSchemaSource.class)
             .registerType(BuilderSessionStatus.class)
             .registerType(BuilderSessionCreateRequest.class)
             .registerType(BuilderSessionCreateResponse.class)

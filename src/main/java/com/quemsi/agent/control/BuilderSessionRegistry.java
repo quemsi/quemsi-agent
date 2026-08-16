@@ -11,8 +11,11 @@ import org.springframework.stereotype.Component;
 
 import com.quemsi.commons.util.Exceptions;
 import com.quemsi.model.dto.builder.BuilderMode;
+import com.quemsi.model.dto.builder.BuilderSchemaSource;
 import com.quemsi.model.dto.builder.BuilderSessionOpenPayload;
+import com.quemsi.model.flow.DataPackage;
 import com.quemsi.model.flow.db.sql.DbModel;
+import com.quemsi.model.flow.file.ZipBackupArchive;
 
 @Component
 public class BuilderSessionRegistry {
@@ -21,16 +24,33 @@ public class BuilderSessionRegistry {
     public record ActiveSession(
             String sessionId,
             BuilderMode mode,
+            BuilderSchemaSource schemaSource,
             String datasourceName,
+            String storageName,
+            String dir,
+            String fileName,
+            Long versionId,
+            String contentType,
+            Long size,
             Map<String, Object> draftConfig,
             String returnUrl,
             String browserToken,
             Instant expiresAt,
             List<String> cachedTables,
-            DbModel cachedModel) {
+            DbModel cachedModel,
+            ZipBackupArchive archive,
+            DataPackage dataPackage) {
         public ActiveSession withCachedTables(List<String> tables, DbModel model) {
-            return new ActiveSession(sessionId, mode, datasourceName, draftConfig, returnUrl, browserToken,
-                    expiresAt, tables, model);
+            return new ActiveSession(sessionId, mode, schemaSource, datasourceName, storageName, dir, fileName,
+                    versionId, contentType, size, draftConfig, returnUrl, browserToken, expiresAt, tables, model,
+                    archive, dataPackage);
+        }
+
+        public ActiveSession withArchive(ZipBackupArchive archive, DataPackage dataPackage, List<String> tables,
+                DbModel model) {
+            return new ActiveSession(sessionId, mode, schemaSource, datasourceName, storageName, dir, fileName,
+                    versionId, contentType, size, draftConfig, returnUrl, browserToken, expiresAt, tables, model,
+                    archive, dataPackage);
         }
     }
 
@@ -38,14 +58,26 @@ public class BuilderSessionRegistry {
 
     public ActiveSession putFromOpen(BuilderSessionOpenPayload payload, Instant expiresAt) {
         String browserToken = newToken();
+        BuilderSchemaSource schemaSource = payload.getSchemaSource() != null
+                ? payload.getSchemaSource()
+                : BuilderSchemaSource.DATASOURCE;
         ActiveSession session = new ActiveSession(
                 payload.getSessionId(),
                 payload.getMode(),
+                schemaSource,
                 payload.getDatasourceName(),
+                payload.getStorageName(),
+                payload.getDir(),
+                payload.getFileName(),
+                payload.getVersionId(),
+                payload.getContentType(),
+                payload.getSize(),
                 payload.getDraftConfig(),
                 payload.getReturnUrl(),
                 browserToken,
                 expiresAt,
+                null,
+                null,
                 null,
                 null);
         sessions.put(payload.getSessionId(), session);
@@ -58,7 +90,7 @@ public class BuilderSessionRegistry {
             throw Exceptions.notFound("builder-session-not-local").withExtra("sessionId", sessionId).get();
         }
         if (session.expiresAt() != null && Instant.now().isAfter(session.expiresAt())) {
-            sessions.remove(sessionId);
+            remove(sessionId);
             throw Exceptions.create(org.springframework.http.HttpStatus.GONE, "builder-session-expired").get();
         }
         if (browserToken == null || !browserToken.equals(session.browserToken())) {
@@ -71,8 +103,31 @@ public class BuilderSessionRegistry {
         sessions.computeIfPresent(sessionId, (id, existing) -> existing.withCachedTables(tables, model));
     }
 
+    public void updateArchiveCache(String sessionId, ZipBackupArchive archive, DataPackage dataPackage,
+            List<String> tables, DbModel model) {
+        sessions.computeIfPresent(sessionId,
+                (id, existing) -> existing.withArchive(archive, dataPackage, tables, model));
+    }
+
     public void remove(String sessionId) {
-        sessions.remove(sessionId);
+        ActiveSession removed = sessions.remove(sessionId);
+        if (removed == null) {
+            return;
+        }
+        if (removed.archive() != null) {
+            try {
+                removed.archive().close();
+            } catch (Exception ignored) {
+                /* best-effort */
+            }
+        }
+        if (removed.dataPackage() != null) {
+            try {
+                removed.dataPackage().clear();
+            } catch (Exception ignored) {
+                /* best-effort */
+            }
+        }
     }
 
     private static String newToken() {
