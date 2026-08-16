@@ -89,7 +89,10 @@
       <p id="subsetStatus" class="status">Loading tables…</p>
       <div class="subset-layout">
         <div class="mask-pane subset-tables-pane">
-          <div class="mask-columns-header"><strong>Tables</strong></div>
+          <div class="mask-columns-header">
+            <strong>Tables</strong>
+            <button type="button" id="subsetAddAll" class="btn secondary" title="Add every table as an entire-table driver">Add all</button>
+          </div>
           <input type="search" id="subsetTableFilter" placeholder="Filter tables…" />
           <div id="subsetTableList" class="list mask-table-list"></div>
         </div>

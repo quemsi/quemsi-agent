@@ -47,6 +47,7 @@
     subsetStatus: document.getElementById("subsetStatus"),
     subsetTableFilter: document.getElementById("subsetTableFilter"),
     subsetTableList: document.getElementById("subsetTableList"),
+    subsetAddAll: document.getElementById("subsetAddAll"),
     subsetTableTitle: document.getElementById("subsetTableTitle"),
     subsetWorkbench: document.getElementById("subsetWorkbench"),
     subsetEntireTable: document.getElementById("subsetEntireTable"),
@@ -1139,6 +1140,25 @@
       schedulePreview();
     }
 
+    function addAllTablesAsDrivers() {
+      if (!tables.length) return;
+      const byTable = new Map(drivers.map((d) => [d.table, d]));
+      tables.forEach((name) => {
+        byTable.set(name, {
+          table: name,
+          entireTable: true,
+          where: "",
+          limit: null,
+        });
+      });
+      drivers = Array.from(byTable.values());
+      sortDriversInPlace();
+      setStatus(els.subsetStatus, tables.length + " table(s) · all added as entire-table drivers");
+      renderDrivers();
+      renderTables();
+      schedulePreview();
+    }
+
     els.subsetTableFilter.addEventListener("input", renderTables);
     els.subsetEntireTable.addEventListener("change", () => {
       syncEntireControls();
@@ -1147,6 +1167,7 @@
     });
     els.subsetBrowseApply.addEventListener("click", applyFilter);
     els.subsetAddDriver.addEventListener("click", addToSubset);
+    els.subsetAddAll.addEventListener("click", addAllTablesAsDrivers);
     els.subsetPrevPage.addEventListener("click", () => {
       if (browsePage > 0) {
         browsePage -= 1;
@@ -1193,9 +1214,15 @@
         const data = await res.json();
         tables = Array.isArray(data.tables) ? data.tables : [];
         setStatus(els.subsetStatus, tables.length + " table(s)");
+        if (els.subsetAddAll) {
+          els.subsetAddAll.disabled = !tables.length;
+        }
         renderTables();
       } catch (e) {
         setStatus(els.subsetStatus, e.message || String(e), true);
+        if (els.subsetAddAll) {
+          els.subsetAddAll.disabled = true;
+        }
       }
     })();
   }

@@ -337,8 +337,9 @@ body:has(.wrap.subset-wide) {
   border: 1px solid var(--border);
   border-radius: 4px;
 }
-.mask-columns-header.mt {
-  margin-top: 1rem;
+.subset-tables-pane > .mask-columns-header .btn {
+  padding: 0.25rem 0.55rem;
+  font-size: 0.8rem;
 }
 .row.driver-item {
   flex-direction: column;
