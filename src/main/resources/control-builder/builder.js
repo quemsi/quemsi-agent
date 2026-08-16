@@ -4,6 +4,7 @@
   const isDrop = mode === "DROP_TABLES";
   const isMask = mode === "MASK_COLUMNS";
   const isSeq = mode === "UP" + "DATE_SEQUENCES";
+  const isSubset = mode === "SUBSET";
 
   const els = {
     title: document.getElementById("title"),
@@ -13,6 +14,7 @@
     tablesMode: document.getElementById("tablesMode"),
     maskMode: document.getElementById("maskMode"),
     seqMode: document.getElementById("seqMode"),
+    subsetMode: document.getElementById("subsetMode"),
     status: document.getElementById("status"),
     list: document.getElementById("list"),
     listBody: document.getElementById("listBody"),
@@ -42,6 +44,22 @@
     seqColumnList: document.getElementById("seqColumnList"),
     seqSelectionSummary: document.getElementById("seqSelectionSummary"),
     seqClearSelection: document.getElementById("seqClearSelection"),
+    subsetStatus: document.getElementById("subsetStatus"),
+    subsetTableFilter: document.getElementById("subsetTableFilter"),
+    subsetTableList: document.getElementById("subsetTableList"),
+    subsetTableTitle: document.getElementById("subsetTableTitle"),
+    subsetWorkbench: document.getElementById("subsetWorkbench"),
+    subsetEntireTable: document.getElementById("subsetEntireTable"),
+    subsetLimit: document.getElementById("subsetLimit"),
+    subsetWhere: document.getElementById("subsetWhere"),
+    subsetBrowseApply: document.getElementById("subsetBrowseApply"),
+    subsetAddDriver: document.getElementById("subsetAddDriver"),
+    subsetBrowseStatus: document.getElementById("subsetBrowseStatus"),
+    subsetGridHead: document.getElementById("subsetGridHead"),
+    subsetGridBody: document.getElementById("subsetGridBody"),
+    subsetDriversList: document.getElementById("subsetDriversList"),
+    subsetPreviewStatus: document.getElementById("subsetPreviewStatus"),
+    subsetPreviewList: document.getElementById("subsetPreviewList"),
   };
 
   els.datasource.textContent = cfg.datasource || "—";
@@ -100,7 +118,13 @@
       window.close();
     } catch (e) {
       setStatus(
-        isMask ? els.maskStatus : isSeq ? els.seqStatus : els.status,
+        isMask
+          ? els.maskStatus
+          : isSeq
+            ? els.seqStatus
+            : isSubset
+              ? els.subsetStatus
+              : els.status,
         e.message || String(e),
         true
       );
@@ -727,7 +751,374 @@
     initMaskMode();
   } else if (isSeq) {
     initSeqMode();
+  } else if (isSubset) {
+    initSubsetMode();
   } else {
     initTablesMode();
+  }
+
+  /* ---------- Subset ---------- */
+  function initSubsetMode() {
+    document.title = "Subset — Quemsi Agent";
+    els.title.textContent = "Configure subset drivers";
+    els.allHint.hidden = false;
+    els.allHint.textContent =
+      "Browse a table, then Add to subset. Entire table / selected rows / filter — one driver per table. Impact shows FK parent rows pulled in.";
+    els.subsetMode.hidden = false;
+    document.querySelector(".wrap")?.classList.add("subset-wide");
+
+    let tables = [];
+    /** @type {Array<{table:string,where?:string,limit?:number|null,entireTable?:boolean}>} */
+    let drivers = [];
+    let activeTable = null;
+    /** @type {Set<string>} */
+    let selectedKeys = new Set();
+    let previewTimer = null;
+
+    if (Array.isArray(draft.drivers)) {
+      drivers = draft.drivers
+        .filter((d) => d && d.table)
+        .map((d) => ({
+          table: String(d.table),
+          where: d.where != null ? String(d.where) : "",
+          limit: d.limit != null && d.limit !== "" ? Number(d.limit) : null,
+          entireTable: !!d.entireTable,
+        }));
+    }
+
+    function driverIndexFor(table) {
+      return drivers.findIndex((d) => d.table === table);
+    }
+
+    function syncEntireControls() {
+      const entire = els.subsetEntireTable.checked;
+      els.subsetWhere.disabled = entire;
+      els.subsetLimit.disabled = entire;
+      els.subsetGridBody.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+        cb.disabled = entire;
+        if (entire) cb.checked = false;
+      });
+      if (entire) selectedKeys.clear();
+    }
+
+    function renderTables() {
+      const q = (els.subsetTableFilter.value || "").trim().toLowerCase();
+      els.subsetTableList.innerHTML = "";
+      tables.forEach((name) => {
+        if (q && !name.toLowerCase().includes(q)) return;
+        const row = document.createElement("div");
+        const has = driverIndexFor(name) >= 0;
+        row.className =
+          "row table-item" +
+          (activeTable === name ? " active" : "") +
+          (has ? " has-driver" : "");
+        row.tabIndex = 0;
+        const span = document.createElement("span");
+        span.textContent = name;
+        row.appendChild(span);
+        if (has) {
+          const badge = document.createElement("span");
+          badge.className = "badge";
+          badge.textContent = "driver";
+          row.appendChild(badge);
+        }
+        row.addEventListener("click", () => selectTable(name));
+        els.subsetTableList.appendChild(row);
+      });
+    }
+
+    function selectTable(name) {
+      activeTable = name;
+      selectedKeys.clear();
+      els.subsetTableTitle.textContent = name;
+      els.subsetWorkbench.hidden = false;
+      const existing = drivers[driverIndexFor(name)];
+      els.subsetEntireTable.checked = !!(existing && existing.entireTable);
+      els.subsetWhere.value = existing && !existing.entireTable ? existing.where || "" : "";
+      els.subsetLimit.value =
+        existing && existing.limit != null ? String(existing.limit) : "50";
+      els.subsetGridHead.innerHTML = "";
+      els.subsetGridBody.innerHTML = "";
+      setStatus(els.subsetBrowseStatus, "Adjust filter/limit and click Apply to load rows.");
+      syncEntireControls();
+      renderTables();
+    }
+
+    function renderDrivers() {
+      els.subsetDriversList.innerHTML = "";
+      if (!drivers.length) {
+        const empty = document.createElement("div");
+        empty.className = "row";
+        empty.textContent = "No drivers yet";
+        els.subsetDriversList.appendChild(empty);
+        return;
+      }
+      drivers.forEach((d, i) => {
+        const row = document.createElement("div");
+        row.className = "row driver-item";
+        const title = document.createElement("strong");
+        title.textContent = d.table;
+        const detail = document.createElement("span");
+        detail.style.fontSize = "0.8rem";
+        detail.style.color = "var(--muted)";
+        if (d.entireTable) {
+          detail.textContent = "Entire table";
+        } else {
+          let t = d.where || "";
+          if (d.limit != null) t += (t ? " · " : "") + "limit " + d.limit;
+          detail.textContent = t || "(empty)";
+        }
+        const actions = document.createElement("div");
+        actions.className = "driver-actions";
+        const focusBtn = document.createElement("button");
+        focusBtn.type = "button";
+        focusBtn.className = "btn secondary";
+        focusBtn.textContent = "Edit";
+        focusBtn.addEventListener("click", () => selectTable(d.table));
+        const rm = document.createElement("button");
+        rm.type = "button";
+        rm.className = "btn secondary";
+        rm.textContent = "Remove";
+        rm.addEventListener("click", () => {
+          drivers.splice(i, 1);
+          renderDrivers();
+          renderTables();
+          schedulePreview();
+        });
+        actions.appendChild(focusBtn);
+        actions.appendChild(rm);
+        row.appendChild(title);
+        row.appendChild(detail);
+        row.appendChild(actions);
+        els.subsetDriversList.appendChild(row);
+      });
+    }
+
+    function renderPreview(tableSummaries) {
+      els.subsetPreviewList.innerHTML = "";
+      if (!tableSummaries || !tableSummaries.length) {
+        setStatus(els.subsetPreviewStatus, drivers.length ? "No tables in plan" : "No drivers yet");
+        return;
+      }
+      setStatus(els.subsetPreviewStatus, tableSummaries.length + " table(s) in plan");
+      tableSummaries.forEach((s) => {
+        const row = document.createElement("div");
+        row.className = "row driver-item";
+        const title = document.createElement("strong");
+        title.textContent = s.table;
+        const detail = document.createElement("span");
+        detail.style.fontSize = "0.8rem";
+        detail.style.color = "var(--muted)";
+        const parts = [s.count + " rows"];
+        if (s.driverCount) parts.push(s.driverCount + " from driver");
+        if (s.requiredByFkCount) {
+          const via = Array.isArray(s.requiredBy) ? s.requiredBy.join(", ") : "";
+          parts.push(s.requiredByFkCount + " via FK" + (via ? " (" + via + ")" : ""));
+        }
+        detail.textContent = parts.join(" · ");
+        row.appendChild(title);
+        row.appendChild(detail);
+        els.subsetPreviewList.appendChild(row);
+      });
+    }
+
+    function schedulePreview() {
+      if (previewTimer) clearTimeout(previewTimer);
+      previewTimer = setTimeout(runPreview, 350);
+    }
+
+    async function runPreview() {
+      if (!drivers.length) {
+        renderPreview([]);
+        return;
+      }
+      setStatus(els.subsetPreviewStatus, "Updating preview…");
+      try {
+        const res = await fetch("/control/builder/api/preview-subset", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sessionId: cfg.sessionId,
+            token: cfg.token,
+            drivers: drivers,
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.messageId || data.message || "Preview failed (" + res.status + ")");
+        }
+        renderPreview(Array.isArray(data.tables) ? data.tables : []);
+      } catch (e) {
+        setStatus(els.subsetPreviewStatus, e.message || String(e), true);
+      }
+    }
+
+    function renderGrid(columns, rows) {
+      els.subsetGridHead.innerHTML = "";
+      els.subsetGridBody.innerHTML = "";
+      const headRow = document.createElement("tr");
+      const th0 = document.createElement("th");
+      th0.textContent = "";
+      headRow.appendChild(th0);
+      (columns || []).forEach((c) => {
+        const th = document.createElement("th");
+        th.textContent = c;
+        headRow.appendChild(th);
+      });
+      els.subsetGridHead.appendChild(headRow);
+      const entire = els.subsetEntireTable.checked;
+      (rows || []).forEach((r) => {
+        const tr = document.createElement("tr");
+        const td0 = document.createElement("td");
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.disabled = entire;
+        cb.checked = selectedKeys.has(r.pkKey);
+        cb.addEventListener("change", () => {
+          if (cb.checked) selectedKeys.add(r.pkKey);
+          else selectedKeys.delete(r.pkKey);
+        });
+        td0.appendChild(cb);
+        tr.appendChild(td0);
+        (r.values || []).forEach((v) => {
+          const td = document.createElement("td");
+          td.textContent = v == null ? "" : String(v);
+          tr.appendChild(td);
+        });
+        els.subsetGridBody.appendChild(tr);
+      });
+    }
+
+    async function browseApply() {
+      if (!activeTable) return;
+      setStatus(els.subsetBrowseStatus, "Loading rows…");
+      selectedKeys.clear();
+      try {
+        const entire = els.subsetEntireTable.checked;
+        const limitVal = els.subsetLimit.value;
+        const res = await fetch("/control/builder/api/browse-rows", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sessionId: cfg.sessionId,
+            token: cfg.token,
+            table: activeTable,
+            entireTable: entire,
+            where: entire ? null : els.subsetWhere.value || null,
+            limit: entire ? null : limitVal === "" ? null : Number(limitVal),
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.messageId || data.message || "Browse failed (" + res.status + ")");
+        }
+        renderGrid(data.columns || [], data.rows || []);
+        syncEntireControls();
+        setStatus(
+          els.subsetBrowseStatus,
+          (data.rows || []).length + " row(s)" + (entire ? " (entire table — selection disabled)" : "")
+        );
+      } catch (e) {
+        setStatus(els.subsetBrowseStatus, e.message || String(e), true);
+      }
+    }
+
+    async function addToSubset() {
+      if (!activeTable) return;
+      const entire = els.subsetEntireTable.checked;
+      let driver;
+      if (entire) {
+        driver = { table: activeTable, entireTable: true, where: "", limit: null };
+      } else if (selectedKeys.size > 0) {
+        try {
+          const res = await fetch("/control/builder/api/pk-predicate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              sessionId: cfg.sessionId,
+              token: cfg.token,
+              table: activeTable,
+              keys: Array.from(selectedKeys),
+            }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            throw new Error(data.messageId || data.message || "Could not build PK predicate");
+          }
+          driver = {
+            table: activeTable,
+            entireTable: false,
+            where: data.where,
+            limit: null,
+          };
+        } catch (e) {
+          setStatus(els.subsetBrowseStatus, e.message || String(e), true);
+          return;
+        }
+      } else {
+        const where = (els.subsetWhere.value || "").trim();
+        if (!where) {
+          setStatus(
+            els.subsetBrowseStatus,
+            "Set entire table, select rows, or enter a filter before adding.",
+            true
+          );
+          return;
+        }
+        const limitVal = els.subsetLimit.value;
+        driver = {
+          table: activeTable,
+          entireTable: false,
+          where: where,
+          limit: limitVal === "" ? null : Number(limitVal),
+        };
+      }
+      const idx = driverIndexFor(activeTable);
+      if (idx >= 0) drivers[idx] = driver;
+      else drivers.push(driver);
+      setStatus(els.subsetBrowseStatus, "Driver added for " + activeTable);
+      renderDrivers();
+      renderTables();
+      schedulePreview();
+    }
+
+    els.subsetTableFilter.addEventListener("input", renderTables);
+    els.subsetEntireTable.addEventListener("change", syncEntireControls);
+    els.subsetBrowseApply.addEventListener("click", browseApply);
+    els.subsetAddDriver.addEventListener("click", addToSubset);
+    els.apply.addEventListener("click", () => {
+      if (!drivers.length) {
+        setStatus(els.subsetStatus, "Add at least one driver before applying.", true);
+        return;
+      }
+      postApply({
+        enabled: true,
+        drivers: drivers.map((d) => ({
+          table: d.table,
+          where: d.entireTable ? "" : d.where || "",
+          limit: d.entireTable ? null : d.limit,
+          entireTable: !!d.entireTable,
+        })),
+      });
+    });
+
+    renderDrivers();
+    schedulePreview();
+
+    (async function loadTables() {
+      try {
+        const res = await fetch("/control/builder/api/tables?" + authQuery());
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body.messageId || "Failed to load tables (" + res.status + ")");
+        }
+        const data = await res.json();
+        tables = Array.isArray(data.tables) ? data.tables : [];
+        setStatus(els.subsetStatus, tables.length + " table(s)");
+        renderTables();
+      } catch (e) {
+        setStatus(els.subsetStatus, e.message || String(e), true);
+      }
+    })();
   }
 })();

@@ -140,7 +140,7 @@ Agent  →  API (redeem)  →  stream file bytes to browser
 
 Progress uses the browser’s native download UI (`Content-Disposition` + `Content-Length`).
 
-### Schema builder (ClearTables / DropTables / MaskColumns / UpdateSequences)
+### Schema builder (ClearTables / DropTables / MaskColumns / UpdateSequences / Subset)
 
 ```
 Flow editor  →  API create builder session  →  popup agent builder
@@ -154,8 +154,10 @@ Flow editor fetches GET /api/builder-sessions/{id}/result  →  merge into step
   - Clear/Drop: `{ all, tables }`
   - Mask: `{ columns: [{ schema, table, column }] }` (mask type/char stay in the flow editor)
   - Sequences: `{ customMappings: [{ sequence, schema, table, column }] }` (template/column stay in the flow editor)
+  - Subset: `{ enabled, drivers: [{ table, where, limit, entireTable }] }` merged into From `source.subset`
 - `DROP_TABLES` with `all: true` means drop tables plus views/sequences/triggers/functions/etc. at runtime; selective mode drops listed tables only.
 - `MASK_COLUMNS` schema browser infers source from the flow’s **From** step: `StoredData` → resolve that version’s archive and load `db-model.json`; `RdbmsBackup` → live From datasource browse. Runtime always masks using archive `db-model.json`.
+- `SUBSET` uses the live From datasource. Builder browse/preview run on the agent (`/control/builder/api/browse-rows`, `/preview-subset`); From **Count** remains the API→agent sync `PreviewSubset` command.
 - Agent UI is static HTML/JS under `classpath:/control-builder/` (mode-aware).
 
 **Follow-up:** browser-side availability check against `controlBaseUrl` (distinct from long-poll ONLINE).
@@ -294,7 +296,7 @@ For interactive actions that must stay in the customer environment (download, la
 1. `AgentCoordinator` — lifecycle + command dispatch
 2. `QuemsiApi` / `AgentApiController` — protocol
 3. `control/ControlDownloadController` — ticketed file download
-4. `control/ControlBuilderController` — schema builder sessions (ClearTables / DropTables / MaskColumns / UpdateSequences)
+4. `control/ControlBuilderController` — schema builder sessions (ClearTables / DropTables / MaskColumns / UpdateSequences / Subset)
 5. `AgentModel` + `AgentCommand` — shared contract
 6. `FlowManager` + `StepFactory` — pipeline engine
 7. `SpringBeanManager` — dynamic resource registration

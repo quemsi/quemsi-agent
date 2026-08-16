@@ -43,12 +43,19 @@ import com.quemsi.model.flow.DataPackageFile;
 import com.quemsi.model.flow.Flow;
 import com.quemsi.model.flow.FlowContext;
 import com.quemsi.model.flow.db.DataSourceFactory;
+import com.quemsi.model.flow.db.DMLService;
 import com.quemsi.model.flow.db.sql.DbColumn;
 import com.quemsi.model.flow.db.sql.DbModel;
 import com.quemsi.model.flow.db.sql.DbSequence;
 import com.quemsi.model.flow.db.sql.DbTable;
 import com.quemsi.model.flow.file.ZipBackupArchive;
 import com.quemsi.model.flow.out.Storage;
+import com.quemsi.model.flow.subset.SqlSubsetSupport;
+import com.quemsi.model.flow.subset.SubsetBrowseResult;
+import com.quemsi.model.flow.subset.SubsetConfig;
+import com.quemsi.model.flow.subset.SubsetDriver;
+import com.quemsi.model.flow.subset.SubsetPlan;
+import com.quemsi.model.flow.subset.SubsetPlanner;
 import com.quemsi.model.util.CommonConstants;
 import com.quemsi.model.util.QuemsiTemp;
 
@@ -116,7 +123,8 @@ public class ControlBuilderController {
         if (session.mode() != BuilderMode.CLEAR_TABLES
                 && session.mode() != BuilderMode.DROP_TABLES
                 && session.mode() != BuilderMode.MASK_COLUMNS
-                && session.mode() != BuilderMode.UPDATE_SEQUENCES) {
+                && session.mode() != BuilderMode.UPDATE_SEQUENCES
+                && session.mode() != BuilderMode.SUBSET) {
             throw Exceptions.badRequest("builder-mode-unsupported").withExtra("mode", session.mode()).get();
         }
         ensureModel(session);
@@ -174,6 +182,158 @@ public class ControlBuilderController {
             }
         }
         return Map.of("sequences", sequences);
+    }
+
+    @PostMapping("/api/browse-rows")
+    public Map<String, Object> browseRows(@RequestBody Map<String, Object> body) {
+        String sessionId = asString(body.get("sessionId"));
+        String token = asString(body.get("token"));
+        ActiveSession session = sessionRegistry.require(sessionId, token);
+        if (session.mode() != BuilderMode.SUBSET) {
+            throw Exceptions.badRequest("builder-mode-unsupported").withExtra("mode", session.mode()).get();
+        }
+        String table = asString(body.get("table"));
+        if (StringUtils.isEmptyOrNull(table)) {
+            throw Exceptions.badRequest("builder-table-required").get();
+        }
+        boolean entireTable = Boolean.TRUE.equals(body.get("entireTable"));
+        String where = entireTable ? null : asString(body.get("where"));
+        Integer limit = null;
+        Object limitObj = body.get("limit");
+        if (limitObj instanceof Number n) {
+            limit = n.intValue();
+        } else if (limitObj != null && !String.valueOf(limitObj).isBlank()) {
+            try {
+                limit = Integer.parseInt(String.valueOf(limitObj));
+            } catch (NumberFormatException e) {
+                throw Exceptions.badRequest("builder-subset-driver-limit-must-be-number").get();
+            }
+        }
+        DbModel model = ensureModel(session);
+        DbTable dbTable = resolveTable(model, table);
+        DataSourceFactory ds = resolveDatasource(session.datasourceName());
+        try (DMLService dml = ds.dmlService()) {
+            if (!dml.supportsSubset()) {
+                throw Exceptions.badRequest("subset-not-supported-for-datasource").get();
+            }
+            SubsetBrowseResult browse = dml.browseRows(dbTable, where, limit);
+            List<Map<String, Object>> rows = new ArrayList<>();
+            if (browse.getRows() != null) {
+                for (SubsetBrowseResult.BrowseRow row : browse.getRows()) {
+                    Map<String, Object> m = new java.util.LinkedHashMap<>();
+                    m.put("pkKey", row.getPkKey());
+                    m.put("values", row.getValues() != null ? row.getValues() : List.of());
+                    rows.add(m);
+                }
+            }
+            return Map.of(
+                    "table", dbTable.qualifiedName(),
+                    "columns", browse.getColumns() != null ? browse.getColumns() : List.of(),
+                    "pkColumns", dbTable.getPkColumnNames() != null ? List.copyOf(dbTable.getPkColumnNames()) : List.of(),
+                    "rows", rows);
+        } catch (BaseRuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw Exceptions.server("builder-browse-rows-failed").withCause(e).get();
+        }
+    }
+
+    @PostMapping("/api/pk-predicate")
+    public Map<String, Object> pkPredicate(@RequestBody Map<String, Object> body) {
+        String sessionId = asString(body.get("sessionId"));
+        String token = asString(body.get("token"));
+        ActiveSession session = sessionRegistry.require(sessionId, token);
+        if (session.mode() != BuilderMode.SUBSET) {
+            throw Exceptions.badRequest("builder-mode-unsupported").withExtra("mode", session.mode()).get();
+        }
+        String table = asString(body.get("table"));
+        if (StringUtils.isEmptyOrNull(table)) {
+            throw Exceptions.badRequest("builder-table-required").get();
+        }
+        Object keysObj = body.get("keys");
+        if (!(keysObj instanceof Iterable<?> iterable)) {
+            throw Exceptions.badRequest("subset-pk-selection-required").get();
+        }
+        List<String> keys = new ArrayList<>();
+        for (Object k : iterable) {
+            if (k != null && !String.valueOf(k).isBlank()) {
+                keys.add(String.valueOf(k));
+            }
+        }
+        DbModel model = ensureModel(session);
+        DbTable dbTable = resolveTable(model, table);
+        String where = SqlSubsetSupport.buildPkInPredicate(dbTable, keys);
+        return Map.of("table", dbTable.qualifiedName(), "where", where);
+    }
+
+    @PostMapping("/api/preview-subset")
+    public Map<String, Object> previewSubset(@RequestBody Map<String, Object> body) {
+        String sessionId = asString(body.get("sessionId"));
+        String token = asString(body.get("token"));
+        ActiveSession session = sessionRegistry.require(sessionId, token);
+        if (session.mode() != BuilderMode.SUBSET) {
+            throw Exceptions.badRequest("builder-mode-unsupported").withExtra("mode", session.mode()).get();
+        }
+        SubsetConfig config = parseSubsetDrivers(body.get("drivers"));
+        if (!config.isActive()) {
+            return Map.of("success", true, "tables", List.of());
+        }
+        DbModel model = ensureModel(session);
+        DataSourceFactory ds = resolveDatasource(session.datasourceName());
+        try (DMLService dml = ds.dmlService()) {
+            if (!dml.supportsSubset()) {
+                throw Exceptions.badRequest("subset-not-supported-for-datasource").get();
+            }
+            SubsetPlan plan = new SubsetPlanner().plan(model, dml, config);
+            List<Map<String, Object>> tables = new ArrayList<>();
+            for (var summary : plan.summaries()) {
+                Map<String, Object> row = new java.util.LinkedHashMap<>();
+                row.put("table", summary.getTable());
+                row.put("count", summary.getCount());
+                row.put("driverCount", summary.getDriverCount());
+                row.put("requiredByFkCount", summary.getRequiredByFkCount());
+                row.put("requiredBy", summary.getRequiredBy() != null ? summary.getRequiredBy() : List.of());
+                tables.add(row);
+            }
+            return Map.of("success", true, "tables", tables);
+        } catch (BaseRuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw Exceptions.server("builder-preview-subset-failed").withCause(e).get();
+        }
+    }
+
+    private static SubsetConfig parseSubsetDrivers(Object driversObj) {
+        List<SubsetDriver> drivers = new ArrayList<>();
+        if (driversObj instanceof Iterable<?> iterable) {
+            for (Object item : iterable) {
+                if (!(item instanceof Map<?, ?> m)) {
+                    continue;
+                }
+                String table = m.get("table") != null ? String.valueOf(m.get("table")) : null;
+                if (StringUtils.isEmptyOrNull(table)) {
+                    continue;
+                }
+                boolean entireTable = Boolean.TRUE.equals(m.get("entireTable"));
+                String where = m.get("where") != null ? String.valueOf(m.get("where")) : null;
+                Integer limit = null;
+                Object limitObj = m.get("limit");
+                if (limitObj instanceof Number n) {
+                    limit = n.intValue();
+                }
+                drivers.add(SubsetDriver.builder()
+                        .table(table)
+                        .where(where)
+                        .limit(limit)
+                        .entireTable(entireTable)
+                        .build());
+            }
+        }
+        return SubsetConfig.builder().enabled(!drivers.isEmpty()).drivers(drivers).build();
+    }
+
+    private static DbTable resolveTable(DbModel model, String tableName) {
+        return SubsetPlanner.resolveTable(model, tableName);
     }
 
     private DbModel ensureModel(ActiveSession session) {
