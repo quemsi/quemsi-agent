@@ -793,6 +793,7 @@
           limit: d.limit != null && d.limit !== "" ? Number(d.limit) : null,
           entireTable: !!d.entireTable,
         }));
+      sortDriversInPlace();
     }
 
     function driverIndexFor(table) {
@@ -813,10 +814,22 @@
       if (entire) selectedKeys.clear();
     }
 
+    function cmpTableName(a, b) {
+      return String(a || "").localeCompare(String(b || ""), undefined, {
+        sensitivity: "base",
+        numeric: true,
+      });
+    }
+
+    function sortDriversInPlace() {
+      drivers.sort((a, b) => cmpTableName(a.table, b.table));
+    }
+
     function renderTables() {
       const q = (els.subsetTableFilter.value || "").trim().toLowerCase();
       els.subsetTableList.innerHTML = "";
-      tables.forEach((name) => {
+      const sorted = tables.slice().sort(cmpTableName);
+      sorted.forEach((name) => {
         if (q && !name.toLowerCase().includes(q)) return;
         const row = document.createElement("div");
         const has = driverIndexFor(name) >= 0;
@@ -879,7 +892,8 @@
         els.subsetDriversList.appendChild(empty);
         return;
       }
-      drivers.forEach((d, i) => {
+      sortDriversInPlace();
+      drivers.forEach((d) => {
         const row = document.createElement("div");
         row.className = "row driver-item";
         const title = document.createElement("strong");
@@ -906,7 +920,8 @@
         rm.className = "btn secondary";
         rm.textContent = "Remove";
         rm.addEventListener("click", () => {
-          drivers.splice(i, 1);
+          const idx = driverIndexFor(d.table);
+          if (idx >= 0) drivers.splice(idx, 1);
           renderDrivers();
           renderTables();
           schedulePreview();
@@ -927,7 +942,8 @@
         return;
       }
       setStatus(els.subsetPreviewStatus, tableSummaries.length + " table(s) in plan");
-      tableSummaries.forEach((s) => {
+      const sorted = tableSummaries.slice().sort((a, b) => cmpTableName(a.table, b.table));
+      sorted.forEach((s) => {
         const row = document.createElement("div");
         row.className = "row driver-item";
         const title = document.createElement("strong");
