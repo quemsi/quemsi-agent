@@ -241,6 +241,23 @@ body {
   max-height: 200px;
   margin-top: 0;
 }
+.subset-pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem 0.75rem;
+  margin-top: 0.5rem;
+}
+.subset-page-label {
+  font-size: 0.85rem;
+  color: var(--muted);
+  min-width: 8rem;
+}
+.subset-field select {
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
 .mask-columns-header.mt {
   margin-top: 1rem;
 }

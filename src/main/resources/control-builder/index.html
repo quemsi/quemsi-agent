@@ -103,15 +103,15 @@
                 <input type="checkbox" id="subsetEntireTable" />
                 <span>Entire table</span>
               </label>
-              <label class="subset-field">
-                <span>Limit</span>
-                <input type="number" id="subsetLimit" min="1" max="200" value="50" />
-              </label>
               <label class="subset-field subset-filter-field">
                 <span>Filter</span>
                 <input type="text" id="subsetWhere" placeholder="t.status = 'FAILED'" />
               </label>
-              <button type="button" id="subsetBrowseApply" class="btn secondary">Apply</button>
+              <label class="subset-field" id="subsetSeedLimitWrap">
+                <span>Seed limit</span>
+                <input type="number" id="subsetLimit" min="1" placeholder="optional" />
+              </label>
+              <button type="button" id="subsetBrowseApply" class="btn secondary">Apply filter</button>
               <button type="button" id="subsetAddDriver" class="btn primary">Add to subset</button>
             </div>
             <p id="subsetBrowseStatus" class="status"></p>
@@ -120,6 +120,19 @@
                 <thead id="subsetGridHead"></thead>
                 <tbody id="subsetGridBody"></tbody>
               </table>
+            </div>
+            <div id="subsetPager" class="subset-pager" hidden>
+              <button type="button" id="subsetPrevPage" class="btn secondary">Prev</button>
+              <span id="subsetPageLabel" class="subset-page-label"></span>
+              <button type="button" id="subsetNextPage" class="btn secondary">Next</button>
+              <label class="subset-field">
+                <span>Page size</span>
+                <select id="subsetPageSize">
+                  <option value="25">25</option>
+                  <option value="50" selected>50</option>
+                  <option value="100">100</option>
+                </select>
+              </label>
             </div>
           </div>
         </div>

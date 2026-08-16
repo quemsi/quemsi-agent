@@ -51,12 +51,18 @@
     subsetWorkbench: document.getElementById("subsetWorkbench"),
     subsetEntireTable: document.getElementById("subsetEntireTable"),
     subsetLimit: document.getElementById("subsetLimit"),
+    subsetSeedLimitWrap: document.getElementById("subsetSeedLimitWrap"),
     subsetWhere: document.getElementById("subsetWhere"),
     subsetBrowseApply: document.getElementById("subsetBrowseApply"),
     subsetAddDriver: document.getElementById("subsetAddDriver"),
     subsetBrowseStatus: document.getElementById("subsetBrowseStatus"),
     subsetGridHead: document.getElementById("subsetGridHead"),
     subsetGridBody: document.getElementById("subsetGridBody"),
+    subsetPager: document.getElementById("subsetPager"),
+    subsetPrevPage: document.getElementById("subsetPrevPage"),
+    subsetNextPage: document.getElementById("subsetNextPage"),
+    subsetPageLabel: document.getElementById("subsetPageLabel"),
+    subsetPageSize: document.getElementById("subsetPageSize"),
     subsetDriversList: document.getElementById("subsetDriversList"),
     subsetPreviewStatus: document.getElementById("subsetPreviewStatus"),
     subsetPreviewList: document.getElementById("subsetPreviewList"),
@@ -763,7 +769,7 @@
     els.title.textContent = "Configure subset drivers";
     els.allHint.hidden = false;
     els.allHint.textContent =
-      "Browse a table, then Add to subset. Entire table / selected rows / filter — one driver per table. Impact shows FK parent rows pulled in.";
+      "Select a table to browse. Seed limit applies only when adding a filter driver (not selected rows / entire table). Page size is for the grid pager.";
     els.subsetMode.hidden = false;
     document.querySelector(".wrap")?.classList.add("subset-wide");
 
@@ -774,6 +780,9 @@
     /** @type {Set<string>} */
     let selectedKeys = new Set();
     let previewTimer = null;
+    let browsePage = 0;
+    let browseTotal = 0;
+    let browsePageSize = 50;
 
     if (Array.isArray(draft.drivers)) {
       drivers = draft.drivers
@@ -794,6 +803,9 @@
       const entire = els.subsetEntireTable.checked;
       els.subsetWhere.disabled = entire;
       els.subsetLimit.disabled = entire;
+      if (els.subsetSeedLimitWrap) {
+        els.subsetSeedLimitWrap.style.opacity = entire ? "0.5" : "1";
+      }
       els.subsetGridBody.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
         cb.disabled = entire;
         if (entire) cb.checked = false;
@@ -830,18 +842,32 @@
     function selectTable(name) {
       activeTable = name;
       selectedKeys.clear();
+      browsePage = 0;
       els.subsetTableTitle.textContent = name;
       els.subsetWorkbench.hidden = false;
       const existing = drivers[driverIndexFor(name)];
       els.subsetEntireTable.checked = !!(existing && existing.entireTable);
       els.subsetWhere.value = existing && !existing.entireTable ? existing.where || "" : "";
       els.subsetLimit.value =
-        existing && existing.limit != null ? String(existing.limit) : "50";
+        existing && existing.limit != null && !existing.entireTable ? String(existing.limit) : "";
       els.subsetGridHead.innerHTML = "";
       els.subsetGridBody.innerHTML = "";
-      setStatus(els.subsetBrowseStatus, "Adjust filter/limit and click Apply to load rows.");
       syncEntireControls();
       renderTables();
+      loadBrowse({ clearSelection: true });
+    }
+
+    function updatePager() {
+      const size = browsePageSize || 50;
+      const totalPages = Math.max(1, Math.ceil(browseTotal / size) || 1);
+      const pageDisplay = browseTotal === 0 ? 0 : browsePage + 1;
+      els.subsetPager.hidden = false;
+      els.subsetPageLabel.textContent =
+        browseTotal === 0
+          ? "0 rows"
+          : "Page " + pageDisplay + " of " + totalPages + " · " + browseTotal + " rows";
+      els.subsetPrevPage.disabled = browsePage <= 0 || browseTotal === 0;
+      els.subsetNextPage.disabled = browseTotal === 0 || (browsePage + 1) * size >= browseTotal;
     }
 
     function renderDrivers() {
@@ -865,7 +891,7 @@
           detail.textContent = "Entire table";
         } else {
           let t = d.where || "";
-          if (d.limit != null) t += (t ? " · " : "") + "limit " + d.limit;
+          if (d.limit != null) t += (t ? " · " : "") + "seed limit " + d.limit;
           detail.textContent = t || "(empty)";
         }
         const actions = document.createElement("div");
@@ -989,13 +1015,14 @@
       });
     }
 
-    async function browseApply() {
+    async function loadBrowse(opts) {
       if (!activeTable) return;
+      const clearSelection = !!(opts && opts.clearSelection);
+      if (clearSelection) selectedKeys.clear();
+      browsePageSize = Number(els.subsetPageSize.value) || 50;
       setStatus(els.subsetBrowseStatus, "Loading rows…");
-      selectedKeys.clear();
       try {
         const entire = els.subsetEntireTable.checked;
-        const limitVal = els.subsetLimit.value;
         const res = await fetch("/control/builder/api/browse-rows", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1005,22 +1032,36 @@
             table: activeTable,
             entireTable: entire,
             where: entire ? null : els.subsetWhere.value || null,
-            limit: entire ? null : limitVal === "" ? null : Number(limitVal),
+            pageSize: browsePageSize,
+            page: browsePage,
           }),
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
           throw new Error(data.messageId || data.message || "Browse failed (" + res.status + ")");
         }
+        browseTotal = typeof data.totalCount === "number" ? data.totalCount : 0;
+        browsePage = typeof data.page === "number" ? data.page : browsePage;
+        browsePageSize = typeof data.pageSize === "number" ? data.pageSize : browsePageSize;
         renderGrid(data.columns || [], data.rows || []);
         syncEntireControls();
+        updatePager();
+        const selNote = selectedKeys.size ? " · " + selectedKeys.size + " selected" : "";
         setStatus(
           els.subsetBrowseStatus,
-          (data.rows || []).length + " row(s)" + (entire ? " (entire table — selection disabled)" : "")
+          (data.rows || []).length +
+            " row(s) on this page" +
+            (entire ? " (entire table — selection disabled)" : selNote)
         );
       } catch (e) {
         setStatus(els.subsetBrowseStatus, e.message || String(e), true);
+        els.subsetPager.hidden = true;
       }
+    }
+
+    function applyFilter() {
+      browsePage = 0;
+      loadBrowse({ clearSelection: true });
     }
 
     async function addToSubset() {
@@ -1083,9 +1124,30 @@
     }
 
     els.subsetTableFilter.addEventListener("input", renderTables);
-    els.subsetEntireTable.addEventListener("change", syncEntireControls);
-    els.subsetBrowseApply.addEventListener("click", browseApply);
+    els.subsetEntireTable.addEventListener("change", () => {
+      syncEntireControls();
+      browsePage = 0;
+      loadBrowse({ clearSelection: true });
+    });
+    els.subsetBrowseApply.addEventListener("click", applyFilter);
     els.subsetAddDriver.addEventListener("click", addToSubset);
+    els.subsetPrevPage.addEventListener("click", () => {
+      if (browsePage > 0) {
+        browsePage -= 1;
+        loadBrowse({ clearSelection: false });
+      }
+    });
+    els.subsetNextPage.addEventListener("click", () => {
+      const size = browsePageSize || 50;
+      if ((browsePage + 1) * size < browseTotal) {
+        browsePage += 1;
+        loadBrowse({ clearSelection: false });
+      }
+    });
+    els.subsetPageSize.addEventListener("change", () => {
+      browsePage = 0;
+      loadBrowse({ clearSelection: false });
+    });
     els.apply.addEventListener("click", () => {
       if (!drivers.length) {
         setStatus(els.subsetStatus, "Add at least one driver before applying.", true);

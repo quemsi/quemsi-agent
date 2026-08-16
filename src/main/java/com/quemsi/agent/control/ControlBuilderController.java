@@ -198,15 +198,26 @@ public class ControlBuilderController {
         }
         boolean entireTable = Boolean.TRUE.equals(body.get("entireTable"));
         String where = entireTable ? null : asString(body.get("where"));
-        Integer limit = null;
-        Object limitObj = body.get("limit");
-        if (limitObj instanceof Number n) {
-            limit = n.intValue();
-        } else if (limitObj != null && !String.valueOf(limitObj).isBlank()) {
+        Integer pageSize = null;
+        Object pageSizeObj = body.get("pageSize");
+        if (pageSizeObj instanceof Number n) {
+            pageSize = n.intValue();
+        } else if (pageSizeObj != null && !String.valueOf(pageSizeObj).isBlank()) {
             try {
-                limit = Integer.parseInt(String.valueOf(limitObj));
+                pageSize = Integer.parseInt(String.valueOf(pageSizeObj));
             } catch (NumberFormatException e) {
-                throw Exceptions.badRequest("builder-subset-driver-limit-must-be-number").get();
+                throw Exceptions.badRequest("builder-browse-page-size-invalid").get();
+            }
+        }
+        Integer page = 0;
+        Object pageObj = body.get("page");
+        if (pageObj instanceof Number n) {
+            page = n.intValue();
+        } else if (pageObj != null && !String.valueOf(pageObj).isBlank()) {
+            try {
+                page = Integer.parseInt(String.valueOf(pageObj));
+            } catch (NumberFormatException e) {
+                throw Exceptions.badRequest("builder-browse-page-invalid").get();
             }
         }
         DbModel model = ensureModel(session);
@@ -216,7 +227,7 @@ public class ControlBuilderController {
             if (!dml.supportsSubset()) {
                 throw Exceptions.badRequest("subset-not-supported-for-datasource").get();
             }
-            SubsetBrowseResult browse = dml.browseRows(dbTable, where, limit);
+            SubsetBrowseResult browse = dml.browseRows(dbTable, where, pageSize, page);
             List<Map<String, Object>> rows = new ArrayList<>();
             if (browse.getRows() != null) {
                 for (SubsetBrowseResult.BrowseRow row : browse.getRows()) {
@@ -226,11 +237,15 @@ public class ControlBuilderController {
                     rows.add(m);
                 }
             }
-            return Map.of(
-                    "table", dbTable.qualifiedName(),
-                    "columns", browse.getColumns() != null ? browse.getColumns() : List.of(),
-                    "pkColumns", dbTable.getPkColumnNames() != null ? List.copyOf(dbTable.getPkColumnNames()) : List.of(),
-                    "rows", rows);
+            Map<String, Object> result = new java.util.LinkedHashMap<>();
+            result.put("table", dbTable.qualifiedName());
+            result.put("columns", browse.getColumns() != null ? browse.getColumns() : List.of());
+            result.put("pkColumns", dbTable.getPkColumnNames() != null ? List.copyOf(dbTable.getPkColumnNames()) : List.of());
+            result.put("rows", rows);
+            result.put("totalCount", browse.getTotalCount());
+            result.put("page", browse.getPage());
+            result.put("pageSize", browse.getPageSize());
+            return result;
         } catch (BaseRuntimeException e) {
             throw e;
         } catch (Exception e) {
