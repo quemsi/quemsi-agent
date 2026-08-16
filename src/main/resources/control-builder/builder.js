@@ -297,6 +297,7 @@
     els.allHint.textContent =
       "Pick tables and columns from the live schema. Nested Mongo field paths can still be added manually in the flow editor.";
     els.maskMode.hidden = false;
+    document.querySelector(".wrap")?.classList.add("mask-wide");
 
     let tables = [];
     /** key: schema\\0table\\0column */

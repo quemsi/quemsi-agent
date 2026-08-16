@@ -38,11 +38,12 @@
     <section id="maskMode" hidden>
       <p id="maskStatus" class="status">Loading tables…</p>
       <div class="mask-layout">
-        <div class="mask-pane">
+        <div class="mask-pane mask-tables-pane">
+          <div class="mask-columns-header"><strong>Tables</strong></div>
           <input type="search" id="maskTableFilter" placeholder="Filter tables…" />
           <div id="maskTableList" class="list mask-table-list"></div>
         </div>
-        <div class="mask-pane">
+        <div class="mask-pane mask-columns-pane">
           <div class="mask-columns-header">
             <strong id="maskTableTitle">Select a table</strong>
             <label class="all-toggle" id="maskSelectAllWrap" hidden>
@@ -54,8 +55,10 @@
           <div id="maskColumnList" class="list mask-column-list"></div>
         </div>
       </div>
-      <p id="maskSelectionSummary" class="status">0 columns selected</p>
-      <button type="button" id="maskClearSelection" class="btn secondary">Clear selection</button>
+      <div class="mask-footer-bar">
+        <p id="maskSelectionSummary" class="status">0 columns selected</p>
+        <button type="button" id="maskClearSelection" class="btn secondary">Clear selection</button>
+      </div>
     </section>
 
     <!-- UpdateSequences -->
