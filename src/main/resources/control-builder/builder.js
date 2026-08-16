@@ -519,6 +519,7 @@
     els.allHint.textContent =
       "Map each sequence to the table column that should drive its next value. Template-based updates stay in the flow editor.";
     els.seqMode.hidden = false;
+    document.querySelector(".wrap")?.classList.add("seq-wide");
 
     let sequences = [];
     let tables = [];
@@ -566,10 +567,20 @@
       els.seqSelectionSummary.textContent = selected.size + " mapping(s)";
     }
 
+    function cmpName(a, b) {
+      return String(a || "").localeCompare(String(b || ""), undefined, {
+        sensitivity: "base",
+        numeric: true,
+      });
+    }
+
     function renderSequences() {
       const q = (els.seqFilter.value || "").trim().toLowerCase();
       els.seqList.innerHTML = "";
-      sequences.forEach((seq) => {
+      const sorted = sequences.slice().sort((a, b) =>
+        cmpName(a.qualified || a.name, b.qualified || b.name)
+      );
+      sorted.forEach((seq) => {
         const label = seq.qualified || seq.name;
         if (q && !label.toLowerCase().includes(q)) return;
         const row = document.createElement("div");
@@ -600,7 +611,8 @@
     function renderTables() {
       const q = (els.seqTableFilter.value || "").trim().toLowerCase();
       els.seqTableList.innerHTML = "";
-      tables.forEach((qualified) => {
+      const sorted = tables.slice().sort(cmpName);
+      sorted.forEach((qualified) => {
         if (q && !qualified.toLowerCase().includes(q)) return;
         const row = document.createElement("div");
         row.className = "row table-item" + (activeTable === qualified ? " active" : "");
@@ -634,7 +646,8 @@
         activeSeq.schema != null && String(activeSeq.schema) !== ""
           ? String(activeSeq.schema)
           : tableSchema;
-      (activeTableMeta.columns || []).forEach((col) => {
+      const sortedCols = (activeTableMeta.columns || []).slice().sort(cmpName);
+      sortedCols.forEach((col) => {
         if (q && !col.toLowerCase().includes(q)) return;
         const row = document.createElement("label");
         row.className = "row";

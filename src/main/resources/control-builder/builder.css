@@ -174,10 +174,11 @@ body {
   margin-top: 0;
 }
 
-/* Full-height builder shell (Subset + MaskColumns + Clear/Drop) */
+/* Full-height builder shell (Subset + Mask + Clear/Drop + Sequences) */
 .wrap.subset-wide,
 .wrap.mask-wide,
-.wrap.tables-wide {
+.wrap.tables-wide,
+.wrap.seq-wide {
   max-width: 1340px;
   width: calc(100% - 2rem);
   margin: 1rem auto;
@@ -191,22 +192,26 @@ body {
 html:has(.wrap.subset-wide),
 html:has(.wrap.mask-wide),
 html:has(.wrap.tables-wide),
+html:has(.wrap.seq-wide),
 body:has(.wrap.subset-wide),
 body:has(.wrap.mask-wide),
-body:has(.wrap.tables-wide) {
+body:has(.wrap.tables-wide),
+body:has(.wrap.seq-wide) {
   height: 100%;
   overflow: hidden;
 }
 .wrap.subset-wide > .header,
 .wrap.mask-wide > .header,
 .wrap.tables-wide > .header,
+.wrap.seq-wide > .header,
 .wrap.subset-wide > #subsetStatus,
 .wrap.mask-wide > #maskStatus {
   flex: 0 0 auto;
 }
 .wrap.subset-wide > .actions,
 .wrap.mask-wide > .actions,
-.wrap.tables-wide > .actions {
+.wrap.tables-wide > .actions,
+.wrap.seq-wide > .actions {
   flex: 0 0 auto;
   margin-top: 0.75rem;
 }
@@ -236,6 +241,51 @@ body:has(.wrap.tables-wide) {
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
+}
+
+#seqMode:not([hidden]) {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+#seqMode > .status {
+  flex: 0 0 auto;
+}
+.wrap.seq-wide .seq-layout {
+  flex: 1 1 auto;
+  margin-top: 0.5rem;
+  min-height: 0;
+  align-items: stretch;
+  grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) minmax(180px, 1fr);
+}
+.seq-pane {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.seq-pane > .mask-columns-header,
+.seq-pane > input[type="search"] {
+  flex: 0 0 auto;
+}
+.wrap.seq-wide .seq-layout .mask-table-list,
+.wrap.seq-wide .seq-layout .mask-column-list {
+  flex: 1 1 auto;
+  max-height: none;
+  min-height: 0;
+}
+.seq-footer-bar {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+.seq-footer-bar .status {
+  margin: 0;
 }
 
 #maskMode:not([hidden]) {

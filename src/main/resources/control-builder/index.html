@@ -65,17 +65,17 @@
     <section id="seqMode" hidden>
       <p id="seqStatus" class="status">Loading sequences…</p>
       <div class="seq-layout">
-        <div class="mask-pane">
+        <div class="mask-pane seq-pane">
           <div class="mask-columns-header"><strong>Sequences</strong></div>
           <input type="search" id="seqFilter" placeholder="Filter sequences…" />
           <div id="seqList" class="list mask-table-list"></div>
         </div>
-        <div class="mask-pane">
+        <div class="mask-pane seq-pane">
           <div class="mask-columns-header"><strong>Table</strong></div>
           <input type="search" id="seqTableFilter" placeholder="Filter tables…" />
           <div id="seqTableList" class="list mask-table-list"></div>
         </div>
-        <div class="mask-pane">
+        <div class="mask-pane seq-pane">
           <div class="mask-columns-header">
             <strong id="seqColumnTitle">Column</strong>
           </div>
@@ -83,8 +83,10 @@
           <div id="seqColumnList" class="list mask-column-list"></div>
         </div>
       </div>
-      <p id="seqSelectionSummary" class="status">0 mappings</p>
-      <button type="button" id="seqClearSelection" class="btn secondary">Clear mappings</button>
+      <div class="seq-footer-bar">
+        <p id="seqSelectionSummary" class="status">0 mappings</p>
+        <button type="button" id="seqClearSelection" class="btn secondary">Clear mappings</button>
+      </div>
     </section>
 
     <!-- Subset -->
