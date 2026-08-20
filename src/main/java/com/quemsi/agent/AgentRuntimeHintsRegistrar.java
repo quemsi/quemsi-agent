@@ -189,6 +189,11 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(java.security.KeyStore.class, MemberCategory.values())
             .registerType(javax.net.ssl.TrustManagerFactory.class, MemberCategory.values())
             ;
+        /* Control builder UI (ClassPathResource) — required for native image */
+        hints.resources()
+            .registerPattern("control-builder/index.html")
+            .registerPattern("control-builder/builder.js")
+            .registerPattern("control-builder/builder.css");
         hints.serialization()
             .registerType(AgentError.class)
             .registerType(AgentModel.class)
