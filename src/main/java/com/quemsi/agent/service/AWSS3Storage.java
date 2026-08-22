@@ -109,11 +109,18 @@ public class AWSS3Storage implements Storage {
     @Override
     public void init(Flow f) {
         String bucketName = awsS3Drive.getBucketName();
+        S3Client s3 = getS3Client();
+        if (bucketAccessible(s3, bucketName)) {
+            if (agentBatchedLogger != null) {
+                agentBatchedLogger.logDebug(null, null, LogMessage.debug("S3 bucket '{}' already exists.", bucketName));
+            }
+            return;
+        }
         try {
             CreateBucketRequest createBucketRequest = CreateBucketRequest.builder()
                 .bucket(bucketName)
                 .build();
-            getS3Client().createBucket(createBucketRequest);
+            s3.createBucket(createBucketRequest);
             if (agentBatchedLogger != null) {
                 agentBatchedLogger.logInfo(null, null, LogMessage.info("Created S3 bucket: {}", bucketName));
             }
@@ -122,10 +129,26 @@ public class AWSS3Storage implements Storage {
                 agentBatchedLogger.logDebug(null, null, LogMessage.debug("S3 bucket '{}' already exists.", bucketName));
             }
         } catch (S3Exception e) {
+            /* Least-privilege IAM often denies CreateBucket even when the bucket already exists. */
+            if (bucketAccessible(s3, bucketName)) {
+                if (agentBatchedLogger != null) {
+                    agentBatchedLogger.logDebug(null, null, LogMessage.debug("S3 bucket '{}' is reachable without CreateBucket.", bucketName));
+                }
+                return;
+            }
             if (agentBatchedLogger != null) {
                 agentBatchedLogger.logWarn(null, null, LogMessage.warn("Failed to create S3 bucket '{}': {}", bucketName, e.getMessage()));
             }
             throw Exceptions.server("unable-to-create-s3-bucket").withExtra("bucketName", bucketName).withCause(e).get();
+        }
+    }
+
+    private boolean bucketAccessible(S3Client s3, String bucketName) {
+        try {
+            s3.headBucket(builder -> builder.bucket(bucketName));
+            return true;
+        } catch (Exception e) {
+            return false;
         }
     }
 
