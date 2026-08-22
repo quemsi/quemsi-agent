@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quemsi Agent</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --card: #fff;
+      --text: #1a1d21;
+      --muted: #5c6570;
+      --border: #d8dee4;
+      --accent: #0b6e4f;
+      --accent-soft: #e7f3ee;
+      --ready: #0b6e4f;
+      --connecting: #9a6700;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .card {
+      width: min(640px, 100%);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.75rem 1.75rem 1.5rem;
+      box-shadow: 0 8px 24px rgba(26, 29, 33, 0.06);
+    }
+    .brand {
+      font-size: 0.8rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 600;
+      margin: 0 0 0.4rem;
+    }
+    h1 {
+      margin: 0 0 0.5rem;
+      font-size: 1.45rem;
+      font-weight: 650;
+    }
+    .lead {
+      margin: 0 0 1.25rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .notice {
+      background: var(--accent-soft);
+      border: 1px solid #c5ddd3;
+      border-radius: 8px;
+      padding: 0.9rem 1rem;
+      margin: 0 0 1.25rem;
+    }
+    .notice strong { display: block; margin-bottom: 0.25rem; }
+    .notice p {
+      margin: 0;
+      color: var(--text);
+      line-height: 1.45;
+      font-size: 0.95rem;
+    }
+    .notice .btn {
+      display: inline-block;
+      margin-top: 0.85rem;
+      background: var(--accent);
+      color: #fff;
+      text-decoration: none;
+      padding: 0.5rem 0.95rem;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+    .notice .btn:hover { background: #095c42; }
+    a { color: var(--accent); }
+    dl {
+      margin: 0;
+      display: grid;
+      grid-template-columns: 8.5rem 1fr;
+      gap: 0.45rem 0.75rem;
+      font-size: 0.92rem;
+    }
+    dt { color: var(--muted); }
+    dd { margin: 0; overflow-wrap: anywhere; }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-weight: 600;
+    }
+    .status::before {
+      content: "";
+      width: 0.55rem;
+      height: 0.55rem;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .status.ready { color: var(--ready); }
+    .status.connecting { color: var(--connecting); }
+    .section-title {
+      margin: 1.35rem 0 0.55rem;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+    }
+    footer {
+      margin-top: 1.35rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+      line-height: 1.45;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <p class="brand">Quemsi Agent</p>
+    <h1>This is not the Quemsi UI</h1>
+    <p class="lead">
+      You opened the agent control address on this machine. The agent runs backup and restore jobs
+      here. Day-to-day work happens in the Quemsi web application.
+    </p>
+
+    <div class="notice">
+      <strong>Use the Quemsi UI instead</strong>
+      <p>
+        Open the Quemsi web UI, sign in, and select this agent.
+        Schema builders and file downloads open from this address automatically when you use
+        <em>Configure on agent</em> or download a file in the UI. There is nothing to configure
+        by visiting this URL directly.
+      </p>
+      <a class="btn" href="{{UI_URL}}" target="_blank" rel="noopener noreferrer">Open Quemsi UI</a>
+    </div>
+
+    <p class="section-title">This agent</p>
+    <dl>
+      <dt>Status</dt>
+      <dd><span class="status {{STATUS_CLASS}}">{{STATUS}}</span></dd>
+      <dt>Identity</dt>
+      <dd>{{CLIENT_ID}}</dd>
+      <dt>Version</dt>
+      <dd>{{VERSION}}</dd>
+      <dt>Runtime</dt>
+      <dd>{{RUNTIME}}</dd>
+      <dt>Connected API</dt>
+      <dd>{{API_URL}}</dd>
+    </dl>
+
+    <p class="section-title">Registered resources</p>
+    <dl>
+      <dt>Datasources</dt>
+      <dd>{{DATASOURCES}}</dd>
+      <dt>Storages</dt>
+      <dd>{{STORAGES}}</dd>
+      <dt>Timers</dt>
+      <dd>{{TIMERS}}</dd>
+      <dt>Flows</dt>
+      <dd>{{FLOWS}}</dd>
+    </dl>
+
+    <footer>
+      If you reached this page from a bookmark or by typing the agent port, continue from
+      <a href="{{UI_URL}}" target="_blank" rel="noopener noreferrer">{{UI_HOST}}</a>.
+    </footer>
+  </main>
+</body>
+</html>

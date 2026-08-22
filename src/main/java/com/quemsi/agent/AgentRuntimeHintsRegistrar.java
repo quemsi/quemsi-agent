@@ -9,6 +9,7 @@ import com.quemsi.agent.flow.TimerImpl;
 import com.quemsi.agent.config.TrustStoreSupport;
 import com.quemsi.agent.control.ControlBuilderController;
 import com.quemsi.agent.control.ControlDownloadController;
+import com.quemsi.agent.control.ControlHomeController;
 import com.quemsi.agent.control.BuilderSessionRegistry;
 import com.quemsi.commons.util.FileNameUtil;
 import com.quemsi.model.dto.AgentError;
@@ -184,6 +185,7 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(BuilderSessionSubmitRequest.class, MemberCategory.values())
             .registerType(ControlDownloadController.class, MemberCategory.values())
             .registerType(ControlBuilderController.class, MemberCategory.values())
+            .registerType(ControlHomeController.class, MemberCategory.values())
             .registerType(BuilderSessionRegistry.class, MemberCategory.values())
             .registerType(TrustStoreSupport.class, MemberCategory.values())
             .registerType(java.security.KeyStore.class, MemberCategory.values())
@@ -193,7 +195,8 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
         hints.resources()
             .registerPattern("control-builder/index.html")
             .registerPattern("control-builder/builder.js")
-            .registerPattern("control-builder/builder.css");
+            .registerPattern("control-builder/builder.css")
+            .registerPattern("control-home/index.html");
         hints.serialization()
             .registerType(AgentError.class)
             .registerType(AgentModel.class)

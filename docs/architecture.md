@@ -49,7 +49,7 @@ quemsi-agent/
     ├── api/           # HTTP clients to API + Keycloak
     ├── aspect/        # GlobalErrorHandling (AOP → NotifyError)
     ├── config/        # Spring beans, WebClient, properties
-    ├── control/       # Browser-facing control (download + schema builder)
+    ├── control/       # Browser-facing control (home, download + schema builder)
     ├── flow/          # TimerImpl (Quartz cron)
     └── service/       # FlowManager, bean registry, storage, cmds
 ```
@@ -159,6 +159,7 @@ Flow editor fetches GET /api/builder-sessions/{id}/result  →  merge into step
 - `MASK_COLUMNS` schema browser infers source from the flow’s **From** step: `StoredData` → resolve that version’s archive and load `db-model.json`; `RdbmsBackup` → live From datasource browse. Runtime always masks using archive `db-model.json`.
 - `SUBSET` uses the live From datasource. Builder browse/preview run on the agent (`/control/builder/api/browse-rows`, `/preview-subset`); From **Count** remains the API→agent sync `PreviewSubset` command.
 - Agent UI is static HTML/JS under `classpath:/control-builder/` (mode-aware).
+- Opening the control base URL (`/`) serves a landing page from `classpath:/control-home/` that identifies the agent and directs users to the Quemsi UI.
 
 **Follow-up:** browser-side availability check against `controlBaseUrl` (distinct from long-poll ONLINE).
 
@@ -218,6 +219,7 @@ Flow editor fetches GET /api/builder-sessions/{id}/result  →  merge into step
 | `BAKERUP_HOME` | Home dir default |
 | Per-datasource/drive env names | When `useEnvVar=true` |
 | `-Dquemsi-api.server-url` / `keycloak-url` | Common overrides |
+| `QUEMSI_UI_URL` | Optional Quemsi UI link on the agent landing page; default is derived from the API URL (`/app/`) |
 
 Local profile: `application-local.yml` points API/Keycloak at `127.0.0.1:9081` / `127.0.0.1`.
 
@@ -295,12 +297,13 @@ For interactive actions that must stay in the customer environment (download, la
 
 1. `AgentCoordinator` — lifecycle + command dispatch
 2. `QuemsiApi` / `AgentApiController` — protocol
-3. `control/ControlDownloadController` — ticketed file download
-4. `control/ControlBuilderController` — schema builder sessions (ClearTables / DropTables / MaskColumns / UpdateSequences / Subset)
-5. `AgentModel` + `AgentCommand` — shared contract
-6. `FlowManager` + `StepFactory` — pipeline engine
-7. `SpringBeanManager` — dynamic resource registration
-8. One `service/cmd/Execute*` — handler pattern
+3. `control/ControlHomeController` — landing page at the control base URL
+4. `control/ControlDownloadController` — ticketed file download
+5. `control/ControlBuilderController` — schema builder sessions (ClearTables / DropTables / MaskColumns / UpdateSequences / Subset)
+6. `AgentModel` + `AgentCommand` — shared contract
+7. `FlowManager` + `StepFactory` — pipeline engine
+8. `SpringBeanManager` — dynamic resource registration
+9. One `service/cmd/Execute*` — handler pattern
 
 ---
 

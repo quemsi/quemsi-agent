@@ -92,8 +92,12 @@ public class AgentCoordinator {
     @Value("${spring.application.version}")
     private String agentVersion;
 
-	private boolean initialized;
-	
+	private volatile boolean initialized;
+
+    public boolean isInitialized() {
+        return initialized;
+    }
+
     public void initialize(AgentModel model){
         if(model.getTimers() != null){
             model.getTimers().forEach(t -> beanManager.registerTimer(t));

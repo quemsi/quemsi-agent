@@ -27,6 +27,9 @@ quemsi-api:
   client-secret: ${CLIENT_SECRET}
   log-request-detail: true
   retry: 5
+quemsi-ui:
+  # Browser URL of the Quemsi web app. Empty = derive from quemsi-api.server-url (origin + /app/).
+  url: ${QUEMSI_UI_URL:}
   truststore:
     path: ${TRUSTSTORE_PATH:}
     password: ${TRUSTSTORE_PASSWORD:changeit}

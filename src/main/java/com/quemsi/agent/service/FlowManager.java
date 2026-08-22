@@ -4,6 +4,7 @@ import java.nio.charset.Charset;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -122,6 +123,10 @@ public class FlowManager {
 
 	public Optional<Flow> findByName(String name) {
 		return !flows.containsKey(name)?Optional.empty():Optional.of(flows.get(name));
+	}
+
+	public List<String> flowNames() {
+		return List.copyOf(flows.keySet());
 	}
 
 	public class FlowRunnable implements NamedRunnable
