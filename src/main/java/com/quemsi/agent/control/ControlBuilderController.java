@@ -48,6 +48,7 @@ import com.quemsi.model.flow.db.sql.DbColumn;
 import com.quemsi.model.flow.db.sql.DbModel;
 import com.quemsi.model.flow.db.sql.DbSequence;
 import com.quemsi.model.flow.db.sql.DbTable;
+import com.quemsi.model.flow.db.sql.DbView;
 import com.quemsi.model.flow.file.ZipBackupArchive;
 import com.quemsi.model.flow.out.Storage;
 import com.quemsi.model.flow.subset.SqlSubsetSupport;
@@ -102,10 +103,15 @@ public class ControlBuilderController {
             schemaLabel = storage.isBlank() ? file : storage + " / " + file;
         }
 
+        String schemaSourceName = session.schemaSource() != null
+                ? session.schemaSource().name()
+                : BuilderSchemaSource.DATASOURCE.name();
+
         String html = loadTemplate("control-builder/index.html");
         html = html.replace("{{SESSION_ID}}", escapeHtml(session.sessionId()))
                 .replace("{{BROWSER_TOKEN}}", escapeHtml(session.browserToken()))
                 .replace("{{MODE}}", escapeHtml(session.mode() != null ? session.mode().name() : ""))
+                .replace("{{SCHEMA_SOURCE}}", escapeHtml(schemaSourceName))
                 .replace("{{DATASOURCE}}", escapeHtml(schemaLabel))
                 .replace("{{DRAFT_JSON}}", escapeJsString(objectMapper.writeValueAsString(
                         session.draftConfig() != null ? session.draftConfig() : Map.of())));
@@ -124,13 +130,218 @@ public class ControlBuilderController {
                 && session.mode() != BuilderMode.DROP_TABLES
                 && session.mode() != BuilderMode.MASK_COLUMNS
                 && session.mode() != BuilderMode.UPDATE_SEQUENCES
-                && session.mode() != BuilderMode.SUBSET) {
+                && session.mode() != BuilderMode.SUBSET
+                && session.mode() != BuilderMode.BROWSE) {
             throw Exceptions.badRequest("builder-mode-unsupported").withExtra("mode", session.mode()).get();
         }
         ensureModel(session);
         ActiveSession refreshed = sessionRegistry.require(sessionId, token);
         List<String> list = refreshed.cachedTables() != null ? refreshed.cachedTables() : List.of();
         return Map.of("tables", list);
+    }
+
+    @GetMapping("/api/objects")
+    public Map<String, Object> objects(@RequestParam("sessionId") String sessionId,
+            @RequestParam("token") String token) {
+        ActiveSession session = sessionRegistry.require(sessionId, token);
+        if (session.mode() != BuilderMode.BROWSE) {
+            throw Exceptions.badRequest("builder-mode-unsupported").withExtra("mode", session.mode()).get();
+        }
+        DbModel model = ensureModel(session);
+        List<String> tables = new ArrayList<>();
+        if (model.getTables() != null) {
+            for (String name : model.getTables().keySet()) {
+                if (name != null && !name.isBlank()) {
+                    tables.add(name);
+                }
+            }
+        }
+        tables.sort(String.CASE_INSENSITIVE_ORDER);
+
+        List<String> views = new ArrayList<>();
+        if (model.getViews() != null) {
+            for (DbView view : model.getViews()) {
+                if (view != null && view.getName() != null) {
+                    views.add(view.qualifiedName());
+                }
+            }
+        }
+        views.sort(String.CASE_INSENSITIVE_ORDER);
+
+        List<String> sequences = new ArrayList<>();
+        if (model.getSequences() != null) {
+            for (DbSequence seq : model.getSequences()) {
+                if (seq != null && seq.getName() != null) {
+                    sequences.add(seq.qualifiedName());
+                }
+            }
+        }
+        sequences.sort(String.CASE_INSENSITIVE_ORDER);
+
+        boolean liveRows = session.schemaSource() != BuilderSchemaSource.DATA_VERSION
+                && !StringUtils.isEmptyOrNull(session.datasourceName());
+
+        Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("tables", tables);
+        result.put("views", views);
+        result.put("sequences", sequences);
+        result.put("liveRows", liveRows);
+        return result;
+    }
+
+    @GetMapping("/api/object-detail")
+    public Map<String, Object> objectDetail(@RequestParam("sessionId") String sessionId,
+            @RequestParam("token") String token,
+            @RequestParam("kind") String kind,
+            @RequestParam("name") String name) {
+        ActiveSession session = sessionRegistry.require(sessionId, token);
+        if (session.mode() != BuilderMode.BROWSE) {
+            throw Exceptions.badRequest("builder-mode-unsupported").withExtra("mode", session.mode()).get();
+        }
+        if (StringUtils.isEmptyOrNull(kind) || StringUtils.isEmptyOrNull(name)) {
+            throw Exceptions.badRequest("builder-object-kind-name-required").get();
+        }
+        DbModel model = ensureModel(session);
+        String kindNorm = kind.trim().toLowerCase();
+        Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("kind", kindNorm);
+        result.put("name", name);
+
+        if ("table".equals(kindNorm) || "view".equals(kindNorm)) {
+            if ("table".equals(kindNorm)) {
+                DbTable dbTable = model.findTable(name)
+                        .orElseThrow(Exceptions.notFound("builder-table-not-found").withExtra("table", name).supplier());
+                putTableDetail(result, model, dbTable);
+            } else {
+                DbView dbView = findView(model, name)
+                        .orElseThrow(Exceptions.notFound("builder-view-not-found").withExtra("view", name).supplier());
+                result.put("schema", dbView.getSchema() != null ? dbView.getSchema() : "");
+                result.put("simpleName", dbView.getName() != null ? dbView.getName() : "");
+                result.put("qualified", dbView.qualifiedName());
+                result.put("definition", dbView.getDefinition() != null ? dbView.getDefinition() : "");
+                result.put("dependsOnViews",
+                        dbView.getDependsOnViews() != null ? List.copyOf(dbView.getDependsOnViews()) : List.of());
+                model.findTable(dbView.qualifiedName()).ifPresent(t -> putTableDetail(result, model, t));
+            }
+            return result;
+        }
+        if ("sequence".equals(kindNorm)) {
+            DbSequence seq = findSequence(model, name)
+                    .orElseThrow(Exceptions.notFound("builder-sequence-not-found").withExtra("sequence", name).supplier());
+            result.put("schema", seq.getSchema() != null ? seq.getSchema() : "");
+            result.put("simpleName", seq.getName() != null ? seq.getName() : "");
+            result.put("qualified", seq.qualifiedName());
+            result.put("startValue", seq.getStartValue());
+            result.put("minValue", seq.getMinValue());
+            result.put("maxValue", seq.getMaxValue());
+            result.put("incrementBy", seq.getIncrementBy());
+            result.put("cycle", seq.isCycle());
+            result.put("cacheSize", seq.getCacheSize());
+            result.put("lastValue", seq.getLastValue());
+            return result;
+        }
+        throw Exceptions.badRequest("builder-object-kind-unsupported").withExtra("kind", kind).get();
+    }
+
+    private static void putTableDetail(Map<String, Object> result, DbModel model, DbTable dbTable) {
+        result.put("schema", dbTable.getSchema() != null ? dbTable.getSchema() : "");
+        result.put("simpleName", dbTable.getName() != null ? dbTable.getName() : "");
+        result.put("qualified", dbTable.qualifiedName());
+        List<Map<String, Object>> columns = new ArrayList<>();
+        for (DbColumn col : dbTable.orderedColumns()) {
+            if (col == null || col.getName() == null) {
+                continue;
+            }
+            Map<String, Object> c = new java.util.LinkedHashMap<>();
+            c.put("name", col.getName());
+            c.put("dataType", col.getDataType() != null ? col.getDataType() : "");
+            c.put("columnType", col.getColumnType() != null ? col.getColumnType() : "");
+            c.put("nullable", col.isNullable());
+            c.put("columnKey", col.getColumnKey() != null ? col.getColumnKey() : "");
+            c.put("identity", col.isIdentity());
+            c.put("maxLength", col.getMaxLength());
+            c.put("numPrecision", col.getNumPrecision());
+            c.put("numScale", col.getNumScale());
+            c.put("columnDefault", col.getColumnDefault());
+            columns.add(c);
+        }
+        result.put("columns", columns);
+        result.put("pkColumns",
+                dbTable.getPkColumnNames() != null ? List.copyOf(dbTable.getPkColumnNames()) : List.of());
+
+        List<Map<String, Object>> foreignKeys = new ArrayList<>();
+        if (model.getReferenceInfos() != null) {
+            String q = dbTable.qualifiedName();
+            String bare = dbTable.getName();
+            for (DbModel.ReferenceInfo ref : model.getReferenceInfos()) {
+                if (ref == null) {
+                    continue;
+                }
+                String srcQ = ref.srcQualifiedName();
+                String refQ = ref.refQualifiedName();
+                boolean involves = q.equals(srcQ) || q.equals(refQ)
+                        || (bare != null && (bare.equals(ref.getSrcTableName()) || bare.equals(ref.getRefTableName())));
+                if (!involves) {
+                    continue;
+                }
+                Map<String, Object> fk = new java.util.LinkedHashMap<>();
+                fk.put("constraintName", ref.getConstraintName() != null ? ref.getConstraintName() : "");
+                fk.put("srcTable", srcQ != null ? srcQ : "");
+                fk.put("srcColumns", ref.getSrcColumnNames() != null ? List.copyOf(ref.getSrcColumnNames()) : List.of());
+                fk.put("refTable", refQ != null ? refQ : "");
+                fk.put("refColumns", ref.getRefColumnNames() != null ? List.copyOf(ref.getRefColumnNames()) : List.of());
+                foreignKeys.add(fk);
+            }
+        }
+        result.put("foreignKeys", foreignKeys);
+
+        List<Map<String, Object>> indexes = new ArrayList<>();
+        Map<String, DbModel.IndexInfo> idxMap = model.indexesForTable(dbTable.qualifiedName());
+        if (idxMap != null) {
+            for (DbModel.IndexInfo idx : idxMap.values()) {
+                if (idx == null || idx.getIndexName() == null) {
+                    continue;
+                }
+                Map<String, Object> i = new java.util.LinkedHashMap<>();
+                i.put("name", idx.getIndexName());
+                i.put("unique", idx.isUnique());
+                i.put("indexType", idx.getIndexType() != null ? idx.getIndexType() : "");
+                i.put("columns", idx.getColumns() != null ? List.copyOf(idx.getColumns()) : List.of());
+                indexes.add(i);
+            }
+        }
+        indexes.sort((a, b) -> String.valueOf(a.get("name")).compareToIgnoreCase(String.valueOf(b.get("name"))));
+        result.put("indexes", indexes);
+    }
+
+    private static java.util.Optional<DbView> findView(DbModel model, String name) {
+        if (model.getViews() == null || name == null) {
+            return java.util.Optional.empty();
+        }
+        for (DbView view : model.getViews()) {
+            if (view == null) {
+                continue;
+            }
+            if (name.equals(view.qualifiedName()) || name.equals(view.getName())) {
+                return java.util.Optional.of(view);
+            }
+        }
+        return java.util.Optional.empty();
+    }
+
+    private static java.util.Optional<DbSequence> findSequence(DbModel model, String name) {
+        if (model.getSequences() == null || name == null) {
+            return java.util.Optional.empty();
+        }
+        for (DbSequence seq : model.getSequences()) {
+            if (seq == null) {
+                continue;
+            }
+            if (name.equals(seq.qualifiedName()) || name.equals(seq.getName())) {
+                return java.util.Optional.of(seq);
+            }
+        }
+        return java.util.Optional.empty();
     }
 
     @GetMapping("/api/columns")
@@ -165,7 +376,7 @@ public class ControlBuilderController {
     public Map<String, Object> sequences(@RequestParam("sessionId") String sessionId,
             @RequestParam("token") String token) {
         ActiveSession session = sessionRegistry.require(sessionId, token);
-        if (session.mode() != BuilderMode.UPDATE_SEQUENCES) {
+        if (session.mode() != BuilderMode.UPDATE_SEQUENCES && session.mode() != BuilderMode.BROWSE) {
             throw Exceptions.badRequest("builder-mode-unsupported").withExtra("mode", session.mode()).get();
         }
         DbModel model = ensureModel(session);
@@ -189,8 +400,13 @@ public class ControlBuilderController {
         String sessionId = asString(body.get("sessionId"));
         String token = asString(body.get("token"));
         ActiveSession session = sessionRegistry.require(sessionId, token);
-        if (session.mode() != BuilderMode.SUBSET) {
+        if (session.mode() != BuilderMode.SUBSET && session.mode() != BuilderMode.BROWSE) {
             throw Exceptions.badRequest("builder-mode-unsupported").withExtra("mode", session.mode()).get();
+        }
+        if (session.mode() == BuilderMode.BROWSE
+                && (session.schemaSource() == BuilderSchemaSource.DATA_VERSION
+                        || StringUtils.isEmptyOrNull(session.datasourceName()))) {
+            throw Exceptions.badRequest("builder-browse-rows-require-live-datasource").get();
         }
         String table = asString(body.get("table"));
         if (StringUtils.isEmptyOrNull(table)) {
@@ -464,6 +680,9 @@ public class ControlBuilderController {
                 ? (Map<String, Object>) m
                 : null;
         ActiveSession session = sessionRegistry.require(sessionId, token);
+        if (session.mode() == BuilderMode.BROWSE) {
+            throw Exceptions.badRequest("builder-browse-read-only").get();
+        }
         if (config == null) {
             throw Exceptions.badRequest("builder-result-required").get();
         }

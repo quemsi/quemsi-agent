@@ -154,6 +154,60 @@
       </div>
     </section>
 
+    <!-- Browse (read-only peek) -->
+    <section id="browseMode" hidden>
+      <p id="browseStatus" class="status">Loading schema…</p>
+      <div class="browse-layout">
+        <div class="mask-pane browse-tree-pane">
+          <div class="mask-columns-header"><strong>Objects</strong></div>
+          <input type="search" id="browseFilter" placeholder="Filter objects…" />
+          <div id="browseTree" class="list browse-tree"></div>
+        </div>
+        <div class="mask-pane browse-detail-pane">
+          <div class="mask-columns-header">
+            <strong id="browseDetailTitle">Select an object</strong>
+          </div>
+          <div id="browseDetailBody" class="browse-detail-body">
+            <p class="meta">Choose a table, view, or sequence.</p>
+          </div>
+          <div id="browseRowsSection" class="browse-rows-section" hidden>
+            <div class="mask-columns-header mt">
+              <strong>Sample rows</strong>
+            </div>
+            <p id="browseRowsBanner" class="meta hint" hidden></p>
+            <div id="browseRowsControls" class="subset-controls" hidden>
+              <label class="subset-field subset-filter-field">
+                <span>Filter</span>
+                <input type="text" id="browseWhere" placeholder="t.status = 'FAILED'" />
+              </label>
+              <button type="button" id="browseRowsApply" class="btn secondary">Apply filter</button>
+            </div>
+            <p id="browseRowsStatus" class="status"></p>
+            <div class="subset-grid-wrap">
+              <table id="browseGrid" class="subset-grid">
+                <thead id="browseGridHead"></thead>
+                <tbody id="browseGridBody"></tbody>
+              </table>
+            </div>
+            <div id="browsePager" class="subset-pager" hidden>
+              <button type="button" id="browsePrevPage" class="btn secondary">Prev</button>
+              <span id="browsePageLabel" class="subset-page-label"></span>
+              <button type="button" id="browseNextPage" class="btn secondary">Next</button>
+              <label class="subset-field">
+                <span>Page size</span>
+                <select id="browsePageSize">
+                  <option value="25">25</option>
+                  <option value="50" selected>50</option>
+                  <option value="100">100</option>
+                  <option value="200">200</option>
+                </select>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <footer class="actions">
       <button type="button" id="cancel" class="btn secondary">Cancel</button>
       <button type="button" id="apply" class="btn primary">Apply</button>
@@ -165,6 +219,7 @@
       sessionId: "{{SESSION_ID}}",
       token: "{{BROWSER_TOKEN}}",
       mode: "{{MODE}}",
+      schemaSource: "{{SCHEMA_SOURCE}}",
       datasource: "{{DATASOURCE}}",
       draft: JSON.parse('{{DRAFT_JSON}}')
     };

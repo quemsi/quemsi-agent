@@ -129,7 +129,7 @@ Interactive user actions that must touch private storage or live schema go throu
 | **Agent download** | Browser opens `GET {controlBaseUrl}/control/download?ticket=…` |
 | **Redeem download** | Agent calls `POST /api/agent/download-grants/{token}/redeem` with its JWT, then streams via `Storage.getFiles` |
 | **Builder session** | User `POST /api/builder-sessions` → agent opens `GET /control/builder?ticket=…`, browses schema, submits config |
-| **Builder modes** | `CLEAR_TABLES`, `DROP_TABLES`, `MASK_COLUMNS`, `UPDATE_SEQUENCES` |
+| **Builder modes** | `CLEAR_TABLES`, `DROP_TABLES`, `MASK_COLUMNS`, `UPDATE_SEQUENCES`, `SUBSET`, `BROWSE` |
 
 ### Download
 
@@ -160,6 +160,19 @@ Flow editor fetches GET /api/builder-sessions/{id}/result  →  merge into step
 - `SUBSET` uses the live From datasource. Builder browse/preview run on the agent (`/control/builder/api/browse-rows`, `/preview-subset`); From **Count** remains the API→agent sync `PreviewSubset` command.
 - Agent UI is static HTML/JS under `classpath:/control-builder/` (mode-aware).
 - Opening the control base URL (`/`) serves a landing page from `classpath:/control-home/` that identifies the agent and directs users to the Quemsi UI.
+
+### Browse (read-only peek)
+
+```
+Datasources / From / Mask / Subset  →  API create builder session (mode=BROWSE)  →  popup agent
+Agent loads DbModel (+ optional sample rows via browse-rows)  →  Close cancels (no result_config)
+```
+
+- Entry points: Datasource list/detail, From (live DS), Subset **Browse**, Mask **Browse schema on agent**.
+- `DATASOURCE`: object tree (tables / views / sequences), column/FK/index detail, paged sample rows with optional WHERE.
+- `DATA_VERSION` (from Mask + StoredData): same schema tree/detail; sample rows disabled (no live connection).
+- Optional `draftConfig.focusTable` / `focusKind` preselects an object.
+- Submit/apply is rejected (`builder-browse-read-only`); nothing merges into the flow step.
 
 **Follow-up:** browser-side availability check against `controlBaseUrl` (distinct from long-poll ONLINE).
 

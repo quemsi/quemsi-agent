@@ -5,6 +5,7 @@
   const isMask = mode === "MASK_COLUMNS";
   const isSeq = mode === "UP" + "DATE_SEQUENCES";
   const isSubset = mode === "SUBSET";
+  const isBrowse = mode === "BROWSE";
 
   const els = {
     title: document.getElementById("title"),
@@ -15,6 +16,7 @@
     maskMode: document.getElementById("maskMode"),
     seqMode: document.getElementById("seqMode"),
     subsetMode: document.getElementById("subsetMode"),
+    browseMode: document.getElementById("browseMode"),
     status: document.getElementById("status"),
     list: document.getElementById("list"),
     listBody: document.getElementById("listBody"),
@@ -67,6 +69,24 @@
     subsetDriversList: document.getElementById("subsetDriversList"),
     subsetPreviewStatus: document.getElementById("subsetPreviewStatus"),
     subsetPreviewList: document.getElementById("subsetPreviewList"),
+    browseStatus: document.getElementById("browseStatus"),
+    browseFilter: document.getElementById("browseFilter"),
+    browseTree: document.getElementById("browseTree"),
+    browseDetailTitle: document.getElementById("browseDetailTitle"),
+    browseDetailBody: document.getElementById("browseDetailBody"),
+    browseRowsSection: document.getElementById("browseRowsSection"),
+    browseRowsBanner: document.getElementById("browseRowsBanner"),
+    browseRowsControls: document.getElementById("browseRowsControls"),
+    browseWhere: document.getElementById("browseWhere"),
+    browseRowsApply: document.getElementById("browseRowsApply"),
+    browseRowsStatus: document.getElementById("browseRowsStatus"),
+    browseGridHead: document.getElementById("browseGridHead"),
+    browseGridBody: document.getElementById("browseGridBody"),
+    browsePager: document.getElementById("browsePager"),
+    browsePrevPage: document.getElementById("browsePrevPage"),
+    browseNextPage: document.getElementById("browseNextPage"),
+    browsePageLabel: document.getElementById("browsePageLabel"),
+    browsePageSize: document.getElementById("browsePageSize"),
   };
 
   els.datasource.textContent = cfg.datasource || "—";
@@ -131,7 +151,9 @@
             ? els.seqStatus
             : isSubset
               ? els.subsetStatus
-              : els.status,
+              : isBrowse
+                ? els.browseStatus
+                : els.status,
         e.message || String(e),
         true
       );
@@ -783,8 +805,351 @@
     initSeqMode();
   } else if (isSubset) {
     initSubsetMode();
+  } else if (isBrowse) {
+    initBrowseMode();
   } else {
     initTablesMode();
+  }
+
+  /* ---------- Browse (read-only) ---------- */
+  function initBrowseMode() {
+    document.title = "Browse — Quemsi Agent";
+    els.title.textContent = "Browse datasource";
+    els.allHint.hidden = false;
+    els.allHint.textContent =
+      "Read-only peek at schema and sample rows. Close when done — nothing is written back to the flow.";
+    els.browseMode.hidden = false;
+    document.querySelector(".wrap")?.classList.add("browse-wide");
+    els.apply.hidden = true;
+    els.cancel.textContent = "Close";
+
+    const liveFromCfg = (cfg.schemaSource || "DATASOURCE") !== "DATA_VERSION";
+    let liveRows = liveFromCfg;
+    /** @type {{kind:string,name:string}[]} */
+    let objects = [];
+    let active = null;
+    let browsePage = 0;
+    let browseTotal = 0;
+    let browsePageSize = 50;
+    let browseColumns = [];
+
+    function sortLocale(a, b) {
+      return String(a).localeCompare(String(b), undefined, { sensitivity: "base", numeric: true });
+    }
+
+    function renderTree() {
+      const q = (els.browseFilter.value || "").trim().toLowerCase();
+      els.browseTree.innerHTML = "";
+      const groups = [
+        { kind: "table", label: "Tables" },
+        { kind: "view", label: "Views" },
+        { kind: "sequence", label: "Sequences" },
+      ];
+      groups.forEach((g) => {
+        const items = objects
+          .filter((o) => o.kind === g.kind)
+          .filter((o) => !q || o.name.toLowerCase().includes(q))
+          .slice()
+          .sort((a, b) => sortLocale(a.name, b.name));
+        if (!items.length && q) return;
+        const header = document.createElement("div");
+        header.className = "browse-group-header";
+        header.textContent = g.label + " (" + items.length + ")";
+        els.browseTree.appendChild(header);
+        items.forEach((o) => {
+          const row = document.createElement("button");
+          row.type = "button";
+          row.className = "row browse-tree-item";
+          if (active && active.kind === o.kind && active.name === o.name) {
+            row.classList.add("active");
+          }
+          row.textContent = o.name;
+          row.addEventListener("click", () => selectObject(o.kind, o.name));
+          els.browseTree.appendChild(row);
+        });
+      });
+    }
+
+    function escapeHtml(s) {
+      return String(s == null ? "" : s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function renderDetail(detail) {
+      els.browseDetailTitle.textContent = detail.qualified || detail.name || "Object";
+      const parts = [];
+      if (detail.kind === "sequence") {
+        parts.push("<dl class='browse-dl'>");
+        [
+          ["Schema", detail.schema],
+          ["Name", detail.simpleName],
+          ["Start", detail.startValue],
+          ["Min", detail.minValue],
+          ["Max", detail.maxValue],
+          ["Increment", detail.incrementBy],
+          ["Cycle", detail.cycle],
+          ["Cache", detail.cacheSize],
+          ["Last value", detail.lastValue],
+        ].forEach(([k, v]) => {
+          if (v === undefined || v === null || v === "") return;
+          parts.push("<dt>" + escapeHtml(k) + "</dt><dd>" + escapeHtml(v) + "</dd>");
+        });
+        parts.push("</dl>");
+        els.browseDetailBody.innerHTML = parts.join("");
+        return;
+      }
+      if (detail.kind === "view" && detail.definition) {
+        parts.push("<p class='meta'><strong>Definition</strong></p>");
+        parts.push("<pre class='browse-pre'>" + escapeHtml(detail.definition) + "</pre>");
+        if (detail.dependsOnViews && detail.dependsOnViews.length) {
+          parts.push(
+            "<p class='meta'>Depends on: " +
+              escapeHtml(detail.dependsOnViews.join(", ")) +
+              "</p>"
+          );
+        }
+      }
+      if (detail.pkColumns && detail.pkColumns.length) {
+        parts.push(
+          "<p class='meta'><strong>Primary key:</strong> " +
+            escapeHtml(detail.pkColumns.join(", ")) +
+            "</p>"
+        );
+      }
+      if (detail.columns && detail.columns.length) {
+        parts.push("<div class='browse-table-wrap'><table class='browse-meta-table'><thead><tr>");
+        parts.push("<th>Column</th><th>Type</th><th>Nullable</th><th>Key</th></tr></thead><tbody>");
+        detail.columns.forEach((c) => {
+          const type = c.columnType || c.dataType || "";
+          parts.push(
+            "<tr><td>" +
+              escapeHtml(c.name) +
+              "</td><td>" +
+              escapeHtml(type) +
+              "</td><td>" +
+              (c.nullable ? "YES" : "NO") +
+              "</td><td>" +
+              escapeHtml(c.columnKey || (c.identity ? "IDENTITY" : "")) +
+              "</td></tr>"
+          );
+        });
+        parts.push("</tbody></table></div>");
+      } else if (detail.kind === "view" && !detail.columns) {
+        parts.push("<p class='meta'>No column metadata in schema model for this view.</p>");
+      }
+      if (detail.foreignKeys && detail.foreignKeys.length) {
+        parts.push("<p class='meta mt'><strong>Foreign keys</strong></p><ul class='browse-ul'>");
+        detail.foreignKeys.forEach((fk) => {
+          parts.push(
+            "<li>" +
+              escapeHtml(fk.srcTable) +
+              " (" +
+              escapeHtml((fk.srcColumns || []).join(", ")) +
+              ") → " +
+              escapeHtml(fk.refTable) +
+              " (" +
+              escapeHtml((fk.refColumns || []).join(", ")) +
+              ")</li>"
+          );
+        });
+        parts.push("</ul>");
+      }
+      if (detail.indexes && detail.indexes.length) {
+        parts.push("<p class='meta mt'><strong>Indexes</strong></p><ul class='browse-ul'>");
+        detail.indexes.forEach((idx) => {
+          parts.push(
+            "<li>" +
+              escapeHtml(idx.name) +
+              (idx.unique ? " (unique)" : "") +
+              ": " +
+              escapeHtml((idx.columns || []).join(", ")) +
+              "</li>"
+          );
+        });
+        parts.push("</ul>");
+      }
+      els.browseDetailBody.innerHTML = parts.join("") || "<p class='meta'>No details.</p>";
+    }
+
+    function clearGrid() {
+      els.browseGridHead.innerHTML = "";
+      els.browseGridBody.innerHTML = "";
+      els.browsePager.hidden = true;
+      setStatus(els.browseRowsStatus, "");
+    }
+
+    function renderGrid(data) {
+      browseColumns = data.columns || [];
+      browseTotal = data.totalCount != null ? Number(data.totalCount) : 0;
+      browsePage = data.page != null ? Number(data.page) : 0;
+      browsePageSize = data.pageSize != null ? Number(data.pageSize) : browsePageSize;
+      els.browsePageSize.value = String(browsePageSize);
+
+      const headRow = document.createElement("tr");
+      browseColumns.forEach((col) => {
+        const th = document.createElement("th");
+        th.textContent = col;
+        headRow.appendChild(th);
+      });
+      els.browseGridHead.innerHTML = "";
+      els.browseGridHead.appendChild(headRow);
+
+      els.browseGridBody.innerHTML = "";
+      (data.rows || []).forEach((row) => {
+        const tr = document.createElement("tr");
+        (row.values || []).forEach((v) => {
+          const td = document.createElement("td");
+          td.textContent = v == null ? "" : String(v);
+          tr.appendChild(td);
+        });
+        els.browseGridBody.appendChild(tr);
+      });
+
+      const totalPages = browsePageSize > 0 ? Math.max(1, Math.ceil(browseTotal / browsePageSize)) : 1;
+      els.browsePager.hidden = false;
+      els.browsePageLabel.textContent =
+        "Page " + (browsePage + 1) + " / " + totalPages + " · " + browseTotal + " row(s)";
+      els.browsePrevPage.disabled = browsePage <= 0;
+      els.browseNextPage.disabled = browsePage + 1 >= totalPages;
+      setStatus(
+        els.browseRowsStatus,
+        (data.rows || []).length + " row(s) on this page"
+      );
+    }
+
+    async function loadRows() {
+      if (!active || (active.kind !== "table" && active.kind !== "view")) {
+        return;
+      }
+      if (!liveRows) {
+        return;
+      }
+      setStatus(els.browseRowsStatus, "Loading rows…");
+      try {
+        const where = (els.browseWhere.value || "").trim();
+        const res = await fetch("/control/builder/api/browse-rows", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sessionId: cfg.sessionId,
+            token: cfg.token,
+            table: active.name,
+            where: where || null,
+            entireTable: !where,
+            page: browsePage,
+            pageSize: browsePageSize,
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.messageId || "Browse failed (" + res.status + ")");
+        }
+        renderGrid(data);
+      } catch (e) {
+        clearGrid();
+        setStatus(els.browseRowsStatus, e.message || String(e), true);
+      }
+    }
+
+    async function selectObject(kind, name) {
+      active = { kind, name };
+      renderTree();
+      els.browseDetailBody.innerHTML = "<p class='meta'>Loading…</p>";
+      clearGrid();
+      els.browseRowsSection.hidden = true;
+      try {
+        const res = await fetch(
+          "/control/builder/api/object-detail?" +
+            authQuery() +
+            "&kind=" +
+            encodeURIComponent(kind) +
+            "&name=" +
+            encodeURIComponent(name)
+        );
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.messageId || "Detail failed (" + res.status + ")");
+        }
+        renderDetail(data);
+        if (kind === "table" || kind === "view") {
+          els.browseRowsSection.hidden = false;
+          if (!liveRows) {
+            els.browseRowsBanner.hidden = false;
+            els.browseRowsBanner.textContent =
+              "Sample rows need a live datasource (archive schema is read-only).";
+            els.browseRowsControls.hidden = true;
+            els.browsePager.hidden = true;
+          } else {
+            els.browseRowsBanner.hidden = true;
+            els.browseRowsControls.hidden = false;
+            browsePage = 0;
+            await loadRows();
+          }
+        }
+      } catch (e) {
+        els.browseDetailBody.innerHTML =
+          "<p class='status error'>" + escapeHtml(e.message || String(e)) + "</p>";
+      }
+    }
+
+    els.browseFilter.addEventListener("input", renderTree);
+    els.browseRowsApply.addEventListener("click", () => {
+      browsePage = 0;
+      loadRows();
+    });
+    els.browsePrevPage.addEventListener("click", () => {
+      if (browsePage > 0) {
+        browsePage -= 1;
+        loadRows();
+      }
+    });
+    els.browseNextPage.addEventListener("click", () => {
+      browsePage += 1;
+      loadRows();
+    });
+    els.browsePageSize.addEventListener("change", () => {
+      browsePageSize = parseInt(els.browsePageSize.value, 10) || 50;
+      browsePage = 0;
+      loadRows();
+    });
+
+    (async function load() {
+      setStatus(els.browseStatus, "Loading schema…");
+      try {
+        const res = await fetch("/control/builder/api/objects?" + authQuery());
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.messageId || "Failed to load objects (" + res.status + ")");
+        }
+        liveRows = data.liveRows !== false && liveFromCfg;
+        objects = [];
+        (data.tables || []).forEach((n) => objects.push({ kind: "table", name: n }));
+        (data.views || []).forEach((n) => objects.push({ kind: "view", name: n }));
+        (data.sequences || []).forEach((n) => objects.push({ kind: "sequence", name: n }));
+        setStatus(
+          els.browseStatus,
+          objects.length +
+            " object(s)" +
+            (liveRows ? "" : " · schema only (no live rows)")
+        );
+        renderTree();
+        const focusKind = (draft.focusKind || "table").toLowerCase();
+        const focusTable = draft.focusTable ? String(draft.focusTable) : "";
+        if (focusTable) {
+          const match =
+            objects.find((o) => o.kind === focusKind && o.name === focusTable) ||
+            objects.find((o) => o.name === focusTable);
+          if (match) {
+            await selectObject(match.kind, match.name);
+          }
+        }
+      } catch (e) {
+        setStatus(els.browseStatus, e.message || String(e), true);
+      }
+    })();
   }
 
   /* ---------- Subset ---------- */
