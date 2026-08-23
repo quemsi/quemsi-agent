@@ -186,6 +186,7 @@ public class ControlBuilderController {
         result.put("views", views);
         result.put("sequences", sequences);
         result.put("liveRows", liveRows);
+        result.put("sourceType", model.getSourceType() != null ? model.getSourceType() : "");
         return result;
     }
 
@@ -440,7 +441,7 @@ public class ControlBuilderController {
         DbTable dbTable = resolveBrowseRelation(model, table, session.mode());
         DataSourceFactory ds = resolveDatasource(session.datasourceName());
         try (DMLService dml = ds.dmlService()) {
-            if (!dml.supportsSubset()) {
+            if (session.mode() == BuilderMode.SUBSET && !dml.supportsSubset()) {
                 throw Exceptions.badRequest("subset-not-supported-for-datasource").get();
             }
             SubsetBrowseResult browse = dml.browseRows(dbTable, where, pageSize, page);

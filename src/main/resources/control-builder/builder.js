@@ -825,6 +825,7 @@
 
     const liveFromCfg = (cfg.schemaSource || "DATASOURCE") !== "DATA_VERSION";
     let liveRows = liveFromCfg;
+    let sourceType = "";
     /** @type {{kind:string,name:string}[]} */
     let objects = [];
     let active = null;
@@ -1125,6 +1126,16 @@
           throw new Error(data.messageId || "Failed to load objects (" + res.status + ")");
         }
         liveRows = data.liveRows !== false && liveFromCfg;
+        sourceType = data.sourceType ? String(data.sourceType) : "";
+        if (els.browseWhere) {
+          if (sourceType.toUpperCase() === "MONGODB") {
+            els.browseWhere.placeholder = '{"status":"ACTIVE"}';
+            els.browseWhere.title = "MongoDB JSON filter document (leave empty for all docs)";
+          } else {
+            els.browseWhere.placeholder = "t.status = 'FAILED'";
+            els.browseWhere.title = "SQL WHERE fragment using alias t";
+          }
+        }
         objects = [];
         (data.tables || []).forEach((n) => objects.push({ kind: "table", name: n }));
         (data.views || []).forEach((n) => objects.push({ kind: "view", name: n }));
@@ -1133,7 +1144,8 @@
           els.browseStatus,
           objects.length +
             " object(s)" +
-            (liveRows ? "" : " · schema only (no live rows)")
+            (liveRows ? "" : " · schema only (no live rows)") +
+            (sourceType ? " · " + sourceType : "")
         );
         renderTree();
         const focusKind = (draft.focusKind || "table").toLowerCase();
