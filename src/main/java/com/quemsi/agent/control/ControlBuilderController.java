@@ -437,7 +437,7 @@ public class ControlBuilderController {
             }
         }
         DbModel model = ensureModel(session);
-        DbTable dbTable = resolveTable(model, table);
+        DbTable dbTable = resolveBrowseRelation(model, table, session.mode());
         DataSourceFactory ds = resolveDatasource(session.datasourceName());
         try (DMLService dml = ds.dmlService()) {
             if (!dml.supportsSubset()) {
@@ -565,6 +565,23 @@ public class ControlBuilderController {
 
     private static DbTable resolveTable(DbModel model, String tableName) {
         return SubsetPlanner.resolveTable(model, tableName);
+    }
+
+    /**
+     * For BROWSE mode, allow sampling views that are not present as {@link DbTable} entries
+     * by synthesizing a relation shell (no PK / columns) for {@code SELECT *}.
+     */
+    private static DbTable resolveBrowseRelation(DbModel model, String name, BuilderMode mode) {
+        try {
+            return resolveTable(model, name);
+        } catch (BaseRuntimeException e) {
+            if (mode != BuilderMode.BROWSE || !"subset-table-not-found".equals(e.getMessageId())) {
+                throw e;
+            }
+            return findView(model, name)
+                    .map(view -> new DbTable(view.getSchema(), view.getName()))
+                    .orElseThrow(() -> e);
+        }
     }
 
     private DbModel ensureModel(ActiveSession session) {
