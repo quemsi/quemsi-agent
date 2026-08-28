@@ -129,12 +129,12 @@ public class AgentCoordinator {
                 String runtime = AgentRuntimeDetector.detect();
                 agentBatchedLogger.logInfo(null, null, LogMessage.info("agent-runtime:{}", runtime));
                 AgentModel model = apiManager.allModel(agentVersion, runtime);
+				initialize(model);
+                initialized = true;
                 agentBatchedLogger.logDebug(null, null, LogMessage.debug("model received")
                     .withDetail(DelayedFormatter.toDelayedString(
                         Exceptions.wrapSupplier(() -> objectMapper.writeValueAsString(
                             CredentialLogSanitizer.copyMasked(model))))));
-				initialize(model);
-                initialized = true;
                 agentBatchedLogger.logInfo(null, null, LogMessage.info("initialization completed"));
                 stopCommandListenerChain.set(false);
                 apiCommandListener = new ApiCommandListener();
@@ -234,11 +234,9 @@ public class AgentCoordinator {
             if(command instanceof ExecuteFlow executeFlow){
                 commandExecutor.execute(executeFlow);
             } else if(command instanceof UpdateAgentModel updatedModel){
-                agentBatchedLogger.logInfo(null, null, LogMessage.info("updating model")
-                    .withDetail(DelayedFormatter.toDelayedString(
-                        Exceptions.wrapSupplier(() -> objectMapper.writeValueAsString(
-                            CredentialLogSanitizer.copyMasked(updatedModel.getUpdatedModel()))))));
                 initialize(updatedModel.getUpdatedModel());
+                agentBatchedLogger.logInfo(null, null, LogMessage.info("updating model")
+                    .withDetail(safeCommandDetail(updatedModel)));
             } else if(command instanceof RetentionExecute retentionExecute){
                 commandExecutor.execute(retentionExecute);
             } else if(command instanceof VersionDeleteRequest versionDeleteRequest){
