@@ -5,6 +5,7 @@
   const isMask = mode === "MASK_COLUMNS";
   const isSeq = mode === "UP" + "DATE_SEQUENCES";
   const isSubset = mode === "SUBSET";
+  const isUpsert = mode === "UPSERT";
   const isBrowse = mode === "BROWSE";
 
   const els = {
@@ -189,17 +190,28 @@
 
   els.cancel.addEventListener("click", doCancel);
 
-  /* ---------- ClearTables / DropTables ---------- */
+  /* ---------- ClearTables / DropTables / Upsert ---------- */
   function initTablesMode() {
-    document.title = (isDrop ? "DropTables" : "ClearTables") + " — Quemsi Agent";
-    els.title.textContent = isDrop ? "Drop tables" : "Clear tables";
-    els.allLabel.textContent = isDrop
-      ? "Drop all (tables, views, sequences, …)"
-      : "Clear all tables";
-    if (isDrop) {
+    if (isUpsert) {
+      document.title = "Upsert tables — Quemsi Agent";
+      els.title.textContent = "Upsert tables";
+      const allToggle = els.clearAll?.closest(".all-toggle");
+      if (allToggle) allToggle.hidden = true;
+      els.clearAll.checked = false;
       els.allHint.hidden = false;
       els.allHint.textContent =
-        "When “Drop all” is on, the step also removes views, sequences, triggers, functions, and related schema objects at runtime.";
+        "Select tables to promote from the backup. At least one table is required; “all tables” is not allowed.";
+    } else {
+      document.title = (isDrop ? "DropTables" : "ClearTables") + " — Quemsi Agent";
+      els.title.textContent = isDrop ? "Drop tables" : "Clear tables";
+      els.allLabel.textContent = isDrop
+        ? "Drop all (tables, views, sequences, …)"
+        : "Clear all tables";
+      if (isDrop) {
+        els.allHint.hidden = false;
+        els.allHint.textContent =
+          "When “Drop all” is on, the step also removes views, sequences, triggers, functions, and related schema objects at runtime.";
+      }
     }
     els.tablesMode.hidden = false;
     document.querySelector(".wrap")?.classList.add("tables-wide");
@@ -207,11 +219,14 @@
     let tables = [];
     const selected = new Set();
 
-    if (draft.all === true) {
+    if (!isUpsert && draft.all === true) {
       els.clearAll.checked = true;
     }
     if (Array.isArray(draft.tables)) {
       draft.tables.forEach((t) => selected.add(String(t)));
+    }
+    if (isUpsert) {
+      els.apply.disabled = selected.size === 0;
     }
 
     function visibleNames() {
@@ -237,6 +252,13 @@
     }
 
     function syncAllMode() {
+      if (isUpsert) {
+        els.list.classList.toggle("disabled", false);
+        els.clearSelection.disabled = false;
+        els.filter.disabled = false;
+        els.selectAll.disabled = false;
+        return;
+      }
       const all = els.clearAll.checked;
       els.list.classList.toggle("disabled", all);
       els.clearSelection.disabled = all;
@@ -244,8 +266,15 @@
       els.selectAll.disabled = all;
     }
 
+    function syncApplyEnabled() {
+      if (isUpsert) {
+        els.apply.disabled = selected.size === 0;
+      }
+    }
+
     function updateStatusCount() {
       setStatus(els.status, tables.length + " table(s) · " + selected.size + " selected");
+      syncApplyEnabled();
     }
 
     function render() {
@@ -298,6 +327,11 @@
       render();
     });
     els.apply.addEventListener("click", () => {
+      if (isUpsert) {
+        if (!selected.size) return;
+        postApply({ tables: Array.from(selected) });
+        return;
+      }
       postApply({
         all: !!els.clearAll.checked,
         tables: els.clearAll.checked ? [] : Array.from(selected),

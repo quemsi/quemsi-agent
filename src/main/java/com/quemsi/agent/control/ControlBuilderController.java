@@ -131,6 +131,7 @@ public class ControlBuilderController {
                 && session.mode() != BuilderMode.MASK_COLUMNS
                 && session.mode() != BuilderMode.UPDATE_SEQUENCES
                 && session.mode() != BuilderMode.SUBSET
+                && session.mode() != BuilderMode.UPSERT
                 && session.mode() != BuilderMode.BROWSE) {
             throw Exceptions.badRequest("builder-mode-unsupported").withExtra("mode", session.mode()).get();
         }
