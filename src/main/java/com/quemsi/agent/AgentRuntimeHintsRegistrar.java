@@ -40,6 +40,7 @@ import com.quemsi.model.dto.StorageType;
 import com.quemsi.model.dto.Tag;
 import com.quemsi.model.dto.TagType;
 import com.quemsi.model.dto.UpdateSchemaConfig;
+import com.quemsi.model.dto.UpsertConfig;
 import com.quemsi.model.dto.ClearRedisConfig;
 import com.quemsi.model.dto.RedisClearMode;
 import com.quemsi.model.dto.RedisConnectionMode;
@@ -166,6 +167,8 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(TestFolderAccessResult.class, MemberCategory.values())
             /* Flow step config types for Jackson convertValue */
             .registerType(UpdateSchemaConfig.class, MemberCategory.values())
+            .registerType(UpsertConfig.class, MemberCategory.values())
+            .registerType(UpsertConfig.OnExisting.class, MemberCategory.values())
             .registerType(ClearRedisConfig.class, MemberCategory.values())
             .registerType(RedisConnectionMode.class, MemberCategory.values())
             .registerType(RedisClearMode.class, MemberCategory.values())
@@ -249,6 +252,8 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(RetentionCompleted.class)
             .registerType(VersionDeleted.class)
             .registerType(UpdateSchemaConfig.class)
+            .registerType(UpsertConfig.class)
+            .registerType(UpsertConfig.OnExisting.class)
             .registerType(ClearRedisConfig.class)
             .registerType(RedisConnectionMode.class)
             .registerType(RedisClearMode.class)
