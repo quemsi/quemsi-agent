@@ -25,6 +25,7 @@ import com.quemsi.model.api.ApiClient;
 import com.quemsi.model.dto.FlowDetail;
 import com.quemsi.model.dto.FlowExecution;
 import com.quemsi.model.dto.agent.onapi.NotifyError;
+import com.quemsi.model.dto.agent.onapi.NotifyFlowReady;
 import com.quemsi.model.flow.Flow;
 import com.quemsi.model.flow.Step;
 import com.quemsi.model.flow.factories.StepFactory;
@@ -49,21 +50,13 @@ public class FlowManager {
 	private AgentBatchedLogger agentBatchedLogger;
 	
 	public Flow createNewFlow(FlowDetail flow) {
-		String model = null;
+		String name = flow.getName();
 		try {
 			if(!flow.isActive()){
-				Flow old = flows.containsKey(flow.getName())?flows.get(flow.getName()):null;
-				if(old != null && old.getTimerName() != null){
-					TimerImpl oldTimer = beanManager.findTimer(old.getTimerName());
-					oldTimer.remove(old.getName());
-					flows.remove(flow.getName());
-				}
-				return old;
+				return uninstall(name);
 			}
-			model = flow.getModel();
-			JsonNode node = objectMapper.readTree(model.getBytes(Charset.forName("UTF-8")));
+			JsonNode node = objectMapper.readTree(flow.getModel().getBytes(Charset.forName("UTF-8")));
 			Flow f = flowObjectProvider.getObject();
-			String name = node.findValue("name").asText(null);
 			f.setId(flow.getId());
 			f.setName(name);
 			f.setActive(flow.isActive());
@@ -85,38 +78,36 @@ public class FlowManager {
 			if (defaultTagsNode != null && defaultTagsNode.isObject()) {
 				f.setDefaultExecutionTags(objectMapper.convertValue(defaultTagsNode, new TypeReference<Map<String, String>>() {}));
 			}
-			Flow old = flows.containsKey(name)?flows.get(name):null;
-			if(old != null && old.getTimerName() != null){
-				TimerImpl oldTimer = beanManager.findTimer(old.getTimerName());
-				oldTimer.remove(old.getName());
-			}
-			if(flow.getTimer() != null){
-				TimerImpl timer = beanManager.findTimer(flow.getTimer());
-				timer.add(new FlowRunnable(f, flow.getTimer()));
-				f.setTimerName(timer.getName());
-			}
-			// Set log writer if available
 			if (agentBatchedLogger != null) {
 				f.setLogWriter((agentId, flowExecutionId, flowExecutionStepId, message) -> {
 					agentBatchedLogger.logWithAgentId(agentId, flowExecutionId, flowExecutionStepId, message);
 				});
 			}
+			uninstall(name);
 			f.initialize();
+			if(flow.getTimer() != null){
+				TimerImpl timer = beanManager.findTimer(flow.getTimer());
+				timer.add(new FlowRunnable(f, flow.getTimer()));
+				f.setTimerName(timer.getName());
+			}
 			flows.put(name, f);
+			apiClient.send(NotifyFlowReady.builder().flowName(name).build());
 			return f;
 		} catch(BaseRuntimeException bre){
+			uninstall(name);
 			if (agentBatchedLogger != null) {
 				agentBatchedLogger.logError(null, null, LogMessage.error("error-in-initializing-flow", bre));
 			}
-			apiClient.send(NotifyError.builder().exception(bre).build());
+			notifyInitFailure(name, bre);
 		} catch (Exception ex){
+			uninstall(name);
 			if (agentBatchedLogger != null) {
 				agentBatchedLogger.logError(null, null, LogMessage.error("error-in-creating-flow", ex));
 			}
 			BaseRuntimeException e = Exceptions.server("error-creating-flow").withCause(ex)
-				.onEntity("flow", flow.getName())
+				.onEntity("flow", name)
 				.withExtra("detailMessage", ex.getMessage()).get();
-			apiClient.send(NotifyError.builder().exception(e).build());
+			notifyInitFailure(name, e);
 		}
 		return null;
 	}
@@ -127,6 +118,33 @@ public class FlowManager {
 
 	public List<String> flowNames() {
 		return List.copyOf(flows.keySet());
+	}
+
+	Flow uninstall(String name) {
+		if (name == null) {
+			return null;
+		}
+		Flow old = flows.remove(name);
+		if (old != null && old.getTimerName() != null) {
+			TimerImpl oldTimer = beanManager.findTimer(old.getTimerName());
+			oldTimer.remove(name);
+		}
+		return old;
+	}
+
+	private void notifyInitFailure(String flowName, BaseRuntimeException bre) {
+		if (bre.getEntityType() == null) {
+			bre.setEntityType("flow");
+		}
+		if (bre.getEntityName() == null) {
+			bre.setEntityName(flowName);
+		}
+		bre.withExtra(NotifyError.EXTRA_PHASE, NotifyError.PHASE_INIT);
+		apiClient.send(NotifyError.builder()
+			.entityType("flow")
+			.entityName(flowName)
+			.exception(bre)
+			.build());
 	}
 
 	public class FlowRunnable implements NamedRunnable

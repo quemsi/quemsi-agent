@@ -59,6 +59,7 @@ import com.quemsi.model.dto.agent.TestRedis;
 import com.quemsi.model.dto.agent.UpdateAgentModel;
 import com.quemsi.model.dto.agent.VersionDeleteRequest;
 import com.quemsi.model.dto.agent.onapi.NotifyError;
+import com.quemsi.model.dto.agent.onapi.NotifyFlowReady;
 import com.quemsi.model.dto.agent.onapi.PreviewSubsetResult;
 import com.quemsi.model.dto.agent.onapi.RetentionCompleted;
 import com.quemsi.model.dto.agent.onapi.TestAWSS3DriveResult;
@@ -155,6 +156,7 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(TestRedis.class, MemberCategory.values())
             .registerType(VersionDeleteRequest.class, MemberCategory.values())
             .registerType(NotifyError.class, MemberCategory.values())
+            .registerType(NotifyFlowReady.class, MemberCategory.values())
             .registerType(RetentionCompleted.class, MemberCategory.values())
             .registerType(TestAWSS3DriveResult.class, MemberCategory.values())
             .registerType(TestAzureBlobDriveResult.class, MemberCategory.values())
@@ -249,6 +251,7 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(TestFolderAccess.class)
             .registerType(TestFolderAccessResult.class)
             .registerType(NotifyError.class)
+            .registerType(NotifyFlowReady.class)
             .registerType(RetentionCompleted.class)
             .registerType(VersionDeleted.class)
             .registerType(UpdateSchemaConfig.class)
