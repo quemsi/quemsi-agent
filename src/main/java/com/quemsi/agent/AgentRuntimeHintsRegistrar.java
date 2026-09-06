@@ -75,6 +75,7 @@ import com.quemsi.model.flow.subset.SubsetSnapshot;
 import com.quemsi.model.flow.db.mongodb.DDLServiceMongo;
 import com.quemsi.model.flow.db.mongodb.DMLServiceMongo;
 import com.quemsi.model.flow.db.mongodb.DatasourceFactoryMongo;
+import com.quemsi.model.flow.db.mongodb.MongoSubsetSupport;
 import com.quemsi.model.flow.db.mongodb.MongoTypeMapper;
 import com.quemsi.model.flow.db.oracle.DDLServiceOracle;
 import com.quemsi.model.flow.db.oracle.DMLServiceOracle;
@@ -131,6 +132,7 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(DDLServiceMongo.class, MemberCategory.values())
             .registerType(DMLServiceMongo.class, MemberCategory.values())
             .registerType(MongoTypeMapper.class, MemberCategory.values())
+            .registerType(MongoSubsetSupport.class, MemberCategory.values())
             .registerType(DatasourceFactoryOracle.class, MemberCategory.values())
             .registerType(DDLServiceOracle.class, MemberCategory.values())
             .registerType(DMLServiceOracle.class, MemberCategory.values())

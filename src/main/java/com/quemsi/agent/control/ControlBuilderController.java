@@ -34,6 +34,7 @@ import com.quemsi.commons.util.BaseRuntimeException;
 import com.quemsi.commons.util.Exceptions;
 import com.quemsi.commons.util.StringUtils;
 import com.quemsi.model.dto.DataFile;
+import com.quemsi.model.dto.DatasourceType;
 import com.quemsi.model.dto.builder.BuilderMode;
 import com.quemsi.model.dto.builder.BuilderSchemaSource;
 import com.quemsi.model.dto.builder.BuilderSessionOpenPayload;
@@ -51,6 +52,7 @@ import com.quemsi.model.flow.db.sql.DbTable;
 import com.quemsi.model.flow.db.sql.DbView;
 import com.quemsi.model.flow.file.ZipBackupArchive;
 import com.quemsi.model.flow.out.Storage;
+import com.quemsi.model.flow.db.mongodb.MongoSubsetSupport;
 import com.quemsi.model.flow.subset.SqlSubsetSupport;
 import com.quemsi.model.flow.subset.SubsetBrowseResult;
 import com.quemsi.model.flow.subset.SubsetConfig;
@@ -135,10 +137,13 @@ public class ControlBuilderController {
                 && session.mode() != BuilderMode.BROWSE) {
             throw Exceptions.badRequest("builder-mode-unsupported").withExtra("mode", session.mode()).get();
         }
-        ensureModel(session);
+        DbModel model = ensureModel(session);
         ActiveSession refreshed = sessionRegistry.require(sessionId, token);
         List<String> list = refreshed.cachedTables() != null ? refreshed.cachedTables() : List.of();
-        return Map.of("tables", list);
+        Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("tables", list);
+        result.put("sourceType", model.getSourceType() != null ? model.getSourceType() : "");
+        return result;
     }
 
     @GetMapping("/api/objects")
@@ -495,7 +500,12 @@ public class ControlBuilderController {
         }
         DbModel model = ensureModel(session);
         DbTable dbTable = resolveTable(model, table);
-        String where = SqlSubsetSupport.buildPkInPredicate(dbTable, keys);
+        String where;
+        if (DatasourceType.MONGODB.name().equalsIgnoreCase(model.getSourceType())) {
+            where = MongoSubsetSupport.buildPkInFilterJson(keys);
+        } else {
+            where = SqlSubsetSupport.buildPkInPredicate(dbTable, keys);
+        }
         return Map.of("table", dbTable.qualifiedName(), "where", where);
     }
 

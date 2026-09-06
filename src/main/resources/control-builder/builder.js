@@ -1209,6 +1209,7 @@
     document.querySelector(".wrap")?.classList.add("subset-wide");
 
     let tables = [];
+    let sourceType = "";
     /** @type {Array<{table:string,where?:string,limit?:number|null,entireTable?:boolean}>} */
     let drivers = [];
     let activeTable = null;
@@ -1218,6 +1219,17 @@
     let browsePage = 0;
     let browseTotal = 0;
     let browsePageSize = 50;
+
+    function applyFilterPlaceholder() {
+      if (!els.subsetWhere) return;
+      if (sourceType.toUpperCase() === "MONGODB") {
+        els.subsetWhere.placeholder = '{"status":"ACTIVE","aircraft.size":{"$gt":100}}';
+        els.subsetWhere.title = "MongoDB JSON filter document (leave empty when using selected rows / entire collection)";
+      } else {
+        els.subsetWhere.placeholder = "t.status = 'FAILED'";
+        els.subsetWhere.title = "SQL WHERE fragment using alias t";
+      }
+    }
 
     if (Array.isArray(draft.drivers)) {
       drivers = draft.drivers
@@ -1647,7 +1659,16 @@
         }
         const data = await res.json();
         tables = Array.isArray(data.tables) ? data.tables : [];
-        setStatus(els.subsetStatus, tables.length + " table(s)");
+        sourceType = data.sourceType ? String(data.sourceType) : "";
+        applyFilterPlaceholder();
+        if (sourceType.toUpperCase() === "MONGODB") {
+          els.allHint.textContent =
+            "Select a collection to browse. Use a MongoDB JSON filter, selected _id rows, or entire collection. Seed limit applies only to filter drivers.";
+        }
+        setStatus(
+          els.subsetStatus,
+          tables.length + " table(s)" + (sourceType ? " · " + sourceType : "")
+        );
         if (els.subsetAddAll) {
           els.subsetAddAll.disabled = !tables.length;
         }
