@@ -1204,7 +1204,7 @@
     els.title.textContent = "Configure subset drivers";
     els.allHint.hidden = false;
     els.allHint.textContent =
-      "Select a table to browse. Seed limit applies only when adding a filter driver (not selected rows / entire table). Page size is for the grid pager.";
+      "Select a table to browse and add drivers. Click a table in Impact preview to inspect which planned rows are included and why (driver vs FK).";
     els.subsetMode.hidden = false;
     document.querySelector(".wrap")?.classList.add("subset-wide");
 
@@ -1213,6 +1213,11 @@
     /** @type {Array<{table:string,where?:string,limit?:number|null,entireTable?:boolean}>} */
     let drivers = [];
     let activeTable = null;
+    /** @type {'browse'|'impact'} */
+    let gridMode = "browse";
+    let impactTable = null;
+    /** @type {Array<object>} */
+    let lastPreviewSummaries = [];
     /** @type {Set<string>} */
     let selectedKeys = new Set();
     let previewTimer = null;
@@ -1300,6 +1305,8 @@
     }
 
     function selectTable(name) {
+      gridMode = "browse";
+      impactTable = null;
       activeTable = name;
       selectedKeys.clear();
       browsePage = 0;
@@ -1313,8 +1320,36 @@
       els.subsetGridHead.innerHTML = "";
       els.subsetGridBody.innerHTML = "";
       syncEntireControls();
+      setSubsetControlsEnabled(true);
       renderTables();
+      renderPreview(lastPreviewSummaries);
       loadBrowse({ clearSelection: true });
+    }
+
+    function setSubsetControlsEnabled(enabled) {
+      els.subsetEntireTable.disabled = !enabled;
+      els.subsetWhere.disabled = !enabled || els.subsetEntireTable.checked;
+      els.subsetLimit.disabled = !enabled || els.subsetEntireTable.checked;
+      els.subsetBrowseApply.disabled = !enabled;
+      els.subsetAddDriver.disabled = !enabled;
+      if (els.subsetSeedLimitWrap) {
+        els.subsetSeedLimitWrap.style.opacity = !enabled || els.subsetEntireTable.checked ? "0.5" : "1";
+      }
+    }
+
+    function inspectImpact(tableName) {
+      if (!tableName || !drivers.length) return;
+      gridMode = "impact";
+      impactTable = tableName;
+      activeTable = tableName;
+      selectedKeys.clear();
+      browsePage = 0;
+      els.subsetTableTitle.textContent = tableName + " · planned rows";
+      els.subsetWorkbench.hidden = false;
+      setSubsetControlsEnabled(false);
+      renderTables();
+      renderPreview(lastPreviewSummaries);
+      loadImpactRows();
     }
 
     function updatePager() {
@@ -1369,6 +1404,11 @@
         rm.addEventListener("click", () => {
           const idx = driverIndexFor(d.table);
           if (idx >= 0) drivers.splice(idx, 1);
+          if (gridMode === "impact" && impactTable === d.table) {
+            gridMode = "browse";
+            impactTable = null;
+            setSubsetControlsEnabled(true);
+          }
           renderDrivers();
           renderTables();
           schedulePreview();
@@ -1383,16 +1423,23 @@
     }
 
     function renderPreview(tableSummaries) {
+      lastPreviewSummaries = Array.isArray(tableSummaries) ? tableSummaries : [];
       els.subsetPreviewList.innerHTML = "";
-      if (!tableSummaries || !tableSummaries.length) {
+      if (!lastPreviewSummaries.length) {
         setStatus(els.subsetPreviewStatus, drivers.length ? "No tables in plan" : "No drivers yet");
         return;
       }
-      setStatus(els.subsetPreviewStatus, tableSummaries.length + " table(s) in plan");
-      const sorted = tableSummaries.slice().sort((a, b) => cmpTableName(a.table, b.table));
+      setStatus(
+        els.subsetPreviewStatus,
+        lastPreviewSummaries.length + " table(s) in plan · click a table to inspect rows"
+      );
+      const sorted = lastPreviewSummaries.slice().sort((a, b) => cmpTableName(a.table, b.table));
       sorted.forEach((s) => {
         const row = document.createElement("div");
-        row.className = "row driver-item";
+        row.className =
+          "row preview-item" + (gridMode === "impact" && impactTable === s.table ? " active" : "");
+        row.tabIndex = 0;
+        row.title = "Inspect planned rows for " + s.table;
         const title = document.createElement("strong");
         title.textContent = s.table;
         const detail = document.createElement("span");
@@ -1407,6 +1454,13 @@
         detail.textContent = parts.join(" · ");
         row.appendChild(title);
         row.appendChild(detail);
+        row.addEventListener("click", () => inspectImpact(s.table));
+        row.addEventListener("keydown", (ev) => {
+          if (ev.key === "Enter" || ev.key === " ") {
+            ev.preventDefault();
+            inspectImpact(s.table);
+          }
+        });
         els.subsetPreviewList.appendChild(row);
       });
     }
@@ -1419,6 +1473,15 @@
     async function runPreview() {
       if (!drivers.length) {
         renderPreview([]);
+        if (gridMode === "impact") {
+          gridMode = "browse";
+          impactTable = null;
+          setSubsetControlsEnabled(true);
+          if (activeTable) {
+            els.subsetTableTitle.textContent = activeTable;
+            loadBrowse({ clearSelection: true });
+          }
+        }
         return;
       }
       setStatus(els.subsetPreviewStatus, "Updating preview…");
@@ -1436,19 +1499,41 @@
         if (!res.ok) {
           throw new Error(data.messageId || data.message || "Preview failed (" + res.status + ")");
         }
-        renderPreview(Array.isArray(data.tables) ? data.tables : []);
+        const summaries = Array.isArray(data.tables) ? data.tables : [];
+        renderPreview(summaries);
+        if (gridMode === "impact" && impactTable) {
+          const stillThere = summaries.some((s) => s.table === impactTable);
+          if (stillThere) {
+            loadImpactRows();
+          } else {
+            gridMode = "browse";
+            impactTable = null;
+            setSubsetControlsEnabled(true);
+            if (activeTable) {
+              els.subsetTableTitle.textContent = activeTable;
+              loadBrowse({ clearSelection: true });
+            }
+          }
+        }
       } catch (e) {
         setStatus(els.subsetPreviewStatus, e.message || String(e), true);
       }
     }
 
-    function renderGrid(columns, rows) {
+    function renderGrid(columns, rows, opts) {
+      const impact = !!(opts && opts.impact);
       els.subsetGridHead.innerHTML = "";
       els.subsetGridBody.innerHTML = "";
       const headRow = document.createElement("tr");
-      const th0 = document.createElement("th");
-      th0.textContent = "";
-      headRow.appendChild(th0);
+      if (!impact) {
+        const th0 = document.createElement("th");
+        th0.textContent = "";
+        headRow.appendChild(th0);
+      } else {
+        const thSrc = document.createElement("th");
+        thSrc.textContent = "Source";
+        headRow.appendChild(thSrc);
+      }
       (columns || []).forEach((c) => {
         const th = document.createElement("th");
         th.textContent = c;
@@ -1458,17 +1543,24 @@
       const entire = els.subsetEntireTable.checked;
       (rows || []).forEach((r) => {
         const tr = document.createElement("tr");
-        const td0 = document.createElement("td");
-        const cb = document.createElement("input");
-        cb.type = "checkbox";
-        cb.disabled = entire;
-        cb.checked = selectedKeys.has(r.pkKey);
-        cb.addEventListener("change", () => {
-          if (cb.checked) selectedKeys.add(r.pkKey);
-          else selectedKeys.delete(r.pkKey);
-        });
-        td0.appendChild(cb);
-        tr.appendChild(td0);
+        if (impact) {
+          const tdSrc = document.createElement("td");
+          tdSrc.className = "subset-source-cell";
+          tdSrc.textContent = r.source || "";
+          tr.appendChild(tdSrc);
+        } else {
+          const td0 = document.createElement("td");
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.disabled = entire;
+          cb.checked = selectedKeys.has(r.pkKey);
+          cb.addEventListener("change", () => {
+            if (cb.checked) selectedKeys.add(r.pkKey);
+            else selectedKeys.delete(r.pkKey);
+          });
+          td0.appendChild(cb);
+          tr.appendChild(td0);
+        }
         (r.values || []).forEach((v) => {
           const td = document.createElement("td");
           td.textContent = v == null ? "" : String(v);
@@ -1480,6 +1572,8 @@
 
     async function loadBrowse(opts) {
       if (!activeTable) return;
+      gridMode = "browse";
+      impactTable = null;
       const clearSelection = !!(opts && opts.clearSelection);
       if (clearSelection) selectedKeys.clear();
       browsePageSize = Number(els.subsetPageSize.value) || 50;
@@ -1506,9 +1600,11 @@
         browseTotal = typeof data.totalCount === "number" ? data.totalCount : 0;
         browsePage = typeof data.page === "number" ? data.page : browsePage;
         browsePageSize = typeof data.pageSize === "number" ? data.pageSize : browsePageSize;
-        renderGrid(data.columns || [], data.rows || []);
+        renderGrid(data.columns || [], data.rows || [], { impact: false });
         syncEntireControls();
+        setSubsetControlsEnabled(true);
         updatePager();
+        renderPreview(lastPreviewSummaries);
         const selNote = selectedKeys.size ? " · " + selectedKeys.size + " selected" : "";
         setStatus(
           els.subsetBrowseStatus,
@@ -1522,9 +1618,59 @@
       }
     }
 
+    async function loadImpactRows() {
+      if (!impactTable || !drivers.length) return;
+      browsePageSize = Number(els.subsetPageSize.value) || 50;
+      setStatus(els.subsetBrowseStatus, "Loading planned rows…");
+      try {
+        const res = await fetch("/control/builder/api/preview-subset-rows", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sessionId: cfg.sessionId,
+            token: cfg.token,
+            drivers: drivers,
+            table: impactTable,
+            pageSize: browsePageSize,
+            page: browsePage,
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.messageId || data.message || "Impact rows failed (" + res.status + ")");
+        }
+        browseTotal = typeof data.totalCount === "number" ? data.totalCount : 0;
+        browsePage = typeof data.page === "number" ? data.page : browsePage;
+        browsePageSize = typeof data.pageSize === "number" ? data.pageSize : browsePageSize;
+        if (data.table) {
+          impactTable = data.table;
+          els.subsetTableTitle.textContent = data.table + " · planned rows";
+        }
+        renderGrid(data.columns || [], data.rows || [], { impact: true });
+        updatePager();
+        setStatus(
+          els.subsetBrowseStatus,
+          "Inspecting plan · " +
+            (data.rows || []).length +
+            " row(s) on this page · Source shows why each row was included"
+        );
+      } catch (e) {
+        setStatus(els.subsetBrowseStatus, e.message || String(e), true);
+        els.subsetPager.hidden = true;
+      }
+    }
+
     function applyFilter() {
       browsePage = 0;
       loadBrowse({ clearSelection: true });
+    }
+
+    function reloadCurrentGrid(clearSelection) {
+      if (gridMode === "impact") {
+        loadImpactRows();
+      } else {
+        loadBrowse({ clearSelection: !!clearSelection });
+      }
     }
 
     async function addToSubset() {
@@ -1607,6 +1753,7 @@
 
     els.subsetTableFilter.addEventListener("input", renderTables);
     els.subsetEntireTable.addEventListener("change", () => {
+      if (gridMode === "impact") return;
       syncEntireControls();
       browsePage = 0;
       loadBrowse({ clearSelection: true });
@@ -1617,19 +1764,19 @@
     els.subsetPrevPage.addEventListener("click", () => {
       if (browsePage > 0) {
         browsePage -= 1;
-        loadBrowse({ clearSelection: false });
+        reloadCurrentGrid(false);
       }
     });
     els.subsetNextPage.addEventListener("click", () => {
       const size = browsePageSize || 50;
       if ((browsePage + 1) * size < browseTotal) {
         browsePage += 1;
-        loadBrowse({ clearSelection: false });
+        reloadCurrentGrid(false);
       }
     });
     els.subsetPageSize.addEventListener("change", () => {
       browsePage = 0;
-      loadBrowse({ clearSelection: false });
+      reloadCurrentGrid(false);
     });
     els.apply.addEventListener("click", () => {
       if (!drivers.length) {

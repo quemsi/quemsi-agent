@@ -546,6 +546,135 @@ public class ControlBuilderController {
         }
     }
 
+    /**
+     * Pages planned subset rows for one table, including first-inclusion source
+     * ({@code from driver} / {@code via FK (...)}).
+     */
+    @PostMapping("/api/preview-subset-rows")
+    public Map<String, Object> previewSubsetRows(@RequestBody Map<String, Object> body) {
+        String sessionId = asString(body.get("sessionId"));
+        String token = asString(body.get("token"));
+        ActiveSession session = sessionRegistry.require(sessionId, token);
+        if (session.mode() != BuilderMode.SUBSET) {
+            throw Exceptions.badRequest("builder-mode-unsupported").withExtra("mode", session.mode()).get();
+        }
+        String table = asString(body.get("table"));
+        if (StringUtils.isEmptyOrNull(table)) {
+            throw Exceptions.badRequest("builder-table-required").get();
+        }
+        SubsetConfig config = parseSubsetDrivers(body.get("drivers"));
+        if (!config.isActive()) {
+            throw Exceptions.badRequest("subset-not-enabled").get();
+        }
+        Integer pageSize = parsePositiveInt(body.get("pageSize"), 50, "builder-browse-page-size-invalid");
+        Integer page = parseNonNegativeInt(body.get("page"), 0, "builder-browse-page-invalid");
+        if (pageSize > 200) {
+            pageSize = 200;
+        }
+
+        DbModel model = ensureModel(session);
+        DbTable dbTable = resolveTable(model, table);
+        DataSourceFactory ds = resolveDatasource(session.datasourceName());
+        try (DMLService dml = ds.dmlService()) {
+            if (!dml.supportsSubset()) {
+                throw Exceptions.badRequest("subset-not-supported-for-datasource").get();
+            }
+            SubsetPlan plan = new SubsetPlanner().plan(model, dml, config);
+            String qname = dbTable.qualifiedName();
+            List<String> allKeys = new ArrayList<>(plan.keysFor(qname));
+            if (allKeys.isEmpty()) {
+                // Try resolved name variants from plan map when qualified names differ in casing.
+                for (String planTable : plan.getPrimaryKeysByTable().keySet()) {
+                    if (planTable.equalsIgnoreCase(table) || planTable.equalsIgnoreCase(qname)
+                            || planTable.equalsIgnoreCase(dbTable.getName())) {
+                        allKeys = new ArrayList<>(plan.keysFor(planTable));
+                        qname = planTable;
+                        break;
+                    }
+                }
+            }
+            int total = allKeys.size();
+            int from = Math.min(page * pageSize, total);
+            int to = Math.min(from + pageSize, total);
+            List<String> pageKeys = allKeys.subList(from, to);
+
+            List<String> columns = List.of();
+            List<Map<String, Object>> rows = new ArrayList<>();
+            if (!pageKeys.isEmpty()) {
+                String where;
+                if (DatasourceType.MONGODB.name().equalsIgnoreCase(model.getSourceType())) {
+                    where = MongoSubsetSupport.buildPkInFilterJson(pageKeys);
+                } else {
+                    where = SqlSubsetSupport.buildPkInPredicate(dbTable, pageKeys);
+                }
+                SubsetBrowseResult browse = dml.browseRows(dbTable, where, Math.max(pageKeys.size(), 1), 0);
+                columns = browse.getColumns() != null ? browse.getColumns() : List.of();
+                Map<String, List<String>> valuesByKey = new java.util.LinkedHashMap<>();
+                if (browse.getRows() != null) {
+                    for (SubsetBrowseResult.BrowseRow browseRow : browse.getRows()) {
+                        if (browseRow.getPkKey() != null) {
+                            valuesByKey.put(browseRow.getPkKey(),
+                                browseRow.getValues() != null ? browseRow.getValues() : List.of());
+                        }
+                    }
+                }
+                for (String key : pageKeys) {
+                    Map<String, Object> m = new java.util.LinkedHashMap<>();
+                    m.put("pkKey", key);
+                    m.put("source", plan.sourceFor(qname, key));
+                    m.put("values", valuesByKey.getOrDefault(key, List.of()));
+                    rows.add(m);
+                }
+            }
+
+            Map<String, Object> result = new java.util.LinkedHashMap<>();
+            result.put("success", true);
+            result.put("table", qname);
+            result.put("columns", columns);
+            result.put("pkColumns",
+                dbTable.getPkColumnNames() != null ? List.copyOf(dbTable.getPkColumnNames()) : List.of());
+            result.put("rows", rows);
+            result.put("totalCount", total);
+            result.put("page", page);
+            result.put("pageSize", pageSize);
+            return result;
+        } catch (BaseRuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw Exceptions.server("builder-preview-subset-rows-failed").withCause(e).get();
+        }
+    }
+
+    private static Integer parsePositiveInt(Object raw, int defaultValue, String errorId) {
+        if (raw == null || String.valueOf(raw).isBlank()) {
+            return defaultValue;
+        }
+        try {
+            int v = raw instanceof Number n ? n.intValue() : Integer.parseInt(String.valueOf(raw));
+            if (v < 1) {
+                throw Exceptions.badRequest(errorId).get();
+            }
+            return v;
+        } catch (NumberFormatException e) {
+            throw Exceptions.badRequest(errorId).get();
+        }
+    }
+
+    private static Integer parseNonNegativeInt(Object raw, int defaultValue, String errorId) {
+        if (raw == null || String.valueOf(raw).isBlank()) {
+            return defaultValue;
+        }
+        try {
+            int v = raw instanceof Number n ? n.intValue() : Integer.parseInt(String.valueOf(raw));
+            if (v < 0) {
+                throw Exceptions.badRequest(errorId).get();
+            }
+            return v;
+        } catch (NumberFormatException e) {
+            throw Exceptions.badRequest(errorId).get();
+        }
+    }
+
     private static SubsetConfig parseSubsetDrivers(Object driversObj) {
         List<SubsetDriver> drivers = new ArrayList<>();
         if (driversObj instanceof Iterable<?> iterable) {

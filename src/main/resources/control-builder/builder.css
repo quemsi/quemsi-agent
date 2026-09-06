@@ -495,6 +495,27 @@ body:has(.wrap.seq-wide) {
   width: 100%;
   justify-content: flex-end;
 }
+.row.preview-item {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  cursor: pointer;
+}
+.row.preview-item:hover {
+  background: rgba(46, 125, 50, 0.08);
+}
+.row.preview-item.active {
+  outline: 1px solid var(--accent, #2e7d32);
+  background: rgba(46, 125, 50, 0.12);
+}
+.subset-source-cell {
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: 0.8rem;
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .row.has-driver .badge {
   color: var(--accent);
 }
