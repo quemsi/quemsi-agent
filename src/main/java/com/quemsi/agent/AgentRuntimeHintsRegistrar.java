@@ -48,6 +48,7 @@ import com.quemsi.model.dto.UpdateSequences;
 import com.quemsi.model.dto.agent.AgentCommand;
 import com.quemsi.model.dto.agent.AgentCommandSync;
 import com.quemsi.model.dto.agent.DelayAgentCommand;
+import com.quemsi.model.dto.agent.ExecuteEphemeralFlow;
 import com.quemsi.model.dto.agent.ExecuteFlow;
 import com.quemsi.model.dto.agent.RetentionExecute;
 import com.quemsi.model.dto.agent.PreviewSubset;
@@ -147,6 +148,7 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(AgentCommand.class, MemberCategory.values())
             .registerType(AgentCommandSync.class, MemberCategory.values())
             .registerType(ExecuteFlow.class, MemberCategory.values())
+            .registerType(ExecuteEphemeralFlow.class, MemberCategory.values())
             .registerType(DelayAgentCommand.class, MemberCategory.values())
             .registerType(UpdateAgentModel.class, MemberCategory.values())
             .registerType(RetentionExecute.class, MemberCategory.values())
@@ -236,6 +238,7 @@ public class AgentRuntimeHintsRegistrar implements RuntimeHintsRegistrar{
             .registerType(AgentCommandSync.class)
             .registerType(DelayAgentCommand.class)
             .registerType(ExecuteFlow.class)
+            .registerType(ExecuteEphemeralFlow.class)
             .registerType(RetentionExecute.class).registerType(RetentionExecute.FileInfo.class)
             .registerType(UpdateAgentModel.class)
             .registerType(VersionDeleteRequest.class)

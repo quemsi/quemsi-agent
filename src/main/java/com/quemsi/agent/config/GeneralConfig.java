@@ -20,6 +20,7 @@ import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.quemsi.agent.AgentCoordinator;
 import com.quemsi.agent.service.AgentCommandExecutor;
+import com.quemsi.agent.service.cmd.ExecuteExecuteEphemeralFlow;
 import com.quemsi.agent.service.cmd.ExecuteExecuteFlow;
 import com.quemsi.agent.service.cmd.ExecuteRetentionExecute;
 import com.quemsi.agent.service.cmd.ExecuteTestAWSS3Drive;
@@ -86,6 +87,11 @@ public class GeneralConfig {
 	@Bean
 	public ExecuteExecuteFlow executeExecuteFlow(){
 		return new ExecuteExecuteFlow();
+	}
+
+	@Bean
+	public ExecuteExecuteEphemeralFlow executeExecuteEphemeralFlow(){
+		return new ExecuteExecuteEphemeralFlow();
 	}
 
 	@Bean

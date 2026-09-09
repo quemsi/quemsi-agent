@@ -29,6 +29,7 @@ import com.quemsi.commons.util.LogMessage;
 import com.quemsi.model.dto.AgentModel;
 import com.quemsi.model.dto.agent.AgentCommand;
 import com.quemsi.model.dto.agent.DelayAgentCommand;
+import com.quemsi.model.dto.agent.ExecuteEphemeralFlow;
 import com.quemsi.model.dto.agent.ExecuteFlow;
 import com.quemsi.model.dto.agent.PreviewSubset;
 import com.quemsi.model.dto.agent.RetentionExecute;
@@ -233,6 +234,8 @@ public class AgentCoordinator {
                 .withDetail(safeCommandDetail(command)));
             if(command instanceof ExecuteFlow executeFlow){
                 commandExecutor.execute(executeFlow);
+            } else if(command instanceof ExecuteEphemeralFlow executeEphemeralFlow){
+                commandExecutor.execute(executeEphemeralFlow);
             } else if(command instanceof UpdateAgentModel updatedModel){
                 initialize(updatedModel.getUpdatedModel());
                 agentBatchedLogger.logInfo(null, null, LogMessage.info("updating model")

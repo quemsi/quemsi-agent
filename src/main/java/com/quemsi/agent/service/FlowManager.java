@@ -120,7 +120,7 @@ public class FlowManager {
 		return List.copyOf(flows.keySet());
 	}
 
-	Flow uninstall(String name) {
+	public Flow uninstall(String name) {
 		if (name == null) {
 			return null;
 		}

@@ -2,6 +2,7 @@ package com.quemsi.agent.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.quemsi.agent.service.cmd.ExecuteExecuteEphemeralFlow;
 import com.quemsi.agent.service.cmd.ExecuteExecuteFlow;
 import com.quemsi.agent.service.cmd.ExecuteRetentionExecute;
 import com.quemsi.agent.service.cmd.ExecuteTestAWSS3Drive;
@@ -11,6 +12,7 @@ import com.quemsi.agent.service.cmd.ExecuteTestFolderAccess;
 import com.quemsi.agent.service.cmd.ExecuteTestRedis;
 import com.quemsi.agent.service.cmd.ExecutePreviewSubset;
 import com.quemsi.agent.service.cmd.ExecuteVersionDeleteRequest;
+import com.quemsi.model.dto.agent.ExecuteEphemeralFlow;
 import com.quemsi.model.dto.agent.ExecuteFlow;
 import com.quemsi.model.dto.agent.PreviewSubset;
 import com.quemsi.model.dto.agent.RetentionExecute;
@@ -24,6 +26,8 @@ import com.quemsi.model.dto.agent.VersionDeleteRequest;
 public class AgentCommandExecutor {
     @Autowired
     private ExecuteExecuteFlow executeExecuteFlow;
+    @Autowired
+    private ExecuteExecuteEphemeralFlow executeExecuteEphemeralFlow;
     @Autowired
     private ExecuteRetentionExecute executeRetentionExecute;
     @Autowired
@@ -43,6 +47,9 @@ public class AgentCommandExecutor {
 
     public void execute(ExecuteFlow cmd){
         executeExecuteFlow.execute(cmd);
+    }
+    public void execute(ExecuteEphemeralFlow cmd){
+        executeExecuteEphemeralFlow.execute(cmd);
     }
     public void execute(RetentionExecute cmd){
         executeRetentionExecute.execute(cmd);
