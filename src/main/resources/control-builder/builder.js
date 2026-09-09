@@ -13,6 +13,9 @@
     allLabel: document.getElementById("allLabel"),
     allHint: document.getElementById("allHint"),
     datasource: document.getElementById("datasource"),
+    schemas: document.getElementById("schemas"),
+    schemasWrap: document.getElementById("schemasWrap"),
+    schemasLabel: document.getElementById("schemasLabel"),
     tablesMode: document.getElementById("tablesMode"),
     maskMode: document.getElementById("maskMode"),
     seqMode: document.getElementById("seqMode"),
@@ -92,6 +95,25 @@
 
   els.datasource.textContent = cfg.datasource || "—";
   const draft = cfg.draft || {};
+
+  function setSchemas(list) {
+    if (!els.schemasWrap || !els.schemas) {
+      return;
+    }
+    const schemas = (Array.isArray(list) ? list : [])
+      .map((s) => String(s || "").trim())
+      .filter(Boolean);
+    if (!schemas.length) {
+      els.schemasWrap.hidden = true;
+      els.schemas.textContent = "";
+      return;
+    }
+    els.schemas.textContent = schemas.join(", ");
+    if (els.schemasLabel) {
+      els.schemasLabel.textContent = schemas.length === 1 ? "Schema" : "Schemas";
+    }
+    els.schemasWrap.hidden = false;
+  }
 
   function setStatus(el, msg, isError) {
     if (!el) return;
@@ -347,6 +369,7 @@
         }
         const data = await res.json();
         tables = Array.isArray(data.tables) ? data.tables : [];
+        setSchemas(data.schemas);
         render();
       } catch (e) {
         setStatus(els.status, e.message || String(e), true);
@@ -564,6 +587,7 @@
         }
         const data = await res.json();
         tables = Array.isArray(data.tables) ? data.tables : [];
+        setSchemas(data.schemas);
         setStatus(els.maskStatus, tables.length + " table(s)");
         renderTables();
         if (tables.length) {
@@ -807,6 +831,7 @@
         const tableData = await tableRes.json();
         sequences = Array.isArray(seqData.sequences) ? seqData.sequences : [];
         tables = Array.isArray(tableData.tables) ? tableData.tables : [];
+        setSchemas(tableData.schemas);
         setStatus(
           els.seqStatus,
           sequences.length + " sequence(s) · " + tables.length + " table(s)"
@@ -1174,6 +1199,7 @@
         (data.tables || []).forEach((n) => objects.push({ kind: "table", name: n }));
         (data.views || []).forEach((n) => objects.push({ kind: "view", name: n }));
         (data.sequences || []).forEach((n) => objects.push({ kind: "sequence", name: n }));
+        setSchemas(data.schemas);
         setStatus(
           els.browseStatus,
           objects.length +
@@ -1807,6 +1833,7 @@
         const data = await res.json();
         tables = Array.isArray(data.tables) ? data.tables : [];
         sourceType = data.sourceType ? String(data.sourceType) : "";
+        setSchemas(data.schemas);
         applyFilterPlaceholder();
         if (sourceType.toUpperCase() === "MONGODB") {
           els.allHint.textContent =

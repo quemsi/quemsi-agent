@@ -37,6 +37,12 @@ body {
   font-size: 0.8rem;
   line-height: 1.35;
 }
+.header-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.35rem;
+  align-items: baseline;
+}
 .toolbar {
   display: flex;
   flex-wrap: wrap;

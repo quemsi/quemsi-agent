@@ -6,9 +6,11 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -143,6 +145,7 @@ public class ControlBuilderController {
         Map<String, Object> result = new java.util.LinkedHashMap<>();
         result.put("tables", list);
         result.put("sourceType", model.getSourceType() != null ? model.getSourceType() : "");
+        result.put("schemas", schemaNames(model));
         return result;
     }
 
@@ -193,6 +196,7 @@ public class ControlBuilderController {
         result.put("sequences", sequences);
         result.put("liveRows", liveRows);
         result.put("sourceType", model.getSourceType() != null ? model.getSourceType() : "");
+        result.put("schemas", schemaNames(model));
         return result;
     }
 
@@ -898,6 +902,34 @@ public class ControlBuilderController {
                     .withCause(e)
                     .get();
         }
+    }
+
+    private static List<String> schemaNames(DbModel model) {
+        Set<String> names = new LinkedHashSet<>();
+        if (model != null && model.getSchemas() != null) {
+            for (String s : model.getSchemas()) {
+                if (s != null && !s.isBlank()) {
+                    names.add(s.trim());
+                }
+            }
+        }
+        if (names.isEmpty() && model != null && model.getTables() != null) {
+            for (DbTable table : model.getTables().values()) {
+                if (table != null && table.getSchema() != null && !table.getSchema().isBlank()) {
+                    names.add(table.getSchema().trim());
+                }
+            }
+        }
+        if (names.isEmpty() && model != null && model.getViews() != null) {
+            for (DbView view : model.getViews()) {
+                if (view != null && view.getSchema() != null && !view.getSchema().isBlank()) {
+                    names.add(view.getSchema().trim());
+                }
+            }
+        }
+        List<String> list = new ArrayList<>(names);
+        list.sort(String.CASE_INSENSITIVE_ORDER);
+        return list;
     }
 
     private static String loadTemplate(String path) throws IOException {
