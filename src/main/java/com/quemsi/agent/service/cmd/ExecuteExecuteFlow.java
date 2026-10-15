@@ -1,6 +1,8 @@
 package com.quemsi.agent.service.cmd;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -49,13 +51,15 @@ public class ExecuteExecuteFlow {
 
     private void saveTerminalExecution(ExecuteFlow cmd, FlowExecutionStatus status) {
         try {
-            LocalDateTime now = LocalDateTime.now();
+            long startedAtEpoch = System.currentTimeMillis();
+            LocalDateTime now = LocalDateTime.ofInstant(Instant.ofEpochMilli(startedAtEpoch), ZoneId.systemDefault());
             FlowExecution execution = new FlowExecution();
             execution.setId(cmd.getFlowExecutionId());
             execution.setActive(true);
             execution.setFlowName(cmd.getFlowName());
             execution.setStatus(status);
             execution.setStartedAt(now);
+            execution.setStartedAtEpoch(startedAtEpoch);
             execution.setFinishedAt(now);
             apiManager.saveFlowExecution(execution);
         } catch (Exception saveEx) {
